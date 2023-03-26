@@ -1,32 +1,60 @@
-# Prerequisites
-*.d
+# Folders
 
-# Compiled Object files
-*.slo
-*.lo
+/build/
+# Compiled source #
+###################
+*.com
+*.class
+*.exe
 *.o
+*.so
 *.obj
 
-# Precompiled Headers
-*.gch
-*.pch
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+*.sdf
+*.opensdf
+*.pdb
+*.ilk
 
-# Fortran module files
-*.mod
-*.smod
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+/Debug/
+/Release/
+/Build/
 
-# Executables
-*.exe
-*.out
-*.app
+# Windows #
+######################
+
+*.sln
+*.suo
+*.vcxproj
+*.vcxproj.filters
+
+# Other
+.vscode
