@@ -58,12 +58,18 @@ class Socket
 		Socket();
 		~Socket();
 		
-		bool			SendRequest(const char * hostname, int port, const char * request, const long size=-1);
+		std::string 	HTTPGet(const std::string & url);
 		bool			Poll(); // return true if data is waiting
+		void			Close();
+		
+		// Old functions
+	
+		bool			SendRequest(const char * hostname, int port, const char * request, const long size=-1);
+
 		int				ReadData(char * result, int maxlen, bool fill=false);
 		int				Get(const char * hostname, int port, const char * request, char * result, int maxlen);
-		std::string 	HTTPGet(const std::string & url);
-		void			Close();
+	
+
 		
 	private:
 		SocketData *		data;

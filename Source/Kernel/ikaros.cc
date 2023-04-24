@@ -76,6 +76,15 @@ std::string  validate_identifier(std::string s)
         kernel().SetParameter(parameter_name, value);
       };
 
+    std::string Module::Lookup(std::string name) // Call kernel.lookup() later ************
+    {
+        name = name_+"."+name;
+        if(!kernel().parameters.count(name))
+            throw exception("Variable \""+name+"\" does not exist");
+
+        return kernel().parameters[name];
+    }
+
   Module::Module()
     {
         info_ = kernel().current_module_info;

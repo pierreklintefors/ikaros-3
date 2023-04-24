@@ -1,4 +1,4 @@
-// options.h
+// options.h   (c) Christian Balkenius 2023
 
 #ifndef OPTIONS
 #define OPTIONS

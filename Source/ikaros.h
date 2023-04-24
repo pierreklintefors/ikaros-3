@@ -16,6 +16,7 @@
 #include "Kernel/dictionary.h"
 #include "Kernel/options.h"
 #include "Kernel/range.h"
+#include "Kernel/expression.h"
 #include "Kernel/matrix.h"
 #include "Kernel/socket.h"
 
@@ -133,7 +134,16 @@ public:
 
     operator std::string()
     {
-        return *string_value; // FIXME: add conversion
+        switch(type)
+        {
+            case no_type: return "uninitialized_parameter"; // FIXME: throw
+            case int_type: if(int_value) return std::to_string(*int_value);
+            case float_type: if(float_value) return std::to_string(*float_value);
+            case string_type: if(string_value) return *string_value;
+            case matrix_type: return "MATRIX-FIX-ME";
+            default: return "type-conversion-error";
+        }
+        return "type-conversion-error";
     }
 
 
@@ -177,9 +187,29 @@ public:
     virtual void Tick() {}
     virtual void Init() {}
 
+    std::string Lookup(std::string name);
+
+    int EvaluateIntExpression(std::string & s)
+    {
+        expression e = expression(s);
+        std::map<std::string, std::string> vars;
+        for(auto v : e.variables())
+            vars[v] = Lookup(v);
+        return expression(s).evaluate(vars);
+    }
+
+    std::vector<int> EvaluateSizeList(std::string & s) // return list of size from size list in string
+    {
+        std::vector<int> shape;
+        for(std::string e : split(s, ","))
+        shape.push_back(EvaluateIntExpression(e));
+        return shape;
+//        throw exception("Could not parse size list string");
+    }
+
     std::vector<int> EvaluateSize(std::string & s) // Evaluate size/shape string
     {
-        if(ends_with(s, ".size")) // shape function
+         if(ends_with(s, ".size")) // special case: use shape function on input
         {
             auto & x = rsplit(s, ".", 1); // FIXME: rhead ???
             matrix m;
@@ -187,7 +217,7 @@ public:
             return m.shape(); 
         }
 
-        throw exception("Could not parse size string");
+        return EvaluateSizeList(s); // default case: parse size list
     }
 
 
@@ -437,7 +467,7 @@ public:
 
     void SetParameter(std::string name, std::string value)
     {
-        //std::cout << "SETTING PARAMETER: " << name << ": " << value << std::endl;
+        std::cout << "SETTING PARAMETER: " << name << ": " << value << std::endl;
         if(parameters.count(name))
             parameters[name] = value;
         else

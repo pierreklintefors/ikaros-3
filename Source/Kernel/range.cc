@@ -1,4 +1,4 @@
-// range.cc
+// range.cc   (c) Christian Balkenius 2023
 
 #include <iostream>
 

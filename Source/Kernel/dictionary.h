@@ -1,5 +1,5 @@
-// dictionary.h
-
+// dictionary.h (c) Christian Balkenius 2023
+//
 #ifndef DICTIONARY
 #define DICTIONARY
 

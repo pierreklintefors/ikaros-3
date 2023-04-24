@@ -1,5 +1,7 @@
 // Ikaros 3.0
 
+#include <string>
+
 #include "ikaros.h"
 
 using namespace ikaros;
@@ -7,6 +9,7 @@ using namespace ikaros;
 int
 main(int argc, char *argv[])
 {
+    std::string s = "abc";
     try
     { 
         Kernel & k = kernel();

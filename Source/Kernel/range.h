@@ -1,4 +1,4 @@
-// range.h - ranges for iteration
+// range.h - ranges for iteration (c) Christian Balkenius 2023
 
 // TODO: Add enumerated ranges: c,b,c
 // TODO: trim= at appropriate places

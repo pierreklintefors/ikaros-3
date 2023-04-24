@@ -1,6 +1,6 @@
 //
 // matrix.h - new multidimensional matrix class
-// Christian Balkenius 2023-02-05
+// (c) Christian Balkenius 2023-02-05
 //
 
 #ifndef MATRIX
@@ -22,8 +22,6 @@
 
 namespace ikaros
 {
-
-
     // Recursive initalizer_list
 
     struct InitList

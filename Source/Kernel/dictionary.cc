@@ -1,4 +1,6 @@
 
+// dictionary.h  (c) Christian Balkenius 2023
+
 #include "dictionary.h"
 
 using namespace ikaros;
