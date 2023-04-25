@@ -37,7 +37,7 @@ std::string  validate_identifier(std::string s)
         else if(k.outputs.count(name))
             m = k.outputs[name];
         else if(k.parameters.count(name))
-            m = matrix(42); // FIXME: Get actual matrix later IF matrix parameter
+            m = (matrix &)(k.parameters[name]); // FIXME: Check if matrix parameter
         else
             throw exception("Input or output named "+name+" does not exist");
     }

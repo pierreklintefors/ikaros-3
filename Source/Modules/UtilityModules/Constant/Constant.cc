@@ -8,7 +8,7 @@ public:
 
     parameter data;
     matrix output;
-
+/*
     int _SetSizes()
     {
         Bind(output, "OUTPUT");
@@ -29,7 +29,7 @@ public:
 
         return 0;
     }
-
+*/
     void Init()
     {
 

@@ -118,19 +118,26 @@ public:
                 case int_type: if(int_value) *int_value = std::stoi(v); break;
                 case float_type: if(float_value) *float_value = std::stof(v); break;
                 case string_type: if(string_value) *string_value = v; break;
-                case matrix_type: if(matrix_value) *matrix_value = v; break;
+                case matrix_type: if(matrix_value) *matrix_value = v; break; // ERRR ****
                 default: break;
             }
             return v;
         }
         catch(const std::exception& e)
         {
-            throw exception("String \""+v+"\"cannot be converted to float");
+            throw exception("String \""+v+"\" cannot be converted to float");
         }
         
     }
 
 
+    operator matrix & ()
+    {
+        if(type==matrix_type && matrix_value) 
+            return *matrix_value;
+
+        throw exception("not a matrix parameter");
+    }
 
     operator std::string()
     {

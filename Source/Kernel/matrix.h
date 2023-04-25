@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cstddef>
 #include <stdexcept>
+#include <string>
 #include <vector>
 #include <initializer_list>
 #include <variant>
@@ -168,15 +169,15 @@ namespace ikaros
             }
             else // 2D
             {
-                realloc(x, y);
+                realloc(y, x);
                 //info_ = std::make_shared<matrix_info>(std::vector<int>{y, x});
                 //data_ = std::make_shared<std::vector<float>>(info_->calculate_size());
 
                 for(int j=0; j< rows.size(); j++)
                 {
                     auto r = split(rows.at(j), ",");
-                    for(int i=0; i< row.size(); i++)
-                        (*this)(j, i) = stof(r.at(i));
+                    for(int i=0; i< r.size(); i++)
+                        (*this)(j,i) = stof(r.at(i));
                 }
             }
         }
