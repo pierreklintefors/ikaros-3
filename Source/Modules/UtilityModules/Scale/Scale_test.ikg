@@ -1,0 +1,11 @@
+<group name="Test">
+	<module class = "Constant" name = "Constant" data="1, 2; 3 4" />
+	<module class = "Scale" name = "Scale" factor="1001" />
+
+	<module class = "Print" name = "Print" />
+	<module class = "Logger" name = "Logger" />	
+
+	<connection  source = "Constant.OUTPUT"  	target = "Scale.INPUT" />
+	<connection  source = "Scale.OUTPUT"  		target = "Print.INPUT" />
+</group>
+

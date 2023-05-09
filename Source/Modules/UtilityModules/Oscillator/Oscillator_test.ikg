@@ -1,0 +1,13 @@
+<group name="Test" stop="99" realtime="">
+	<module class = "Oscillator" name = "Oscillator" type="square" frequency="1, 2, 3, 400" />
+
+	<module class = "Print" name = "Print" />
+	<module class = "Logger" name = "Logger"/>	
+
+	<group name="Subgroup">
+		<module class = "Logger" name = "Logger"/>
+	</group>
+
+	<connection  source = "Oscillator.OUTPUT"  	target = "Print.INPUT" />
+</group>
+

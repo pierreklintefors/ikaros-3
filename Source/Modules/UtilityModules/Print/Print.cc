@@ -1,12 +1,10 @@
 #include "ikaros.h"
-#include <iostream>
 
 using namespace ikaros;
 
 class Print: public Module
 {
-public:
-    matrix      input;
+    matrix input;
 
     void Init()
     {
@@ -16,12 +14,10 @@ public:
 
     void Tick()
     {
-        if(input.size(0) > 0)
-            std::cout << "PRINT: " << input[0] << std::endl;
-        else
-        std::cout << "PRINT: no data " << std::endl;
-     }
+        input.print();
+    }
 };
 
 
 INSTALL_CLASS(Print)
+
