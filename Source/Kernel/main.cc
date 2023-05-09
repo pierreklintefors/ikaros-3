@@ -15,14 +15,16 @@ main(int argc, char *argv[])
         Kernel & k = kernel();
 
         options o;
-        o.set_default("w", "8000");
+        o.add_option("r", "realtime", "run in real-time mode");
+        o.add_option("s", "stop", "stop Ikaros after this tick");
+        o.add_option("w", "webuiport", "port for ikaros WebUI", "8000");
+ 
         o.parse_args(argc, argv);
-        //o.filenames.push_back("Add_test.ikg"); // Testing
 
         std::cout << "Ikaros 3.0 Starting" << std::endl;
 
         //k.ListClasses();
-        k.LoadFiles(o.filenames);
+        k.LoadFiles(o.filenames, o);
 
         // ResolveParameters - indirection - sharing etc
 
@@ -34,10 +36,9 @@ main(int argc, char *argv[])
         k.ListOutputs();
         k.ListParameters();
 
-        exit(0);
 
-        for(int i=0; i< 10; i++)
-        {
+        for(int i=0; i<10; i++)
+        {   
             k.Tick();
             k.Propagate();
         }
@@ -46,7 +47,7 @@ main(int argc, char *argv[])
 
         std::cout << "Ikaros 3.0 Ended" << std::endl;
     }
-    catch(exception e)
+    catch(exception & e)
     {
         std::cerr << "IKAROS::EXCEPTION: " << e.what() << std::endl;
     }
@@ -55,14 +56,10 @@ main(int argc, char *argv[])
     {
         std::cerr << "STD::EXCEPTION: " << e.what() << std::endl;
     }
-   catch(...)
+    catch(...)
     {
         std::cerr << "UNKOWN EXCEPTION " << std::endl;
     }
     return 0;
 }
-
-//
-// TEMPORARY: INCLUDE MODULES HERE
-//
 

@@ -375,13 +375,25 @@ namespace ikaros
 
 
         void 
-        print(std::string n="")  // print matrix; n overrides name if set (useful during debugging)
+        print(std::string n="") // print matrix; n overrides name if set (useful during debugging)
         {
             if(!n.empty())
                 std::cout << n << " = ";
             else if(!info_->name_.empty())
                 std::cout << info_->name_ << " = ";
-            print_();
+            if(rank()==1)
+            {
+                std::string sep;
+                std::cout << "{";
+                for(auto v: *this)
+                {
+                    std::cout << sep << v;
+                    sep = ", ";
+                }
+                std::cout << "}";
+            }
+            else
+                print_();
             std::cout << std::endl;
         }
 
@@ -448,7 +460,7 @@ namespace ikaros
 
 
         matrix & 
-        copy(float v) // Set all element of the matrix to a value
+        set(float v) // Set all element of the matrix to a value
         {
             return apply([=](float x) {return v;});
         }
@@ -530,7 +542,7 @@ namespace ikaros
         matrix &
         reset() // reset the matrix 
         {
-            return copy(0);
+            return set(0);
         }
     
 
@@ -747,8 +759,8 @@ namespace ikaros
 
         matrix & add(float c) { return apply([c](float x)->float {return x+c;}); }
         matrix & subtract(float c) { return add(-c); }
-        matrix & multiply(float c) { return apply([c](float x)->float {return x*c;});  }
-        matrix & divide(float c) { return multiply(1/c); }
+        matrix & scale(float c) { return apply([c](float x)->float {return x*c;});  }
+        matrix & divide(float c) { return scale(1/c); }
 
         matrix & add(matrix A)      { check_same_size(A); return apply(A, [](float x, float y)->float {return x+y;}); }
         matrix & subtract(matrix A) { check_same_size(A); return apply(A, [](float x, float y)->float {return x-y;}); }
@@ -874,7 +886,7 @@ namespace ikaros
             return *this;   
         }
 
-    friend std::ostream& operator<<(std::ostream& os, const matrix & m)
+    friend std::ostream& operator<<(std::ostream& os, matrix & m)
         {
             if(m.rank() == 0)
             {
@@ -884,7 +896,8 @@ namespace ikaros
                     os << m.data_->at(m.info_->offset_);
             }
             else
-                os << "{...}";
+                //os << "{...}";
+                m.print();
             return os;
         }
 

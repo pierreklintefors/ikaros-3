@@ -34,12 +34,11 @@ struct exception : public std::exception
 
 
 
-
 class Kernel;
 
 Kernel& kernel();
 
-enum parameter_type { no_type, int_type, float_type, string_type, matrix_type, list_type };
+enum parameter_type { no_type, int_type, float_type, string_type, matrix_type, options_type };
 
 class parameter // FIXME: check all types everywhere
 {
@@ -50,11 +49,11 @@ private:
     std::shared_ptr<float>          float_value;
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
-    std::vector<std::string>        list_alternatives;
+    std::vector<std::string>        options;
 public:
     parameter(): type(no_type) {}
 
-    parameter(std::string type_string, std::string default_value)
+    parameter(std::string type_string, std::string default_value, std::string options_string)
     {
         if(type_string == "int")
         {
@@ -75,6 +74,15 @@ public:
         {
             type = matrix_type;
             matrix_value = std::make_shared<matrix>(default_value);
+        }
+        else if(type_string == "options")
+        {
+            type = options_type;
+            options = split(options_string, ",");
+            auto ix = find(options.begin(), options.end(), default_value);
+            if (ix==options.end())
+                throw exception("option not defined");
+            int_value = std::make_shared<int>(ix - options.begin());
         }
         else
             throw exception("unkown parameter type");
@@ -110,24 +118,25 @@ public:
 
     std::string operator=(std::string v) // FIXME: Handle exceptions higher up ******* FOR STRING CHECK CONVERSION POSSIBLY
     {
-        try
+        switch(type)
         {
-            switch(type)
+            case no_type: type=string_type;  string_value = std::make_shared<std::string>(v); break;          // FIXME: ADD THIS TO THE OTHER TYPES AS WELL
+            case int_type: if(int_value) *int_value = std::stoi(v); break;
+            case options_type:
             {
-                case no_type: type=string_type;  string_value = std::make_shared<std::string>(v); break;          // FIXME: ADD THIS TO THE OTHER TYPES AS WELL
-                case int_type: if(int_value) *int_value = std::stoi(v); break;
-                case float_type: if(float_value) *float_value = std::stof(v); break;
-                case string_type: if(string_value) *string_value = v; break;
-                case matrix_type: if(matrix_value) *matrix_value = v; break; // ERRR ****
-                default: break;
+                auto ix = find(options.begin(), options.end(), v);
+                if (ix==options.end())
+                    throw exception("option \""+v+"\" not defined"); // FIXME: Should be able to recover if the value came from WEBUI
+                int_value = std::make_shared<int>(ix - options.begin());
             }
-            return v;
+            break;
+
+            case float_type: if(float_value) *float_value = std::stof(v); break;
+            case string_type: if(string_value) *string_value = v; break;
+            case matrix_type: if(matrix_value) *matrix_value = v; break; // ERRR **** // FIXME: ****
+            default: break;
         }
-        catch(const std::exception& e)
-        {
-            throw exception("String \""+v+"\" cannot be converted to float");
-        }
-        
+        return v;
     }
 
 
@@ -145,22 +154,54 @@ public:
         {
             case no_type: return "uninitialized_parameter"; // FIXME: throw
             case int_type: if(int_value) return std::to_string(*int_value);
+            // FIXME: get options string
             case float_type: if(float_value) return std::to_string(*float_value);
             case string_type: if(string_value) return *string_value;
-            case matrix_type: return "MATRIX-FIX-ME";
+            case matrix_type: return "MATRIX-FIX-ME"; //FIXME: Get matrix string - add to matrix class to also be used by print
             default: return "type-conversion-error";
         }
         return "type-conversion-error";
     }
 
+   operator int()
+    {
+        switch(type)
+        {
+            case no_type: throw exception("uninitialized_parameter");
+            case int_type: if(int_value) return *int_value;
+            case options_type: if(int_value) return *int_value;
+            case float_type: if(float_value) return *float_value;
+            case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
+            case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
+            default: throw exception("type-conversion-error");  // FIXME: ADD NAME
+        }
+        throw exception("type-conversion-error");
+    }
+
+   operator float()
+    {
+        switch(type)
+        {
+            case no_type: throw exception("uninitialized_parameter");
+            case int_type: if(int_value) return *int_value;
+            case options_type: if(int_value) return *int_value;
+            case float_type: if(float_value) return *float_value;
+            case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
+            case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
+            default: throw exception("type-conversion-error");  // FIXME: ADD NAME
+        }
+        throw exception("type-conversion-error");
+    }
 
     friend std::ostream& operator<<(std::ostream& os, parameter p)
     {
         switch(p.type)
         {
             case int_type:      os << *p.int_value; break;
+            case options_type:  os << *p.int_value; break;
             case float_type:    os <<  *p.float_value; break;
             case string_type:   os <<  *p.string_value; break;
+            case matrix_type:   os <<  *p.matrix_value; break;
             default:            os << "unkown-parameter-type"; break;
         }
 
@@ -257,6 +298,13 @@ public:
 
 typedef std::function<Module *()> ModuleCreator;
 
+
+class Group : public Module
+{
+    
+};
+
+
 class Connection
 {
     public:
@@ -312,7 +360,16 @@ public:
     std::map<std::string, matrix>       outputs;        // Use IO-structure later: Output
     std::map<std::string, parameter>    parameters;
 
-    dictionary                      current_module_info;
+    dictionary                          current_module_info;
+
+    long tick;
+    float tick_length;
+
+    long GetTick() { return tick; }
+    double GetTickLength() { return tick_length; } // Time for each tick in seconds (s)
+    double GetTime() { return GetTickTime(); }   // Time since start (in real time or tick time depnding on mode)
+    double GetRealTime() { return GetTickTime(); }    // Time since start in real time  (s) - is equal to GetTickTime when not in real-time mode // FIXME: Handle real-time mode
+    double GetTickTime() { return float(GetTick())*GetTickLength(); }    // Nominal time since start for current tick (s)
 
 
     void ScanClasses(std::string path)
@@ -442,14 +499,25 @@ public:
 
     Kernel()
     {
+            tick = 0;
+            tick_length = 0.01; // 10 ms
+
             ScanClasses("Source/Modules");
     }
 
     // Functions for creating the network
 
-    void AddGroup(std::string name)
+    void AddGroup(std::string name, dictionary parameters=dictionary())
     {
-        //std::cout << "ADD GROUP: " << name  << std::endl;
+        std::cout << "ADD GROUP: " << name  << std::endl;
+
+            if(modules.count(name)> 0)
+                throw exception("Module or group with this name already exists");
+
+            current_module_info["class"] = dictionary();
+            current_module_info["parameters"] = parameters;
+            current_module_info["name"] = name;
+            modules[name] = new Group(); // Implicit argument passing as for Modules
     }
 
     void AddInput(std::string name, dictionary parameters=dictionary())
@@ -468,7 +536,7 @@ public:
         std::string type_string = params["type"];
         std::string default_value = params["default"];
         std::string options = params["options"];
-        parameter p(type_string, default_value);
+        parameter p(type_string, default_value, options);
         parameters[name] =  p;
     }
 
@@ -478,13 +546,14 @@ public:
         if(parameters.count(name))
             parameters[name] = value;
         else
-           throw exception("ATTEMPTING TO SET NON-EXISTING PARAMETER: "+name);
+            parameters[name] = value; // TEST
+           // throw exception("ATTEMPTING TO SET NON-EXISTING PARAMETER: "+name);
     }
 
     void AddModule(std::string name, std::string classname, dictionary parameters=dictionary())
     {
             if(modules.count(name)> 0)
-                throw exception("Module with this name already exists");
+                throw exception("Module or group with this name already exists");
 
             current_module_info["class"] = dictionary(classes[classname].path, true);
             current_module_info["parameters"] = parameters;
@@ -508,7 +577,7 @@ public:
             name = path+"."+name;
 
         //std::cout << "PARSE GROUP: " << name << std::endl;
-        AddGroup(name);
+        AddGroup(name, dictionary(xml));
 
 
         for (XMLElement * xml_node = xml->GetContentElement(); xml_node != nullptr; xml_node = xml_node->GetNextElement())
@@ -543,7 +612,7 @@ public:
             m.second->Init(); 
     }
 
-    void LoadFiles(std::vector<std::string> files)
+    void LoadFiles(std::vector<std::string> files, options & opts)
     {
             for(auto & filename: files)
             {
@@ -555,7 +624,14 @@ public:
                 if(xmlDoc->xml->name != std::string("group"))
                     exit(1);
 
-                ParseGroupFromXML(xmlDoc->xml); // TODO: check that main element is of type 'group'
+                // Add command line options to top element of XML before parsing // FIXME: Clean up
+
+                for(auto & x : opts.d)
+                    if(!xmlDoc->xml->GetAttribute(x.first.c_str())) 
+                        ((XMLElement *)(xmlDoc->xml))->attributes = new XMLAttribute(create_string(x.first.c_str()), create_string(x.second.c_str()),0,((XMLElement *)(xmlDoc->xml))->attributes);          
+
+
+                ParseGroupFromXML(xmlDoc->xml);
             }
     }
 
@@ -581,6 +657,7 @@ public:
     {
         for(auto & m : modules)
             m.second->Tick();
+        tick++;
     }
 };
 

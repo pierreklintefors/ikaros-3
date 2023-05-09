@@ -10,13 +10,19 @@ class options
 public:
     std::vector<std::string> filenames;
     std::map<std::string, std::string> d;
+    std::map<std::string, std::string> full;
+    std::map<std::string, std::string> description;
 
     options() {};
 
-    void set_default(std::string a, std::string v)
+    void add_option(std::string short_name, std::string full_name, std::string desc, std::string default_value="")
     {
-        d[a] = v;
+        full[short_name] = full_name;
+        description[full_name] = desc;
+        if(!default_value.empty())
+            d[full_name] = default_value;
     }
+
 
     void parse_args(int argc, char *argv[])
     {
@@ -38,9 +44,19 @@ public:
                     d[s.substr(0, pos)] = s.substr(pos+1, s.size()-pos);
             }
             else if(s.size()>2 && s.front() =='-')
-                d[s.substr(1, 1)] = s.substr(2);  // option with parameter
+            {
+                std::string attr = s.substr(1, 1);
+                if(!full.count(attr))
+                    throw std::runtime_error("\"-"+attr + "\" is not a valid command line option");
+                d[full[attr]] = s.substr(2);  // option with parameter
+            }
             else if(s.size()>1 && s.front() =='-')
-                d[s.substr(1, 1)] = "";  // option without parameter
+            {
+                std::string attr = s.substr(1, 1);
+                if(!full.count(attr))
+                    throw std::runtime_error("\"-"+attr + "\" is not a valid command line option");
+                d[full[attr]] = "";  // option without parameter
+            }
             else
             {
                 if (!std::filesystem::exists(s))

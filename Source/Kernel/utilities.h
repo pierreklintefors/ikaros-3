@@ -11,6 +11,7 @@
 
 namespace ikaros
 {
+    std::string trim(const std::string &s);
     const std::vector<std::string> split(const std::string & s, const std::string & sep, int maxsplit=-1);
     const std::vector<std::string> rsplit(const std::string & str, const std::string & sep, int maxsplit=-1);
     std::string join(const std::string & separator, const std::vector<std::string> & v, bool reverse);

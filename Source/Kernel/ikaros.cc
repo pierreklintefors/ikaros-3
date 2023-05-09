@@ -9,7 +9,7 @@ namespace ikaros
 {
 std::string  validate_identifier(std::string s)
 {
-    static std::string legal = "abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVX_1234567890";
+    static std::string legal = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_1234567890";
     if(s.empty())
         throw exception("Identifier cannot be empty string");
     if('0' <= s[0] && s[0] <= '9')
@@ -93,6 +93,11 @@ std::string  validate_identifier(std::string s)
             AddInput(input["attributes"]);
         for(auto & output: info_["class"]["outputs"])
             AddOutput(output["attributes"]);
+
+        // Do we want to add attributes in info_["class"]["attributes"] here as well? Like this?
+        for(auto p: dictionary(info_["class"]["attributes"]))
+            SetParameter(p.first, p.second);
+
         for(auto p: info_["class"]["parameters"])
             AddParameter(p["attributes"]);
         for(auto p: dictionary(info_["parameters"]["attributes"]))
@@ -106,5 +111,6 @@ std::string  validate_identifier(std::string s)
         static Kernel * kernelInstance = new Kernel();
         return *kernelInstance;
     }
-
 };
+
+

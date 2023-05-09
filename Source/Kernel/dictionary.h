@@ -63,7 +63,6 @@ struct dictionary
     dictionary() {};
     dictionary(XMLElement * xml, bool merge=false);
     dictionary(std::string filename, bool merge=false);
-
 };
 
 struct list
@@ -195,7 +194,10 @@ struct value
 
         operator dictionary ()
     {
-        return std::get<dictionary>(value_);
+        if(std::holds_alternative<null>(value_))
+            return dictionary();
+        else
+            return std::get<dictionary>(value_);
     }
 
     void print()

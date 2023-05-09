@@ -5,6 +5,13 @@
 namespace ikaros
 {
 
+std::string trim(const std::string &s)
+{
+   auto wsfront=std::find_if_not(s.begin(),s.end(),[](int c){return std::isspace(c);});
+   auto wsback=std::find_if_not(s.rbegin(),s.rend(),[](int c){return std::isspace(c);}).base();
+   return (wsback<=wsfront ? std::string() : std::string(wsfront,wsback));
+}
+
 const std::vector<std::string>
 split(const std::string & s, const std::string & sep, int maxsplit)
 {
@@ -27,14 +34,14 @@ split(const std::string & s, const std::string & sep, int maxsplit)
             {
                 if(maxsplit != -1 && maxsplit-- <= 0)
                     break;
-                r.push_back(s.substr(j, i-j));
+                r.push_back(trim(s.substr(j, i-j)));
                 while(i < len && ::isspace(s[i]))
                     i++;
                 j = i;
             }
         }
         if (j < len)
-            r.push_back(s.substr(j, len - j));
+            r.push_back(trim(s.substr(j, len - j)));
 
         return r;
     }
@@ -47,14 +54,14 @@ split(const std::string & s, const std::string & sep, int maxsplit)
             if(maxsplit != -1 && maxsplit-- <= 0)
                 break;
 
-            r.push_back(s.substr(j, i - j));
+            r.push_back(trim(s.substr(j, i - j)));
             i = j = i + n;
         }
         else
             i++;
     }
 
-    r.push_back(s.substr(j, len-j));
+    r.push_back(trim(s.substr(j, len-j)));
     return r;
 }
 
