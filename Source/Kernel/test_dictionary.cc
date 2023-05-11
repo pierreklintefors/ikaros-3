@@ -66,20 +66,20 @@ main()
 
      std::cout << z << " size:"<< z.size() << std::endl; // size is 4
 
-dictionary xmldict = dictionary("Add_test.ikg", true);
+dictionary xmldict = dictionary("../Modules/TestModules/Test1_test.ikg", true);
 std::cout << xmldict << std::endl;
 
-        std::cout << std::endl;
+    std::cout << std::endl;
 
-        for(auto & p : dictionary(u))
-        {
-            std::cout << p.first << ": " << p.second << std::endl;
-        }
+    for(auto & p : dictionary(u))
+    {
+        std::cout << p.first << ": " << p.second << std::endl;
+    }
 
     return 0;
 }
 
 
-
+// To allow compilation directly from editor
 #include "xml.cc"
-
+#include "dictionary.cc"

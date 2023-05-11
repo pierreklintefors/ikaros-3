@@ -1,13 +1,15 @@
-<group name="Test1" x="1">
+<group name="Test1" xyz="777">
+	<group name="Inner"  xyz="111">
+			<parameter name="abc" type="int" default="7+8+9"/>
+			<parameter name="xyz" type="float" default="1.234"/>
 
-	<group name="Inner1" y="1+2+3">
+			<input name="INPUT_A" />
+			<input name="INPUT_B" />
+
+			<output name="OUTPUT1" size="1,2,3" />
+			<output name="OUTPUT2" size="5,6" />
 	</group>
 
-	<group name="Inner2" y="i2">
-
-		<parameter name="abc" type="int" default="7+8+9"/>
-
-	</group>
-
+	<module name="C" class="Constant" data="9, 8; 7, 6" >
+	</module>
 </group>
-

@@ -32,13 +32,14 @@ struct exception : public std::exception
    const char * what () const throw () { return message.c_str(); }
 };
 
-
-
+class Component;
+class Module;
 class Kernel;
 
 Kernel& kernel();
 
-enum parameter_type { no_type, int_type, float_type, string_type, matrix_type, options_type };
+enum parameter_type { no_type=0, int_type, float_type, string_type, matrix_type, options_type };
+static std::vector<std::string> parameter_strings = {"none", "int", "float", "string", "matrix", "options"};
 
 class parameter // FIXME: check all types everywhere
 {
@@ -49,12 +50,21 @@ private:
     std::shared_ptr<float>          float_value;
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
+    std::shared_ptr<std::string>    default_value;
     std::vector<std::string>        options;
 public:
     parameter(): type(no_type) {}
 
-    parameter(std::string type_string, std::string default_value, std::string options_string)
+    parameter(std::string type_string, std::string default_val, std::string options_string)
     {
+        default_value = std::make_shared<std::string>(default_val);
+        auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
+        if(type_index == parameter_strings.end())
+            throw exception("unkown parameter type: "+type_string);
+        type = parameter_type(std::distance(parameter_strings.begin(), type_index));
+
+        return;
+/*
         if(type_string == "int")
         {
             type = int_type;
@@ -86,8 +96,8 @@ public:
         }
         else
             throw exception("unkown parameter type");
+*/
     }
-
 
     int operator=(int v)
     {
@@ -113,15 +123,21 @@ public:
         return v;
     }
 
-    float operator=(double v) { return operator=(float(v)); };
+    float operator=(double v) { return operator=(float(v)); }; // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***
 
 
-    std::string operator=(std::string v) // FIXME: Handle exceptions higher up ******* FOR STRING CHECK CONVERSION POSSIBLY
+    std::string operator=(std::string v) // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***
     {
         switch(type)
         {
             case no_type: type=string_type;  string_value = std::make_shared<std::string>(v); break;          // FIXME: ADD THIS TO THE OTHER TYPES AS WELL
-            case int_type: if(int_value) *int_value = std::stoi(v); break;
+        
+            case int_type: 
+                if(int_value) 
+                    *int_value = std::stoi(v); 
+                else
+                    int_value = std::make_shared<int>(std::stoi(v));
+                break;
             case options_type:
             {
                 auto ix = find(options.begin(), options.end(), v);
@@ -131,9 +147,21 @@ public:
             }
             break;
 
-            case float_type: if(float_value) *float_value = std::stof(v); break;
+            case float_type: 
+                if(float_value) 
+                    *float_value = std::stof(v);
+                else
+                    float_value = std::make_shared<float>(std::stof(v));
+                break;
+
+
             case string_type: if(string_value) *string_value = v; break;
-            case matrix_type: if(matrix_value) *matrix_value = v; break; // ERRR **** // FIXME: ****
+            case matrix_type: 
+                if(matrix_value) 
+                    matrix_value = std::make_shared<matrix>(matrix(v)); // FIXME: Copy???
+                else
+                    matrix_value = std::make_shared<matrix>(matrix(v));
+                break;
             default: break;
         }
         return v;
@@ -197,11 +225,11 @@ public:
     {
         switch(p.type)
         {
-            case int_type:      os << *p.int_value; break;
-            case options_type:  os << *p.int_value; break;
-            case float_type:    os <<  *p.float_value; break;
-            case string_type:   os <<  *p.string_value; break;
-            case matrix_type:   os <<  *p.matrix_value; break;
+            case int_type:      if(p.int_value) os << *p.int_value; break;
+            case options_type:  if(p.int_value) os << *p.int_value; break;
+            case float_type:    if(p.float_value) os <<  *p.float_value; break;
+            case string_type:   if(p.string_value) os <<  *p.string_value; break;
+            case matrix_type:   if(p.matrix_value) os <<  *p.matrix_value; break;
             default:            os << "unkown-parameter-type"; break;
         }
 
@@ -209,19 +237,19 @@ public:
     }
 };
 
-class Module
+class Component
 {
 public:
     std::string     name_;
     dictionary      info_;
 
-    Module();
+    Component();
 
-    virtual ~Module() {};
+    virtual ~Component() {};
 
     void print()
     {
-        std::cout << "MODULE: " << info_["name"]  << '\n';
+        std::cout << "Component: " << info_["name"]  << '\n';
     }
 
     void AddInput(dictionary parameters);
@@ -269,12 +297,11 @@ public:
     }
 
 
-
     virtual int SetSizes() // FIXME: add more exception handling
     {
         int outputs_with_size = 0;
 
-        for(auto & d : info_["class"]["outputs"])
+        for(auto & d : info_["outputs"])
         {
             std::string n = d["attributes"]["name"];
             std::cout << "SET SIZES " << name_ << "." << n << std::endl;
@@ -299,11 +326,18 @@ public:
 typedef std::function<Module *()> ModuleCreator;
 
 
-class Group : public Module
+class Group : public Component
 {
     
 };
 
+
+class Module : public Component
+{
+public:
+    Module();
+    ~Module() {}    
+};
 
 class Connection
 {
@@ -354,22 +388,24 @@ class Kernel
 {
 public:
     std::map<std::string, Class>        classes;
-    std::map<std::string, Module *>     modules;
+    std::map<std::string, Component *>  components;
     std::vector<Connection>             connections;
     std::map<std::string, matrix>       inputs;         // Use IO-structure later: or only matrix?
     std::map<std::string, matrix>       outputs;        // Use IO-structure later: Output
     std::map<std::string, parameter>    parameters;
 
+    dictionary                          current_component_info; // From class or group
     dictionary                          current_module_info;
 
     long tick;
-    float tick_length;
+    float tick_duration; // actual or simulated time for each tick
 
     long GetTick() { return tick; }
-    double GetTickLength() { return tick_length; } // Time for each tick in seconds (s)
-    double GetTime() { return GetTickTime(); }   // Time since start (in real time or tick time depnding on mode)
+    double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
+    double GetTime() { return GetTickTime(); }   // Time since start (in real time or simulated (tick) time depnding on mode)
     double GetRealTime() { return GetTickTime(); }    // Time since start in real time  (s) - is equal to GetTickTime when not in real-time mode // FIXME: Handle real-time mode
-    double GetTickTime() { return float(GetTick())*GetTickLength(); }    // Nominal time since start for current tick (s)
+    double GetTickTime() { return float(GetTick())*GetTickDuration(); }    // Nominal time since start for current tick (s)
+    double GetLag() { return GetTickTime() - GetRealTime(); }
 
 
     void ScanClasses(std::string path)
@@ -397,7 +433,7 @@ public:
 
     void CalculateSizes()
     {
-        std::map<std::string, Module *> init_modules = modules;     // Copy the table of all modules
+        std::map<std::string, Component *> init_components = components;     // Copy the table of all components
 
         // Propagate output size to inputs as long as at least one module sets one of it output sizes
 
@@ -428,11 +464,11 @@ public:
 
             // STEP 2: Try to set output sizes and remove from list if complete
 
-            auto it = init_modules.begin();
-            while( it!=init_modules.end())
+            auto it = init_components.begin();
+            while( it!=init_components.end())
                 if(it->second->SetSizes() == 1) // 1 = completed
                 {
-                    it = init_modules.erase(it);
+                    it = init_components.erase(it);
                     //progress = true;
                 }
                 else
@@ -444,12 +480,12 @@ public:
                 break;
         }
 
-        // List remaining modules
+        // List remaining components
 
-        if(init_modules.size() > 0)
+        if(init_components.size() > 0)
         {
-            std::cout << "--- Modules with unset input sizes ---" << std::endl;
-            for(auto & m : init_modules)
+            std::cout << "--- Components with unset input sizes ---" << std::endl;
+            for(auto & m : init_components)
                 std::cout << m.first << std::endl;
             std::cout << "--------------------------------------" << std::endl;
         }
@@ -457,10 +493,10 @@ public:
 
 
 
-    void ListModules()
+    void ListComponents()
     {
-        std::cout << "\nModules:" << std::endl;
-        for(auto & m : modules)
+        std::cout << "\nComponents:" << std::endl;
+        for(auto & m : components)
             m.second->print();
     }
 
@@ -477,7 +513,7 @@ public:
     {
         std::cout << "\nInputs:" << std::endl;
         for(auto & i : inputs)
-            std::cout << i.first <<  ": (rank:" << i.second.rank() << ", shape: " << i.second.shape() << ")" << std::endl;
+            std::cout << "\t" << i.first <<  ": (rank:" << i.second.rank() << ", shape: " << i.second.shape() << ")" << std::endl;
     }
 
 
@@ -485,7 +521,7 @@ public:
     {
         std::cout << "\nOutputs:" << std::endl;
         for(auto & o : outputs)
-            std::cout << o.first << ": (rank:" << o.second.rank() << ", shape: " << o.second.shape() << ")" << std::endl;
+            std::cout  << "\t" << o.first << ": (rank:" << o.second.rank() << ", shape: " << o.second.shape() << ")" << std::endl;
     }
 
 
@@ -493,32 +529,19 @@ public:
     {
         std::cout << "\nParameters:" << std::endl;
         for(auto & p : parameters)
-            std::cout << p.first << ": " << p.second << std::endl;
+            std::cout  << "\t" << p.first << ": " << p.second << std::endl;
     }
 
 
     Kernel()
     {
             tick = 0;
-            tick_length = 0.01; // 10 ms
+            tick_duration = 0.01; // 10 ms
 
             ScanClasses("Source/Modules");
     }
 
     // Functions for creating the network
-
-    void AddGroup(std::string name, dictionary parameters=dictionary())
-    {
-        std::cout << "ADD GROUP: " << name  << std::endl;
-
-            if(modules.count(name)> 0)
-                throw exception("Module or group with this name already exists");
-
-            current_module_info["class"] = dictionary();
-            current_module_info["parameters"] = parameters;
-            current_module_info["name"] = name;
-            modules[name] = new Group(); // Implicit argument passing as for Modules
-    }
 
     void AddInput(std::string name, dictionary parameters=dictionary())
     {
@@ -532,7 +555,7 @@ public:
 
     void AddParameter(std::string name, dictionary params=dictionary())
     {
-        //std::cout << "ADDING PARAMETER: " << name << ": " <<  std::endl;
+        std::cout << "ADDING PARAMETER: " << name << ": " <<  std::endl;
         std::string type_string = params["type"];
         std::string default_value = params["default"];
         std::string options = params["options"];
@@ -550,15 +573,26 @@ public:
            // throw exception("ATTEMPTING TO SET NON-EXISTING PARAMETER: "+name);
     }
 
-    void AddModule(std::string name, std::string classname, dictionary parameters=dictionary())
+    void AddGroup(std::string name, dictionary info=dictionary()) // WILL BE USED FOR ADD-MODULE AS WELL LATER ON ***
     {
-            if(modules.count(name)> 0)
-                throw exception("Module or group with this name already exists");
+        if(components.count(name)> 0)
+            throw exception("Module or group with this name already exists");
 
-            current_module_info["class"] = dictionary(classes[classname].path, true);
-            current_module_info["parameters"] = parameters;
-            current_module_info["name"] = name;
-            modules[name] = classes[classname].module_creator(); // throws bad function call if not defined
+        current_component_info = info;
+        current_component_info["name"] = name;
+        components[name] = new Group(); // Implicit argument passing as for components
+    }
+
+    void AddModule(std::string name, dictionary info=dictionary())
+    {
+        if(components.count(name)> 0)
+            throw exception("Module or group with this name already exists");
+        std::string classname = info["attributes"]["class"];
+        current_component_info = dictionary(classes[classname].path, true);
+        current_component_info["name"] = name;
+        current_module_info = info;
+        current_module_info["name"] = name;
+        components[name] = classes[classname].module_creator(); // throws bad function call if not defined
     }
 
 
@@ -575,16 +609,13 @@ public:
         std::string name = validate_identifier((*xml)["name"]);
         if(!path.empty())
             name = path+"."+name;
-
-        //std::cout << "PARSE GROUP: " << name << std::endl;
-        AddGroup(name, dictionary(xml));
-
+        AddGroup(name, dictionary(xml, true));
 
         for (XMLElement * xml_node = xml->GetContentElement(); xml_node != nullptr; xml_node = xml_node->GetNextElement())
         {
             if(xml_node->IsElement("module"))
             {
-                AddModule(name+"."+validate_identifier((*xml_node)["name"]), (*xml_node)["class"], dictionary(xml_node));
+                AddModule(name+"."+validate_identifier((*xml_node)["name"]), dictionary(xml_node)); // (*xml_node)["class"], 
             }
             else if(xml_node->IsElement("group"))
             {
@@ -605,10 +636,10 @@ public:
     }
 
 
-    void InitModules()
+    void InitComponents()
     {
         // Call Init for all modules (after CalcalateSizes and Allocate)
-        for(auto & m : modules)
+        for(auto & m : components)
             m.second->Init(); 
     }
 
@@ -639,7 +670,7 @@ public:
     void SortNetwork()
     {
         // Resolve paths
-        // Sort Modules and Connections => Thread Groups and Partially Ordered Events (Tick & Propagate)
+        // Sort Components and Connections => Thread Groups and Partially Ordered Events (Tick & Propagate)
     }
 
 
@@ -655,7 +686,7 @@ public:
 
     void Tick()
     {
-        for(auto & m : modules)
+        for(auto & m : components)
             m.second->Tick();
         tick++;
     }

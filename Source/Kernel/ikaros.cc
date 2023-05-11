@@ -1,6 +1,5 @@
 // Ikaros 3.0
 
-
 #include "ikaros.h"
 
 using namespace ikaros;
@@ -21,14 +20,13 @@ std::string  validate_identifier(std::string s)
 }
 
 
-    void Module::Bind(parameter & p, std::string n) // FIXME: Do the fancy recurrency here as well
+    void Component::Bind(parameter & p, std::string n) // FIXME: Do the fancy recurrency here as well ****
     {
-        Kernel & k = kernel();
-        p = k.parameters.at(name_+"."+n);
+        p = kernel().parameters.at(name_+"."+n);
     };
 
 
-    void Module::Bind(matrix & m, std::string n)
+    void Component::Bind(matrix & m, std::string n) // Bind input, output or parameter
     {
         Kernel & k = kernel();
         std::string name = name_+"."+n;
@@ -37,25 +35,24 @@ std::string  validate_identifier(std::string s)
         else if(k.outputs.count(name))
             m = k.outputs[name];
         else if(k.parameters.count(name))
-            m = (matrix &)(k.parameters[name]); // FIXME: Check if matrix parameter
+            m = (matrix &)(k.parameters[name]); // FIXME: Check if matrix parameter // FIXME: Do the fancy recurrency here as well **** maybe
         else
             throw exception("Input or output named "+name+" does not exist");
     }
 
-
-    void Module::AddInput(dictionary parameters)
+    void Component::AddInput(dictionary parameters)
     {
         std::string input_name = std::string(info_["name"])+"."+validate_identifier(parameters["name"]);
         kernel().AddInput(input_name, parameters);
     };
 
-    void Module::AddOutput(dictionary parameters)
+    void Component::AddOutput(dictionary parameters)
     {
         std::string output_name = std::string(info_["name"])+"."+validate_identifier(parameters["name"]);
         kernel().AddOutput(output_name, parameters);
       };
 
-    void Module::AddParameter(dictionary parameters)
+    void Component::AddParameter(dictionary parameters)
     {
         std::string pn = parameters["name"];
         if(pn=="name")
@@ -66,7 +63,7 @@ std::string  validate_identifier(std::string s)
         kernel().AddParameter(parameter_name, parameters);
       };
 
-    void Module::SetParameter(std::string name, std::string value)
+    void Component::SetParameter(std::string name, std::string value)
     {
         if(name=="name")
             return;
@@ -76,7 +73,7 @@ std::string  validate_identifier(std::string s)
         kernel().SetParameter(parameter_name, value);
       };
 
-    std::string Module::Lookup(std::string name) // Call kernel.lookup() later ************
+    std::string Component::Lookup(std::string name) // Call kernel.lookup() later ************
     {
         name = name_+"."+name;
         if(!kernel().parameters.count(name))
@@ -85,26 +82,42 @@ std::string  validate_identifier(std::string s)
         return kernel().parameters[name];
     }
 
-  Module::Module()
+  Component::Component()
     {
-        info_ = kernel().current_module_info;
+        info_ = kernel().current_component_info;
         name_ = info_["name"];
-        for(auto & input: info_["class"]["inputs"])
-            AddInput(input["attributes"]);
-        for(auto & output: info_["class"]["outputs"])
-            AddOutput(output["attributes"]);
 
-        // Do we want to add attributes in info_["class"]["attributes"] here as well? Like this?
-        for(auto p: dictionary(info_["class"]["attributes"]))
+        std::cout << "COMPONENT CREATOR: " << name_ << std::endl;
+
+
+        for(auto p: info_["parameters"])
+            AddParameter(p["attributes"]);
+
+        for(auto p: dictionary(info_["attributes"]))
             SetParameter(p.first, p.second);
 
-        for(auto p: info_["class"]["parameters"])
-            AddParameter(p["attributes"]);
-        for(auto p: dictionary(info_["parameters"]["attributes"]))
+        for(auto & input: info_["inputs"])
+            AddInput(input["attributes"]);
+
+        for(auto & output: info_["outputs"])
+            AddOutput(output["attributes"]);
+
+    //    for(auto p: dictionary(info_["class"]["attributes"])) // Add ad-hoc attributes/parameters // TODO: remove class
+    //        SetParameter(p.first, p.second);
+    //    for(auto p: info_["class"]["parameters"]) // TODO: remove class
+    //         AddParameter(p["attributes"]);
+    
+    }
+
+  Module::Module()
+    {
+        auto & minfo = kernel().current_module_info;
+        for(auto p: dictionary(minfo["attributes"]))
             SetParameter(p.first, p.second);
     }
 
-// The following lines will create the kernel the first time it is accessed by one of the modules
+
+// The following lines will create the kernel the first time it is accessed by one of the components
 
     Kernel& kernel()
     {

@@ -9,7 +9,6 @@ using namespace ikaros;
 int
 main(int argc, char *argv[])
 {
-    std::string s = "abc";
     try
     { 
         Kernel & k = kernel();
@@ -21,7 +20,7 @@ main(int argc, char *argv[])
  
         o.parse_args(argc, argv);
 
-        std::cout << "Ikaros 3.0 Starting" << std::endl;
+        std::cout << "Ikaros 3.0 Starting\n" << std::endl;
 
         //k.ListClasses();
         k.LoadFiles(o.filenames, o);
@@ -29,8 +28,8 @@ main(int argc, char *argv[])
         // ResolveParameters - indirection - sharing etc
 
         k.CalculateSizes();
-        k.InitModules();
-        //k.ListModules();
+        k.InitComponents();
+        //k.ListComponents();
         //k.ListConnections();
         k.ListInputs();
         k.ListOutputs();
@@ -45,7 +44,7 @@ main(int argc, char *argv[])
         //k.ListInputs();
         //k.ListOutputs();
 
-        std::cout << "Ikaros 3.0 Ended" << std::endl;
+        std::cout << "\nIkaros 3.0 Ended" << std::endl;
     }
     catch(exception & e)
     {

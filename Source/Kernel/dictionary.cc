@@ -48,9 +48,9 @@ dictionary::dictionary(XMLElement * xml_node, bool merge)
 
     for (XMLElement * xml_element = xml_node->GetContentElement(); xml_element != nullptr; xml_element = xml_element->GetNextElement())
         if(merge)
-            dict_[std::string(xml_element->name)+"s"].push_back(dictionary(xml_element));
+            dict_[std::string(xml_element->name)+"s"].push_back(dictionary(xml_element, merge));
         else
-            dict_["elements"].push_back(dictionary(xml_element));
+            dict_["elements"].push_back(dictionary(xml_element, merge));
 }
 
 

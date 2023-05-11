@@ -64,15 +64,12 @@ public:
                 filenames.push_back(s);
             }
         }
-        for(auto & x : d)
-            std::cout << x.first << " = " << x.second << std::endl;
     }
 
     bool is_set(std::string o)
     {
         return d.count(o)>0;
     }
-
 
     std::string get(std::string o)
     { 
