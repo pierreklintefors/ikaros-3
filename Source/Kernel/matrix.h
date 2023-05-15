@@ -185,31 +185,38 @@ namespace ikaros
 
         matrix(std::string & data_string)
         {
-            auto & rows = split(data_string, ";");
-            auto & row = split(rows.at(0), ",");
-
-            int x = row.size();
-            int y = rows.size();
-
-            if(rows.size() == 1) // 1D - array
+            try 
             {
-                info_ = std::make_shared<matrix_info>(std::vector<int>{x});
-                data_ = std::make_shared<std::vector<float>>(info_->calculate_size());
-            
-                for(int i=0; i< row.size(); i++)
-                    (*this)(i) = stof(row.at(i));
-            }
-            else // 2D
-            {
-                info_ = std::make_shared<matrix_info>(std::vector<int>{y, x});
-                data_ = std::make_shared<std::vector<float>>(info_->calculate_size());
+                auto & rows = split(data_string, ";");
+                auto & row = split(rows.at(0), ",");
 
-                for(int j=0; j< rows.size(); j++)
+                int x = row.size();
+                int y = rows.size();
+
+                if(rows.size() == 1) // 1D - array
                 {
-                    auto r = split(rows.at(j), ",");
+                    info_ = std::make_shared<matrix_info>(std::vector<int>{x});
+                    data_ = std::make_shared<std::vector<float>>(info_->calculate_size());
+                
                     for(int i=0; i< row.size(); i++)
-                        (*this)(j, i) = stof(r.at(i));
+                        (*this)(i) = stof(row.at(i));
                 }
+                else // 2D
+                {
+                    info_ = std::make_shared<matrix_info>(std::vector<int>{y, x});
+                    data_ = std::make_shared<std::vector<float>>(info_->calculate_size());
+
+                    for(int j=0; j< rows.size(); j++)
+                    {
+                        auto r = split(rows.at(j), ",");
+                        for(int i=0; i< row.size(); i++)
+                            (*this)(j, i) = stof(r.at(i));
+                    }
+                }
+            }
+            catch(std::out_of_range e)
+            {
+                throw std::invalid_argument("Invalid matrix string");
             }
         }
 

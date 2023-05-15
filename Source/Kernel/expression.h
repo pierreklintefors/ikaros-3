@@ -26,9 +26,23 @@ typedef std::map<std::string, std::string> variables;
 
 
 
+
 class expression
 {
     public:
+        static bool is_expression(const std::string & s)
+        {
+            if(s.empty())
+                return false;
+            for(char c : "+-*/()")
+                if(s.find(c) != std::string::npos)
+                return true;
+            //if(s[0] >= '0' && s[0] <='9')
+            //    return true;
+            return false;
+        }
+
+
         bool split(std::string s, char bin_op, bool unary=false)
         {
             std::string left_string, right_string;

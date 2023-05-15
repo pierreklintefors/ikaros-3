@@ -46,6 +46,11 @@ struct dictionary
         return dict_[s];
     }
 
+    bool contains(std::string s)
+    {
+        return dict_.count(s);
+    }
+
     operator std::string ();
 
     std::map<std::string, value>::iterator begin()  { return dict_.begin(); };

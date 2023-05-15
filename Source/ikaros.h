@@ -27,7 +27,10 @@ std::string  validate_identifier(std::string s);
 struct exception : public std::exception
 {
     std::string message;
-    exception(std::string msg): message(msg) {};
+    exception(std::string msg): message(msg)
+    {
+        message = msg;
+    };
 
    const char * what () const throw () { return message.c_str(); }
 };
@@ -38,66 +41,44 @@ class Kernel;
 
 Kernel& kernel();
 
-enum parameter_type { no_type=0, int_type, float_type, string_type, matrix_type, options_type };
-static std::vector<std::string> parameter_strings = {"none", "int", "float", "string", "matrix", "options"};
+enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type };
+static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options"};
 
 class parameter // FIXME: check all types everywhere
 {
 private:
+public:
     parameter_type  type;
-    bool            live;
+    bool            is_set;
+    bool            is_live;
+    bool            is_ad_hoc;
+//    std::string     init_value;
+    std::string    default_value;
     std::shared_ptr<int>            int_value;
     std::shared_ptr<float>          float_value;
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
-    std::shared_ptr<std::string>    default_value;
+
     std::vector<std::string>        options;
 public:
-    parameter(): type(no_type) {}
+    parameter(): type(no_type), is_set(false), is_live(false), is_ad_hoc(true)
+    {}
 
-    parameter(std::string type_string, std::string default_val, std::string options_string)
+    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), is_set(false), is_live(true), is_ad_hoc(false)
     {
-        default_value = std::make_shared<std::string>(default_val);
+        default_value = default_val;
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
         if(type_index == parameter_strings.end())
-            throw exception("unkown parameter type: "+type_string);
+            throw exception("Unkown parameter type: "+type_string+".");
         type = parameter_type(std::distance(parameter_strings.begin(), type_index));
-
-        return;
-/*
-        if(type_string == "int")
-        {
-            type = int_type;
-            int_value = std::make_shared<int>(std::stoi(default_value));
-        }
-        else if(type_string == "float")
-        {
-            type = float_type;
-            float_value = std::make_shared<float>(std::stof(default_value));
-        }
-        else if(type_string == "string")
-        {
-            type = string_type;
-            string_value = std::make_shared<std::string>(default_value);
-        }
-        else if(type_string == "matrix")
-        {
-            type = matrix_type;
-            matrix_value = std::make_shared<matrix>(default_value);
-        }
-        else if(type_string == "options")
-        {
-            type = options_type;
-            options = split(options_string, ",");
-            auto ix = find(options.begin(), options.end(), default_value);
-            if (ix==options.end())
-                throw exception("option not defined");
-            int_value = std::make_shared<int>(ix - options.begin());
-        }
-        else
-            throw exception("unkown parameter type");
-*/
     }
+
+/*
+    void init(const std::string & init_val)
+    {
+        init_value = init_val;
+    }
+*/
 
     int operator=(int v)
     {
@@ -106,8 +87,10 @@ public:
             case int_type: if(int_value) *int_value = v; break;
             case float_type: if(float_value) *float_value = float(v); break;
             case string_type: if(string_value) *string_value = std::to_string(v); break;
+            // TODO: options and bool
             default: break;
         }
+        is_set = true;
         return v;
     }
 
@@ -118,15 +101,17 @@ public:
             case int_type: if(int_value) *int_value = int(v); break;
             case float_type: if(float_value) *float_value = v; break;
             case string_type: if(string_value) *string_value = std::to_string(v); break;
+        // TODO: options and bool
             default: break;
         }
+        is_set = true;
         return v;
     }
 
     float operator=(double v) { return operator=(float(v)); }; // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***
 
 
-    std::string operator=(std::string v) // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***
+    std::string operator=(std::string v) // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***         // TODO: options and bool
     {
         switch(type)
         {
@@ -142,7 +127,7 @@ public:
             {
                 auto ix = find(options.begin(), options.end(), v);
                 if (ix==options.end())
-                    throw exception("option \""+v+"\" not defined"); // FIXME: Should be able to recover if the value came from WEBUI
+                    throw exception("option \""+v+"\" not defined."); // FIXME: Should be able to recover if the value came from WEBUI
                 int_value = std::make_shared<int>(ix - options.begin());
             }
             break;
@@ -155,7 +140,12 @@ public:
                 break;
 
 
-            case string_type: if(string_value) *string_value = v; break;
+            case string_type:
+                if(string_value)
+                    *string_value = v;
+                else
+                    string_value = std::make_shared<std::string>(v);
+                    break;
             case matrix_type: 
                 if(matrix_value) 
                     matrix_value = std::make_shared<matrix>(matrix(v)); // FIXME: Copy???
@@ -164,6 +154,7 @@ public:
                 break;
             default: break;
         }
+        is_set = true;
         return v;
     }
 
@@ -173,52 +164,52 @@ public:
         if(type==matrix_type && matrix_value) 
             return *matrix_value;
 
-        throw exception("not a matrix parameter");
+        throw exception("Not a matrix value.");
     }
 
     operator std::string()
     {
         switch(type)
         {
-            case no_type: return "uninitialized_parameter"; // FIXME: throw
+            case no_type: throw exception("Uninitialized parameter."); // return "uninitialized_parameter";
             case int_type: if(int_value) return std::to_string(*int_value);
-            // FIXME: get options string
+            // FIXME: get options string and bool
             case float_type: if(float_value) return std::to_string(*float_value);
             case string_type: if(string_value) return *string_value;
-            case matrix_type: return "MATRIX-FIX-ME"; //FIXME: Get matrix string - add to matrix class to also be used by print
-            default: return "type-conversion-error";
+            //case matrix_type: return "MATRIX-FIX-ME"; //FIXME: Get matrix string - add to matrix class to also be used by print *****
+            default: ;
         }
-        return "type-conversion-error";
+        throw exception("Type conversion error for  parameter.");
     }
 
    operator int()
     {
         switch(type)
         {
-            case no_type: throw exception("uninitialized_parameter");
+            case no_type: throw exception("Uninitialized_parameter.");
             case int_type: if(int_value) return *int_value;
             case options_type: if(int_value) return *int_value;
             case float_type: if(float_value) return *float_value;
             case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
             case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
-            default: throw exception("type-conversion-error");  // FIXME: ADD NAME
+            default: ;
         }
-        throw exception("type-conversion-error");
+        throw exception("Type conversion error for  parameter");
     }
 
    operator float()
     {
         switch(type)
         {
-            case no_type: throw exception("uninitialized_parameter");
+            case no_type: throw exception("uninitialized_parameter.");
             case int_type: if(int_value) return *int_value;
             case options_type: if(int_value) return *int_value;
             case float_type: if(float_value) return *float_value;
             case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
-            case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
-            default: throw exception("type-conversion-error");  // FIXME: ADD NAME
+            //case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
+            default: ;
         }
-        throw exception("type-conversion-error");
+       throw exception("Type conversion error for  parameter.");
     }
 
     friend std::ostream& operator<<(std::ostream& os, parameter p)
@@ -240,8 +231,11 @@ public:
 class Component
 {
 public:
-    std::string     name_;
+    Component *     parent;
     dictionary      info_;
+    std::string     name_;
+
+
 
     Component();
 
@@ -256,21 +250,61 @@ public:
     void AddOutput(dictionary parameters);
     void AddParameter(dictionary parameters);
     void SetParameter(std::string name, std::string value);
+    void ResolveParameter(const std::string & name, const  std::string & default_value)
+    {
+        std::string v = GetValue(name);
+        std::cout << "Component::ResolveParameter " << name  << " = " << v << '\n';
+
+        if(!v.empty())
+            SetParameter(name, Evaluate(v)); // EVALUATE here
+        else
+            SetParameter(name, Evaluate(default_value)); // EVALUATE here
+
+    }
 
     void    Bind(parameter & p, std::string n);   // Bind to parameter in global parameter table
-    void    Bind(matrix & m, std::string n); // Bind to input or output in global tables, or matrix parameter
+    void    Bind(matrix & m, std::string n); // Bind to input or output in global parameter table, or matrix parameter
 
     virtual void Tick() {}
     virtual void Init() {}
 
-    std::string Lookup(std::string name);
+    std::string GetValue(const std::string & s)    // Get value of a parameter in the context of this component
+    {
+        std::cout << "Getting value: " << s << std::endl;
+        if(dictionary(info_["attributes"]).contains(s))
+            return info_["attributes"][s];
+        if(parent)
+            return parent->GetValue(s);
+        return "";
+    }
 
+
+    std::string Evaluate(const std::string & s)     // Evaluate an expression in the current context - as string?
+    {
+
+        if(!expression::is_expression(s))
+            return s;
+         expression e = expression(s);
+            std::map<std::string, std::string> vars;
+            for(auto v : e.variables())
+            {
+                std::string value = GetValue(v);
+                if(value.empty())
+                    throw exception("Variable \""+v+"\" not defined.");
+                vars[v] = value; // FIXME: Evaluate???
+        }
+        return std::to_string(expression(s).evaluate(vars));
+    }
+
+
+    std::string Lookup(const std::string & name) const;
+    
     int EvaluateIntExpression(std::string & s)
     {
         expression e = expression(s);
         std::map<std::string, std::string> vars;
         for(auto v : e.variables())
-            vars[v] = Lookup(v);
+            vars[v] = Lookup(v); // FIXME: Use Evaluate() instead later
         return expression(s).evaluate(vars);
     }
 
@@ -427,9 +461,34 @@ public:
             c.second.print();
     }
 
-    /*
-        EXPLAIN ALGORITHM HERE 
-    */
+
+    void ResolveParameter(const std::string & name, const std::string & default_value)
+    {
+        std::size_t i = name.rfind(".");
+        if(i == std::string::npos)
+            return;
+
+         auto c = components.at(name.substr(0, i));
+        std::string parameter_name = name.substr(i+1, name.size());
+        c->ResolveParameter(parameter_name, default_value);
+    }
+
+
+    void ResolveParameters() // Find and evaluate value or default
+    {
+        for(auto & p : parameters)
+        {
+            // Find component and parameter_name
+            std::size_t i = p.first.rfind(".");
+            if(i != std::string::npos)
+            {
+                auto c = components.at(p.first.substr(0, i));
+                std::string parameter_name = p.first.substr(i+1, p.first.size());
+                c->ResolveParameter(parameter_name, p.second.default_value);
+            }
+        }
+    }
+
 
     void CalculateSizes()
     {
@@ -490,7 +549,6 @@ public:
             std::cout << "--------------------------------------" << std::endl;
         }
     }
-
 
 
     void ListComponents()
@@ -555,28 +613,36 @@ public:
 
     void AddParameter(std::string name, dictionary params=dictionary())
     {
-        std::cout << "ADDING PARAMETER: " << name << ": " <<  std::endl;
+        //std::cout << "ADDING PARAMETER: " << name << ": " <<  std::endl;
         std::string type_string = params["type"];
         std::string default_value = params["default"];
         std::string options = params["options"];
         parameter p(type_string, default_value, options);
-        parameters[name] =  p;
+        parameters.emplace(name, p);
     }
 
     void SetParameter(std::string name, std::string value)
     {
-        std::cout << "SETTING PARAMETER: " << name << ": " << value << std::endl;
         if(parameters.count(name))
+        {
+            std::cout << "SETTING PARAMETER: " << name << ": " << value << std::endl;
             parameters[name] = value;
-        else
-            parameters[name] = value; // TEST
-           // throw exception("ATTEMPTING TO SET NON-EXISTING PARAMETER: "+name);
+        }
     }
 
-    void AddGroup(std::string name, dictionary info=dictionary()) // WILL BE USED FOR ADD-MODULE AS WELL LATER ON ***
+
+/*
+    void InitParameter(std::string name, std::string value)
+    {
+        std::cout << "INITIALIZING PARAMETER: " << name << ": " << value << std::endl;
+        parameters[name].init(value);
+    }
+*/
+
+    void AddGroup(std::string name, dictionary info=dictionary())
     {
         if(components.count(name)> 0)
-            throw exception("Module or group with this name already exists");
+            throw exception("Module or group with this name already exists.");
 
         current_component_info = info;
         current_component_info["name"] = name;
@@ -586,13 +652,14 @@ public:
     void AddModule(std::string name, dictionary info=dictionary())
     {
         if(components.count(name)> 0)
-            throw exception("Module or group with this name already exists");
+            throw exception("Module or group with this name already exists.");
         std::string classname = info["attributes"]["class"];
         current_component_info = dictionary(classes[classname].path, true);
         current_component_info["name"] = name;
         current_module_info = info;
         current_module_info["name"] = name;
         components[name] = classes[classname].module_creator(); // throws bad function call if not defined
+
     }
 
 
@@ -615,7 +682,7 @@ public:
         {
             if(xml_node->IsElement("module"))
             {
-                AddModule(name+"."+validate_identifier((*xml_node)["name"]), dictionary(xml_node)); // (*xml_node)["class"], 
+                AddModule(name+"."+validate_identifier((*xml_node)["name"]), dictionary(xml_node)); 
             }
             else if(xml_node->IsElement("group"))
             {
@@ -628,7 +695,6 @@ public:
         }
     }
  
-
 
     void AllocateInputs()
     {

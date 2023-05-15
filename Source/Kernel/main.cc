@@ -24,9 +24,7 @@ main(int argc, char *argv[])
 
         //k.ListClasses();
         k.LoadFiles(o.filenames, o);
-
-        // ResolveParameters - indirection - sharing etc
-
+        k.ResolveParameters();
         k.CalculateSizes();
         k.InitComponents();
         //k.ListComponents();

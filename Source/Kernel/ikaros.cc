@@ -20,24 +20,38 @@ std::string  validate_identifier(std::string s)
 }
 
 
-    void Component::Bind(parameter & p, std::string n) // FIXME: Do the fancy recurrency here as well ****
+    void Component::Bind(parameter & p, std::string name)
     {
-        p = kernel().parameters.at(name_+"."+n);
+        Kernel & k = kernel();
+        std::string pname = name_+"."+name;
+        if(k.parameters.count(pname) && k.parameters[pname].is_live)
+            p = kernel().parameters[pname];
+        else
+            throw exception("Cannot bind to \""+name+"\"");
     };
 
 
     void Component::Bind(matrix & m, std::string n) // Bind input, output or parameter
     {
-        Kernel & k = kernel();
         std::string name = name_+"."+n;
-        if(k.inputs.count(name))
-            m = k.inputs[name];
-        else if(k.outputs.count(name))
-            m = k.outputs[name];
-        else if(k.parameters.count(name))
-            m = (matrix &)(k.parameters[name]); // FIXME: Check if matrix parameter // FIXME: Do the fancy recurrency here as well **** maybe
-        else
-            throw exception("Input or output named "+name+" does not exist");
+        try
+        {
+            Kernel & k = kernel();
+            if(k.inputs.count(name))
+                m = k.inputs[name];
+            else if(k.outputs.count(name))
+                m = k.outputs[name];
+            else if(k.parameters.count(name) && k.parameters[name].is_live)
+                m = (matrix &)(k.parameters[name]);
+            else if(k.parameters.count(name))
+                throw exception("Cannot bind to attribute \""+name+"\". Define it as a parameter!");
+            else
+                throw exception("Input or output named \""+name+"\" does not exist");
+        }
+        catch(exception e)
+        {
+            throw exception("Bind:\""+name+"\" failed. "+e.message);
+        }
     }
 
     void Component::AddInput(dictionary parameters)
@@ -73,47 +87,84 @@ std::string  validate_identifier(std::string s)
         kernel().SetParameter(parameter_name, value);
       };
 
-    std::string Component::Lookup(std::string name) // Call kernel.lookup() later ************
+
+
+/*
+ void Component::InitParameter(std::string name, std::string value)
     {
-        name = name_+"."+name;
-        if(!kernel().parameters.count(name))
-            throw exception("Variable \""+name+"\" does not exist");
+        if(name=="name")
+            return;
+        if(name=="class")
+            return;  
+        std::string parameter_name = std::string(info_["name"])+"."+validate_identifier(name);
+        kernel().InitParameter(parameter_name, value);
+      };
+*/
 
-        return kernel().parameters[name];
-    }
-
-  Component::Component()
+std::string Component::Lookup(const std::string & name) const // FIXME: Should this funciton throw????
+{
+    std::string component_name = name_;
+    while (true)
     {
-        info_ = kernel().current_component_info;
-        name_ = info_["name"];
-
-        std::cout << "COMPONENT CREATOR: " << name_ << std::endl;
-
-
-        for(auto p: info_["parameters"])
-            AddParameter(p["attributes"]);
-
-        for(auto p: dictionary(info_["attributes"]))
-            SetParameter(p.first, p.second);
-
-        for(auto & input: info_["inputs"])
-            AddInput(input["attributes"]);
-
-        for(auto & output: info_["outputs"])
-            AddOutput(output["attributes"]);
-
-    //    for(auto p: dictionary(info_["class"]["attributes"])) // Add ad-hoc attributes/parameters // TODO: remove class
-    //        SetParameter(p.first, p.second);
-    //    for(auto p: info_["class"]["parameters"]) // TODO: remove class
-    //         AddParameter(p["attributes"]);
-    
+        auto it = kernel().parameters.find(component_name + "." + name);
+        if (it != kernel().parameters.end() && it->second.is_set)
+            return it->second;
+        int p = component_name.rfind('.');
+        if(p == std::string::npos)
+            return std::string();
+        component_name = component_name.substr(0, p);
     }
+}
+
+
+// Recursive
+/*
+std::string Component::Lookup(const std::string & name) const
+{
+    auto it = kernel().parameters.find(name_ + "." + name);
+    if (it != kernel().parameters.end() && it->second.is_set)
+        return it->second;
+    else if(parent)
+        return parent->Lookup(name)
+    else 
+        return "";
+    }
+}
+*/
+
+  Component::Component(): 
+    parent(nullptr),
+    info_(kernel().current_component_info),
+    name_(info_["name"])
+{
+    std::cout << "COMPONENT CREATOR: " << name_ << std::endl;
+
+    for(auto p: info_["parameters"])
+        AddParameter(p["attributes"]);
+
+/*
+    for(auto p: dictionary(info_["attributes"]))
+        SetParameter(p.first, p.second);
+*/
+    for(auto & input: info_["inputs"])
+        AddInput(input["attributes"]);
+
+    for(auto & output: info_["outputs"])
+        AddOutput(output["attributes"]);
+
+    // Set parent
+
+    auto p = name_.rfind('.');
+    if(p != std::string::npos)
+        parent = kernel().components.at(name_.substr(0, p));
+}
 
   Module::Module()
     {
-        auto & minfo = kernel().current_module_info;
-        for(auto p: dictionary(minfo["attributes"]))
+/*
+        for(auto p: dictionary(kernel().current_module_info["attributes"]))
             SetParameter(p.first, p.second);
+*/
     }
 
 
