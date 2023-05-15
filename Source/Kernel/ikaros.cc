@@ -24,7 +24,7 @@ std::string  validate_identifier(std::string s)
     {
         Kernel & k = kernel();
         std::string pname = name_+"."+name;
-        if(k.parameters.count(pname) && k.parameters[pname].is_live)
+        if(k.parameters.count(pname))
             p = kernel().parameters[pname];
         else
             throw exception("Cannot bind to \""+name+"\"");
@@ -41,7 +41,7 @@ std::string  validate_identifier(std::string s)
                 m = k.inputs[name];
             else if(k.outputs.count(name))
                 m = k.outputs[name];
-            else if(k.parameters.count(name) && k.parameters[name].is_live)
+            else if(k.parameters.count(name))
                 m = (matrix &)(k.parameters[name]);
             else if(k.parameters.count(name))
                 throw exception("Cannot bind to attribute \""+name+"\". Define it as a parameter!");
@@ -58,7 +58,7 @@ std::string  validate_identifier(std::string s)
     {
         std::string input_name = std::string(info_["name"])+"."+validate_identifier(parameters["name"]);
         kernel().AddInput(input_name, parameters);
-    };
+    }
 
     void Component::AddOutput(dictionary parameters)
     {
@@ -75,7 +75,7 @@ std::string  validate_identifier(std::string s)
             return;            
         std::string parameter_name = std::string(info_["name"])+"."+validate_identifier(pn);
         kernel().AddParameter(parameter_name, parameters);
-      };
+      }
 
     void Component::SetParameter(std::string name, std::string value)
     {
@@ -85,21 +85,9 @@ std::string  validate_identifier(std::string s)
             return;  
         std::string parameter_name = std::string(info_["name"])+"."+validate_identifier(name);
         kernel().SetParameter(parameter_name, value);
-      };
+      }
 
 
-
-/*
- void Component::InitParameter(std::string name, std::string value)
-    {
-        if(name=="name")
-            return;
-        if(name=="class")
-            return;  
-        std::string parameter_name = std::string(info_["name"])+"."+validate_identifier(name);
-        kernel().InitParameter(parameter_name, value);
-      };
-*/
 
 std::string Component::Lookup(const std::string & name) const // FIXME: Should this funciton throw????
 {
@@ -161,10 +149,10 @@ std::string Component::Lookup(const std::string & name) const
 
   Module::Module()
     {
-/*
+    // Copy module attributes into info structure taht already contains class attributes
         for(auto p: dictionary(kernel().current_module_info["attributes"]))
-            SetParameter(p.first, p.second);
-*/
+            info_["attributes"][p.first] = p.second;
+
     }
 
 
@@ -175,6 +163,6 @@ std::string Component::Lookup(const std::string & name) const
         static Kernel * kernelInstance = new Kernel();
         return *kernelInstance;
     }
-};
+}; // namespace ikaros
 
 

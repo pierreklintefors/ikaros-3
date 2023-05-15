@@ -50,9 +50,6 @@ private:
 public:
     parameter_type  type;
     bool            is_set;
-    bool            is_live;
-    bool            is_ad_hoc;
-//    std::string     init_value;
     std::string    default_value;
     std::shared_ptr<int>            int_value;
     std::shared_ptr<float>          float_value;
@@ -61,10 +58,10 @@ public:
 
     std::vector<std::string>        options;
 public:
-    parameter(): type(no_type), is_set(false), is_live(false), is_ad_hoc(true)
+    parameter(): type(no_type), is_set(false)
     {}
 
-    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), is_set(false), is_live(true), is_ad_hoc(false)
+    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), is_set(false)
     {
         default_value = default_val;
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
@@ -73,12 +70,6 @@ public:
         type = parameter_type(std::distance(parameter_strings.begin(), type_index));
     }
 
-/*
-    void init(const std::string & init_val)
-    {
-        init_value = init_val;
-    }
-*/
 
     int operator=(int v)
     {
