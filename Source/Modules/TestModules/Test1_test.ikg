@@ -1,5 +1,6 @@
 <group name="Test1" z="12" xyz="z+7.3" data="1,1;1,1">
-	<group name="Inner"  _xyz="1+1+1">
+	<parameter name="ddd" type="int" default="99"/>
+	<group name="Inner"  _xyz="1+1+1" data.bind="ddd">
 			<parameter name="abc" type="int" default="10*20"/>
 			<parameter name="xyz" type="int" default="1.234"/>
 			<parameter name="x_str" type="string" default="1.234"/>
@@ -10,9 +11,11 @@
 
 			<output name="OUTPUT1" size="1,2,3" />
 			<output name="OUTPUT2" size="5,6" />
+
+			<module name="C" class="Constant" _data="9, 8; 7, 6"  >
+			</module>
 	</group>
 
-		<module name="C" class="Constant" data="9, 8; 7, 6"  >
-		</module>
+
 </group>
 

@@ -243,7 +243,16 @@ public:
     void SetParameter(std::string name, std::string value);
     void ResolveParameter(const std::string & name, const  std::string & default_value)
     {
-        std::string v = GetValue(name);
+        // Test bindings for parameter sharing
+        std::string v = GetValue(name+".bind");
+        if(!v.empty())
+        {
+            //std::string bind_to = name.substr(0, name.size()-5);
+            std::cout << "    Binding " << name << '\n';
+            return;
+        }
+        v = GetValue(name);
+
         std::cout << "Component::ResolveParameter " << name  << " = " << v << '\n';
 
         if(!v.empty())
