@@ -25,16 +25,16 @@ main(int argc, char *argv[])
         //k.ListClasses();
         k.LoadFiles(o.filenames, o);
         k.ResolveParameters();
-        k.CalculateSizes();
+    //    k.CalculateSizes();
         k.InitComponents();
         //k.ListComponents();
         //k.ListConnections();
-        k.ListInputs();
-        k.ListOutputs();
+    //    k.ListInputs();
+    //    k.ListOutputs();
         k.ListParameters();
 
 
-        for(int i=0; i<10; i++)
+        for(int i=0; i<0; i++)
         {   
             k.Tick();
             k.Propagate();

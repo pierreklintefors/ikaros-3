@@ -75,7 +75,8 @@ std::string  validate_identifier(std::string s)
             return;            
         std::string parameter_name = std::string(info_["name"])+"."+validate_identifier(pn);
         kernel().AddParameter(parameter_name, parameters);
-      }
+    }
+
 
     void Component::SetParameter(std::string name, std::string value)
     {
@@ -88,7 +89,22 @@ std::string  validate_identifier(std::string s)
       }
 
 
+    bool Component::LookupParameter(parameter & p, const std::string & name)
+    {
+        Kernel & k = kernel();
+        if(k.parameters.count(name_+"."+name))
+        {
+            p = k.parameters[name_+"."+name];
+            return true;
+        }
+        else if(parent_)
+            return parent_->LookupParameter(p, name);
+        else
+            return false;
+    }
 
+
+/*
 std::string Component::Lookup(const std::string & name) const // FIXME: Should this funciton throw????
 {
     std::string component_name = name_;
@@ -106,7 +122,7 @@ std::string Component::Lookup(const std::string & name) const // FIXME: Should t
 
 
 // Recursive
-/*
+
 std::string Component::Lookup(const std::string & name) const
 {
     auto it = kernel().parameters.find(name_ + "." + name);
@@ -121,11 +137,11 @@ std::string Component::Lookup(const std::string & name) const
 */
 
   Component::Component(): 
-    parent(nullptr),
+    parent_(nullptr),
     info_(kernel().current_component_info),
     name_(info_["name"])
 {
-    std::cout << "COMPONENT CREATOR: " << name_ << std::endl;
+    //std::cout << "COMPONENT CREATOR: " << name_ << std::endl;
 
     for(auto p: info_["parameters"])
         AddParameter(p["attributes"]);
@@ -144,7 +160,7 @@ std::string Component::Lookup(const std::string & name) const
 
     auto p = name_.rfind('.');
     if(p != std::string::npos)
-        parent = kernel().components.at(name_.substr(0, p));
+        parent_ = kernel().components.at(name_.substr(0, p));
 }
 
   Module::Module()

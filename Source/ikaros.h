@@ -49,27 +49,49 @@ class parameter // FIXME: check all types everywhere
 private:
 public:
     parameter_type  type;
-    bool            is_set;
+    //bool            is_set;
     std::string    default_value;
     std::shared_ptr<int>            int_value;
     std::shared_ptr<float>          float_value;
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
-
     std::vector<std::string>        options;
 public:
-    parameter(): type(no_type), is_set(false)
+    parameter(): type(no_type) //, is_set(false)
     {}
 
-    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), is_set(false)
+    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type) // , is_set(false)
     {
         default_value = default_val;
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
         if(type_index == parameter_strings.end())
             throw exception("Unkown parameter type: "+type_string+".");
         type = parameter_type(std::distance(parameter_strings.begin(), type_index));
+        // Inits shared pointer
+        switch(type)
+        {
+            case int_type: int_value = std::make_shared<int>(0); break;
+            case float_type: float_value = std::make_shared<float>(0); break;
+            case string_type: string_value = std::make_shared<std::string>(""); break;
+            case matrix_type: matrix_value = std::make_shared<matrix>(); break;
+            // TODO: options and bool
+            default: break;
+        } 
     }
 
+
+
+    void operator=(parameter & p) // this shares data with p
+    {
+        type = p.type;
+        //is_set = p.is_set;
+        default_value = p.default_value;
+        int_value = p.int_value;
+        float_value = p.float_value;
+        matrix_value = p.matrix_value;
+        string_value = p.string_value;
+        options = p.options;
+    }
 
     int operator=(int v)
     {
@@ -81,7 +103,7 @@ public:
             // TODO: options and bool
             default: break;
         }
-        is_set = true;
+        //is_set = true;
         return v;
     }
 
@@ -95,7 +117,7 @@ public:
         // TODO: options and bool
             default: break;
         }
-        is_set = true;
+        //is_set = true;
         return v;
     }
 
@@ -139,13 +161,13 @@ public:
                     break;
             case matrix_type: 
                 if(matrix_value) 
-                    matrix_value = std::make_shared<matrix>(matrix(v)); // FIXME: Copy???
+                    *matrix_value = matrix(v);
                 else
                     matrix_value = std::make_shared<matrix>(matrix(v));
                 break;
             default: break;
         }
-        is_set = true;
+        //is_set = true;
         return v;
     }
 
@@ -222,7 +244,7 @@ public:
 class Component
 {
 public:
-    Component *     parent;
+    Component *     parent_;
     dictionary      info_;
     std::string     name_;
 
@@ -241,26 +263,42 @@ public:
     void AddOutput(dictionary parameters);
     void AddParameter(dictionary parameters);
     void SetParameter(std::string name, std::string value);
-    void ResolveParameter(const std::string & name, const  std::string & default_value)
+
+
+    bool BindParameter(parameter & p,  std::string & name) // Handle parameter sharing
     {
-        // Test bindings for parameter sharing
-        std::string v = GetValue(name+".bind");
+        std::string bind_to = GetValue(name+".bind");
+        if(bind_to.empty())
+            return false;
+        else
+            return LookupParameter(p, bind_to);
+    }
+
+
+
+    bool ResolveParameter(parameter & p,  std::string & name,   std::string & default_value)
+    {
+        // Look for binding
+        std::string bind_to = GetBind(name);
+        if(!bind_to.empty())
+        {
+          if(LookupParameter(p, bind_to))
+                return true;
+        }
+
+        // Lookup normal value in current component-context
+        std::string v = GetValue(name);
         if(!v.empty())
         {
-            //std::string bind_to = name.substr(0, name.size()-5);
-            std::cout << "    Binding " << name << '\n';
-            return;
+            SetParameter(name, Evaluate(v));
+            return true;
         }
-        v = GetValue(name);
 
-        std::cout << "Component::ResolveParameter " << name  << " = " << v << '\n';
-
-        if(!v.empty())
-            SetParameter(name, Evaluate(v)); // EVALUATE here
-        else
-            SetParameter(name, Evaluate(default_value)); // EVALUATE here
-
+        SetParameter(name, Evaluate(default_value));
+        return true; // IF refault value ******
     }
+
+
 
     void    Bind(parameter & p, std::string n);   // Bind to parameter in global parameter table
     void    Bind(matrix & m, std::string n); // Bind to input or output in global parameter table, or matrix parameter
@@ -268,13 +306,30 @@ public:
     virtual void Tick() {}
     virtual void Init() {}
 
-    std::string GetValue(const std::string & s)    // Get value of a parameter in the context of this component
+
+
+
+
+    std::string GetValue(const std::string & name)    // Get value of a parameter in the context of this component
     {
-        std::cout << "Getting value: " << s << std::endl;
-        if(dictionary(info_["attributes"]).contains(s))
-            return info_["attributes"][s];
-        if(parent)
-            return parent->GetValue(s);
+        //std::cout << "Getting value: " << name << std::endl;
+        if(dictionary(info_["attributes"]).contains(name))
+            return info_["attributes"][name];
+        if(parent_)
+            return parent_->GetValue(name);
+        return "";
+    }
+
+
+  std::string GetBind(const std::string & name)
+    {
+        //std::cout << "Getting binding: " << name << std::endl;
+        if(dictionary(info_["attributes"]).contains(name))
+            return ""; // Value set in attribute - do not bind
+        if(dictionary(info_["attributes"]).contains(name+".bind"))
+            return info_["attributes"][name+".bind"];
+        if(parent_)
+            return parent_->GetBind(name);
         return "";
     }
 
@@ -297,14 +352,18 @@ public:
     }
 
 
-    std::string Lookup(const std::string & name) const;
+    bool LookupParameter(parameter & p, const std::string & name);
+
+
+
+    //std::string Lookup(const std::string & name) const;
     
     int EvaluateIntExpression(std::string & s)
     {
         expression e = expression(s);
         std::map<std::string, std::string> vars;
-        for(auto v : e.variables())
-            vars[v] = Lookup(v); // FIXME: Use Evaluate() instead later
+        //for(auto v : e.variables())
+        //    vars[v] = Lookup(v); // FIXME: Use Evaluate() instead later
         return expression(s).evaluate(vars);
     }
 
@@ -462,7 +521,7 @@ public:
     }
 
 
-    void ResolveParameter(const std::string & name, const std::string & default_value)
+    void ResolveParameter(parameter & p,  std::string & name,  std::string & default_value)
     {
         std::size_t i = name.rfind(".");
         if(i == std::string::npos)
@@ -470,21 +529,24 @@ public:
 
          auto c = components.at(name.substr(0, i));
         std::string parameter_name = name.substr(i+1, name.size());
-        c->ResolveParameter(parameter_name, default_value);
+        c->ResolveParameter(p, parameter_name, default_value);
     }
 
 
     void ResolveParameters() // Find and evaluate value or default
     {
-        for(auto & p : parameters)
+        //for(auto & p : parameters)
+        for (auto p=parameters.rbegin(); p!=parameters.rend(); p++) // Reverse order equals outside in in groups
         {
-            // Find component and parameter_name
-            std::size_t i = p.first.rfind(".");
+            std::size_t i = p->first.rfind(".");
+            // Find component and parameter_name and resolve
+            i = p->first.rfind(".");
             if(i != std::string::npos)
             {
-                auto c = components.at(p.first.substr(0, i));
-                std::string parameter_name = p.first.substr(i+1, p.first.size());
-                c->ResolveParameter(parameter_name, p.second.default_value);
+                auto c = components.at(p->first.substr(0, i));
+                std::string parameter_name = p->first.substr(i+1, p->first.size());
+                //std::cout << "Resolve: " << parameter_name << std::endl;
+                c->ResolveParameter(p->second, parameter_name, p->second.default_value);
             }
         }
     }
@@ -625,7 +687,7 @@ public:
     {
         if(parameters.count(name))
         {
-            std::cout << "SETTING PARAMETER: " << name << ": " << value << std::endl;
+            //std::cout << "Setting parameter: " << name << ": " << value << std::endl;
             parameters[name] = value;
         }
     }
