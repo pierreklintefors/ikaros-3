@@ -1,21 +1,11 @@
-<group name="Test1" z="12" xyz="z+7.3" data="1,1;1,1">
-	<parameter name="ddd" type="int" default="99"/>
-	<group name="Inner"  _xyz="1+1+1" data.bind="ddd">
-			<parameter name="abc" type="int" default="10*20"/>
-			<parameter name="xyz" type="int" default="1.234"/>
-			<parameter name="x_str" type="string" default="1.234"/>
-			<parameter name="y_str" type="string" default="hello!"/>
+<group name="Test"   _m31="7, 9">
+	<parameter name="m31" type="matrix" default="31, 31"/>
+	<group name="Inner"  m30.bind="m31" data="3, 0">
+		<parameter name="m30" type="matrix" default="30, 30"/>
 
-			<input name="INPUT_A" />
-			<input name="INPUT_B" />
-
-			<output name="OUTPUT1" size="1,2,3" />
-			<output name="OUTPUT2" size="5,6" />
-
-			<module name="C" class="Constant" _data="9, 8; 7, 6"  >
-			</module>
+		<module name="C3" class="Constant" _data.bind="m30"/>
 	</group>
-
-
+	<module class = "Logger" name = "Logger" />
 </group>
+
 
