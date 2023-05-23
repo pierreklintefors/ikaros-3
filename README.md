@@ -22,14 +22,18 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Dictionary        |<div style="color:green">OK |  |
 | Options           |<div style="color:green">OK |
 | Maths             |<div style="color:#c60">Partial | only essential functions |
-| Parameters        |<div style="color:#c60">Partial | only basic data types |
-| Expressions        |<div style="color:#c60">Partial | no variable support |
+| Parameters        |<div style="color:green">OK | some conversions misssing |
+| Expressions       |<div style="color:green">OK | problems with non-expressions |
 | XML          |<div style="color:green">OK | some std::string functions missing |
 | Kernel            |<div style="color:#c60">Partial | SetSizes not fully implemented |
 | Scheduler         |<div style="color:#c60">Minimal | delay = 1 only, single thread |
+| SetSizes    |     <div style="color:#c60">Partial | almost complete|
+| Input resizing    |<div style="color:#e00">Pending | only 1-1 |
 | Delays            |<div style="color:#e00">Pending |  |
+| Task Sorting      |<div style="color:#e00">Pending |  |
 | Real Time         |<div style="color:#e00">Pending |  |
 | WebUI             |<div style="color:#e00">Pending |  |
+| Encryption        |<div style="color:#e00">Pending |  |
 | Editing           |<div style="color:#e00">Pending |  |
 | Sockets           |<div style="color:#c60">Partial | std::string not supported |
 | UtilityModules    |<div style="color:#c60">Partial | 4 modules |
