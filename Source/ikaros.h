@@ -693,14 +693,6 @@ public:
     }
 
 
-/*
-    void InitParameter(std::string name, std::string value)
-    {
-        std::cout << "INITIALIZING PARAMETER: " << name << ": " << value << std::endl;
-        parameters[name].init(value);
-    }
-*/
-
     void AddGroup(std::string name, dictionary info=dictionary())
     {
         if(components.count(name)> 0)
