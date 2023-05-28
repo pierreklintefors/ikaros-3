@@ -32,6 +32,7 @@ main(int argc, char *argv[])
     //    k.ListInputs();
     //    k.ListOutputs();
         k.ListParameters();
+        k.PrintLog();
 
 
         for(int i=0; i<0; i++)

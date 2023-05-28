@@ -23,7 +23,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Options           |<div style="color:green">OK |
 | Maths             |<div style="color:#c60">Partial | only essential functions |
 | Parameters        |<div style="color:green">OK | some conversions misssing |
-| Expressions       |<div style="color:green">OK | problems with non-expressions |
+| Expressions       |<div style="color:green">OK |  |
 | XML          |<div style="color:green">OK | some std::string functions missing |
 | Kernel            |<div style="color:#c60">Partial |  |
 | Scheduler         |<div style="color:#c60">Minimal | delay = 1 only, single thread |

@@ -24,8 +24,9 @@ namespace ikaros {
 
 std::string  validate_identifier(std::string s);
 
-struct exception : public std::exception
+class exception : public std::exception
 {
+public:
     std::string message;
     exception(std::string msg): message(msg)
     {
@@ -34,6 +35,12 @@ struct exception : public std::exception
 
    const char * what () const throw () { return message.c_str(); }
 };
+
+  class fatal_error : public exception 
+  {
+  public:
+        fatal_error(std::string msg) : exception(msg) {}
+  };
 
 class Component;
 class Module;
@@ -108,7 +115,7 @@ public:
             // TODO: options and bool
             default: break;
         }
-        //is_set = true;
+
         return v;
     }
 
@@ -119,21 +126,22 @@ public:
             case int_type: if(int_value) *int_value = int(v); break;
             case float_type: if(float_value) *float_value = v; break;
             case string_type: if(string_value) *string_value = std::to_string(v); break;
-        // TODO: options and bool
+            case bool_type: if(int_value) *int_value = int(v); break;
+            case options_type: if(int_value) *int_value = int(v); break; // FIXME: check range
             default: break;
         }
         //is_set = true;
         return v;
     }
 
-    float operator=(double v) { return operator=(float(v)); }; // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***
+    float operator=(double v) { return operator=(float(v)); };
 
 
-    std::string operator=(std::string v) // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***         // TODO: options and bool
+    std::string operator=(std::string v) // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 *** 
     {
         switch(type)
         {
-            case no_type: type=string_type;  string_value = std::make_shared<std::string>(v); break;          // FIXME: ADD THIS TO THE OTHER TYPES AS WELL
+            case no_type: type=string_type;  string_value = std::make_shared<std::string>(v); break; 
         
             case int_type: 
                 if(int_value) 
@@ -141,6 +149,17 @@ public:
                 else
                     int_value = std::make_shared<int>(std::stoi(v));
                 break;
+
+            case bool_type:
+                if(int_value)
+                {
+                    if(v=="True"||v=="true" ||v=="yes")
+                        *int_value = 1;
+                    else
+                        *int_value = 0;
+                }
+                break;
+
             case options_type:
             {
                 auto ix = find(options.begin(), options.end(), v);
@@ -170,9 +189,10 @@ public:
                 else
                     matrix_value = std::make_shared<matrix>(matrix(v));
                 break;
-            default: break;
+
+            default: 
+                break;
         }
-        //is_set = true;
         return v;
     }
 
@@ -199,7 +219,7 @@ public:
             //case matrix_type: return "MATRIX-FIX-ME"; //FIXME: Get matrix string - add to matrix class to also be used by print *****
             default: ;
         }
-        throw exception("Type conversion error for  parameter.");
+        throw exception("Type conversion error for parameter.");
     }
 
    operator int()
@@ -361,18 +381,7 @@ public:
     std::string Evaluate(const std::string & s)     // Evaluate an expression in the current context - as string?
     {
         if(s.empty())
-            return "";
-/*
-        if(s[0]=='@') // Handle indirection (unless expresson)
-        {
-            if(s.find('.')==std::string::npos)
-                return GetValue(s.substr(1));
-            
-            std::string component_path = rhead(s.substr(1), '.');
-            std::string variable_name = SubstituteVariables(rtail(s, '.'));
-            return GetComponent(component_path)->GetValue(variable_name);
-        }
-*/
+
     if(!expression::is_expression(s))
     {
         if(s[0]=='@') // Handle indirection (unless expresson)
@@ -400,7 +409,7 @@ public:
                 std::string value = Evaluate(v); // was GetValue
                 if(value.empty())
                     throw exception("Variable \""+v+"\" not defined.");
-                vars[v] = value; // FIXME: Evaluate???
+                vars[v] = value;
         }
         return std::to_string(expression(s).evaluate(vars));
     }
@@ -547,13 +556,14 @@ public:
     long tick;
     float tick_duration; // actual or simulated time for each tick
 
+    std::vector<std::string>            log;
+
     long GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
     double GetTime() { return GetTickTime(); }   // Time since start (in real time or simulated (tick) time depnding on mode)
     double GetRealTime() { return GetTickTime(); }    // Time since start in real time  (s) - is equal to GetTickTime when not in real-time mode // FIXME: Handle real-time mode
     double GetTickTime() { return float(GetTick())*GetTickDuration(); }    // Nominal time since start for current tick (s)
     double GetLag() { return GetTickTime() - GetRealTime(); }
-
 
     void ScanClasses(std::string path)
     {
@@ -589,7 +599,6 @@ public:
 
     void ResolveParameters() // Find and evaluate value or default
     {
-        //for(auto & p : parameters)
         for (auto p=parameters.rbegin(); p!=parameters.rend(); p++) // Reverse order equals outside in in groups
         {
             std::size_t i = p->first.rfind(".");
@@ -706,6 +715,13 @@ public:
             std::cout  << "\t" << p.first << ": " << p.second << std::endl;
     }
 
+    void PrintLog()
+    {
+        for(auto & s : log)
+            std::cout << "IKAROS: " << s << std::endl;
+        log.clear();
+    }
+
 
     Kernel()
     {
@@ -813,31 +829,44 @@ public:
     void InitComponents()
     {
         // Call Init for all modules (after CalcalateSizes and Allocate)
-        for(auto & m : components)
-            m.second->Init(); 
+        for(auto & c : components)
+            try
+            {
+                c.second->Init();
+            }
+            catch(const fatal_error& e)
+            {
+                log.push_back("Fatal error. Init failed for \""+c.second->name_+"\": "+std::string(e.what())); // FIXME: set end of execution
+            }
+            catch(const std::exception& e)
+            {
+                log.push_back("Init failed for \""+c.second->name_+"\": "+std::string(e.what()));
+            }
     }
 
     void LoadFiles(std::vector<std::string> files, options & opts)
     {
             for(auto & filename: files)
-            {
-                //std::cout << "READING FILE: " << filename << std::endl;
-                XMLDocument * xmlDoc = new XMLDocument(filename.c_str());
-                if(xmlDoc->xml == nullptr)
-                    std::cout << "File not found" << std::endl;
+                try
+                {
+                    XMLDocument * xmlDoc = new XMLDocument(filename.c_str());
+                    if(xmlDoc->xml == nullptr)
+                        throw exception("File \""+filename+"\" not found");
 
-                if(xmlDoc->xml->name != std::string("group"))
-                    exit(1);
+                    if(xmlDoc->xml->name != std::string("group"))
+                         throw exception("Group element not found in \""+filename+"\"."); // FIXME: request exit
 
-                // Add command line options to top element of XML before parsing // FIXME: Clean up
+                    // Add command line options to top element of XML before parsing // FIXME: Clean up
 
-                for(auto & x : opts.d)
-                    if(!xmlDoc->xml->GetAttribute(x.first.c_str())) 
-                        ((XMLElement *)(xmlDoc->xml))->attributes = new XMLAttribute(create_string(x.first.c_str()), create_string(x.second.c_str()),0,((XMLElement *)(xmlDoc->xml))->attributes);          
-
-
-                ParseGroupFromXML(xmlDoc->xml);
-            }
+                    for(auto & x : opts.d)
+                        if(!xmlDoc->xml->GetAttribute(x.first.c_str())) 
+                            ((XMLElement *)(xmlDoc->xml))->attributes = new XMLAttribute(create_string(x.first.c_str()), create_string(x.second.c_str()),0,((XMLElement *)(xmlDoc->xml))->attributes);          
+                    ParseGroupFromXML(xmlDoc->xml);
+                }
+                catch(const std::exception& e)
+                {
+                    log.push_back(e.what());
+                }
     }
 
 
