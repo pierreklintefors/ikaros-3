@@ -1,0 +1,14 @@
+<group name="Test" q="333">
+	<group 
+		name="Inner"
+		x = "10"
+		y = "20"
+		z = "50"
+		result = "@x+@Test.q"
+	>
+
+		<parameter name="result" 	type="float" 	default="1.2"/>
+	</group>
+</group>
+
+

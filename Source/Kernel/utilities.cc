@@ -172,8 +172,28 @@ const std::string tail(std::string s, char token) // including token
     if(p==std::string::npos)
         return "";
     else
-        return s.substr(p, s.size()-p);
+        return s.substr(p+1, s.size()-p-1);
 }
+
+
+const std::string rhead(std::string s, char token) // without token
+{
+    int p = s.rfind(token);
+    if(p==std::string::npos)
+        return s;
+    else
+        return s.substr(0, p);
+}
+
+const std::string rtail(std::string s, char token) // without token
+{
+    int p = s.rfind(token);
+    if(p==std::string::npos)
+        return s; // was ""
+    else
+        return s.substr(p+1, s.size()-p);
+}
+
 
 
 bool contains(std::string & s, std::string n)

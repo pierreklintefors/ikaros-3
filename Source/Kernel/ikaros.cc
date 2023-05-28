@@ -136,7 +136,34 @@ std::string Component::Lookup(const std::string & name) const
 }
 */
 
-  Component::Component(): 
+
+    Component * Component::GetComponent(const std::string & s) // Get component; sensitive to variables and indirection
+    {
+        std::string path = SubstituteVariables(s);
+        try
+        {        
+            std::string aaa = rhead(name_,'.');
+            std::string xxx = rtail(rhead(name_,'.'),'.');
+
+            if(path.empty()) // this
+                return this;
+            if(path[0]=='.') // global
+                return kernel().components.at(path.substr(1));
+            if(kernel().components.count(name_+"."+head(path,'.'))) // inside
+                return kernel().components[name_+"."+head(path,'.')]->GetComponent(tail(path,'.'));
+            if(rtail(rhead(name_,'.'),'.') == head(path,'.') && parent_) // parent
+                return parent_->GetComponent(tail(path,'.'));
+            throw exception("Component does not exist.");
+        }
+        catch(const std::exception& e)
+        {
+            throw exception("Component \""+path+"\" does not exist.");
+        }
+    }
+
+
+
+  Component::Component():
     parent_(nullptr),
     info_(kernel().current_component_info),
     name_(info_["name"])

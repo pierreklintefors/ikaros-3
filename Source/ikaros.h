@@ -49,7 +49,6 @@ class parameter // FIXME: check all types everywhere
 private:
 public:
     parameter_type  type;
-    //bool            is_set;
     std::string    default_value;
     std::shared_ptr<int>            int_value;
     std::shared_ptr<float>          float_value;
@@ -57,10 +56,10 @@ public:
     std::shared_ptr<std::string>    string_value;
     std::vector<std::string>        options;
 public:
-    parameter(): type(no_type) //, is_set(false)
+    parameter(): type(no_type)
     {}
 
-    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type) // , is_set(false)
+    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type)
     {
         default_value = default_val;
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
@@ -71,10 +70,17 @@ public:
         switch(type)
         {
             case int_type: int_value = std::make_shared<int>(0); break;
+            case bool_type: int_value = std::make_shared<int>(0); break;
             case float_type: float_value = std::make_shared<float>(0); break;
             case string_type: string_value = std::make_shared<std::string>(""); break;
             case matrix_type: matrix_value = std::make_shared<matrix>(); break;
-            // TODO: options and bool
+
+            case options_type:
+                int_value = std::make_shared<int>(0);
+                options = split(options_string,",");
+                break;
+
+            // TODO: bool
             default: break;
         } 
     }
@@ -84,7 +90,6 @@ public:
     void operator=(parameter & p) // this shares data with p
     {
         type = p.type;
-        //is_set = p.is_set;
         default_value = p.default_value;
         int_value = p.int_value;
         float_value = p.float_value;
@@ -185,10 +190,12 @@ public:
         switch(type)
         {
             case no_type: throw exception("Uninitialized parameter."); // return "uninitialized_parameter";
-            case int_type: if(int_value) return std::to_string(*int_value);
+            case int_type: if(int_value) return std::to_string(*int_value);            
             // FIXME: get options string and bool
             case float_type: if(float_value) return std::to_string(*float_value);
+            case bool_type: if(int_value) return std::to_string(*int_value==1);
             case string_type: if(string_value) return *string_value;
+
             //case matrix_type: return "MATRIX-FIX-ME"; //FIXME: Get matrix string - add to matrix class to also be used by print *****
             default: ;
         }
@@ -232,6 +239,7 @@ public:
             case int_type:      if(p.int_value) os << *p.int_value; break;
             case options_type:  if(p.int_value) os << *p.int_value; break;
             case float_type:    if(p.float_value) os <<  *p.float_value; break;
+            case bool_type:     if(p.int_value) os <<  (*p.int_value==1? "true" : "false"); break;
             case string_type:   if(p.string_value) os <<  *p.string_value; break;
             case matrix_type:   if(p.matrix_value) os <<  *p.matrix_value; break;
             default:            os << "unkown-parameter-type"; break;
@@ -310,11 +318,10 @@ public:
 
 
 
-    std::string GetValue(const std::string & name)    // Get value of a parameter in the context of this component
-    {
-        //std::cout << "Getting value: " << name << std::endl;
+    std::string GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component
+    {        
         if(dictionary(info_["attributes"]).contains(name))
-            return info_["attributes"][name];
+            return Evaluate(info_["attributes"][name]);
         if(parent_)
             return parent_->GetValue(name);
         return "";
@@ -333,17 +340,64 @@ public:
         return "";
     }
 
+    std::string SubstituteVariables(const std::string & s)
+    {
+        std::string var; 
+        std::string sep;
+        for(auto c : split(s, "."))
+        {
+            if(c[0] == '@')
+                var += sep + GetValue(c.substr(1));
+            else
+                var += sep + c;
+            sep = ".";
+        }
+        return var;
+    }
+
+    Component * GetComponent(const std::string & s); // Get component; sensitive to variables and indirection
+ 
 
     std::string Evaluate(const std::string & s)     // Evaluate an expression in the current context - as string?
     {
+        if(s.empty())
+            return "";
+/*
+        if(s[0]=='@') // Handle indirection (unless expresson)
+        {
+            if(s.find('.')==std::string::npos)
+                return GetValue(s.substr(1));
+            
+            std::string component_path = rhead(s.substr(1), '.');
+            std::string variable_name = SubstituteVariables(rtail(s, '.'));
+            return GetComponent(component_path)->GetValue(variable_name);
+        }
+*/
+    if(!expression::is_expression(s))
+    {
+        if(s[0]=='@') // Handle indirection (unless expresson)
+        {
+            if(s.find('.')==std::string::npos)
+                return GetValue(s.substr(1));
+            
+            std::string component_path = rhead(s.substr(1), '.');
+            std::string variable_name = SubstituteVariables(rtail(s, '.'));
+            return GetComponent(component_path)->GetValue(variable_name);
+        }
+        else
+            return s;
+    }
+
+        // Handle mathematical expression
 
         if(!expression::is_expression(s))
             return s;
+
          expression e = expression(s);
             std::map<std::string, std::string> vars;
             for(auto v : e.variables())
             {
-                std::string value = GetValue(v);
+                std::string value = Evaluate(v); // was GetValue
                 if(value.empty())
                     throw exception("Variable \""+v+"\" not defined.");
                 vars[v] = value; // FIXME: Evaluate???
@@ -443,7 +497,7 @@ class Connection
     Connection(std::string s, std::string t)
     {
         source = head(s, '[');
-        source_range = range(tail(s, '['));
+        source_range = range(tail(s, '[')); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
         target = head(t, '[');
         target_range = range(tail(t, '['));
     };

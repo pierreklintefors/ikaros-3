@@ -25,7 +25,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Parameters        |<div style="color:green">OK | some conversions misssing |
 | Expressions       |<div style="color:green">OK | problems with non-expressions |
 | XML          |<div style="color:green">OK | some std::string functions missing |
-| Kernel            |<div style="color:#c60">Partial | SetSizes not fully implemented |
+| Kernel            |<div style="color:#c60">Partial |  |
 | Scheduler         |<div style="color:#c60">Minimal | delay = 1 only, single thread |
 | SetSizes    |     <div style="color:#c60">Partial | almost complete|
 | Input resizing    |<div style="color:#e00">Pending | only 1-1 |

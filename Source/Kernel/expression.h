@@ -34,6 +34,13 @@ class expression
         {
             if(s.empty())
                 return false;
+
+            if(s.find(',') != std::string::npos)
+                return false;
+
+      if(s.find(';') != std::string::npos)
+                return false;
+                
             for(char c : "+-*/()")
                 if(s.find(c) != std::string::npos)
                 return true;
