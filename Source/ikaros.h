@@ -44,6 +44,7 @@ public:
 
 class Component;
 class Module;
+class Connection;
 class Kernel;
 
 Kernel& kernel();
@@ -453,30 +454,15 @@ public:
     }
 
 
-    virtual int SetSizes() // FIXME: add more exception handling
-    {
-        int outputs_with_size = 0;
+bool InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
-        for(auto & d : info_["outputs"])
-        {
-            std::string n = d["attributes"]["name"];
-            std::cout << "SET SIZES " << name_ << "." << n << std::endl;
-            std::string s = d["attributes"]["size"];
-            std::vector<int> shape = EvaluateSize(s);
-            matrix o;
-            Bind(o, n);
-            if(o.rank() != 0)
-                outputs_with_size++; // Count number of inputs that are set
-            
-            o.realloc(shape);
-            outputs_with_size++;
-        }
+void SetInputSize_Copy(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+void SetInputSize_Flat(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+void SetInputSize_Stack(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+void SetInputSize_Index(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
-        if(outputs_with_size == info_["class"]["outputs"].size())
-            return 0; // all outputs have been set
-        else
-            return 0; // needs to be called again - FIXME: Report progress later on
-    }
+    virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 };
 
 typedef std::function<Module *()> ModuleCreator;
@@ -617,7 +603,55 @@ public:
 
     void CalculateSizes()
     {
-        std::map<std::string, Component *> init_components = components;     // Copy the table of all components
+        // Copy the table of all components
+        std::map<std::string, Component *> init_components = components;
+
+        // Build input table
+
+        std::map<std::string,std::vector<Connection *>> ingoing_connections; 
+    for(auto & c : connections)
+        ingoing_connections[c.target].push_back(&c);
+
+        // Propagate output size to inputs as long as at least one module sets one of it output sizes
+
+        int iteration_counter = 0;
+        bool progress = true;
+        while(progress)
+        {
+     
+            //progress = false; // FIXME: turn on again when progress reporting is implemented
+
+            // Try to set input and output sizes and remove from list if complete
+
+            auto it = init_components.begin();
+            while( it!=init_components.end())
+                if(it->second->SetSizes(ingoing_connections) == 1) // 1 = completed
+                {
+                    it = init_components.erase(it);
+                    //progress = true;
+                }
+                else
+                    it++;
+            if(iteration_counter++ > 4) // FIXME: REAL CONDITION LATER
+                return;
+        }
+    }
+
+
+
+/* OLD ************** */
+/*
+
+void CalculateSizes()
+    {
+        // Copy the table of all components
+        std::map<std::string, Component *> init_components = components;
+
+        // Build input table
+
+        std::map<std::string,std::vector<Connection *>> ingoing_connections; 
+    for(auto & c : connections)
+        ingoing_connections[c.target].push_back(&c);
 
         // Propagate output size to inputs as long as at least one module sets one of it output sizes
 
@@ -675,7 +709,7 @@ public:
         }
     }
 
-
+*/
     void ListComponents()
     {
         std::cout << "\nComponents:" << std::endl;

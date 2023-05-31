@@ -626,6 +626,11 @@ namespace ikaros
 
 
 
+        int size() // Size of full data
+        {
+            return info_->size_;
+        }
+
         int size(int dim)
         {
             if(dim < info_->shape_.size()) 

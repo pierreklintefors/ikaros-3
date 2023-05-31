@@ -1,6 +1,6 @@
 <class name="Add" description="adds two inputs">
-	<input name="INPUT1" description="The first input" />
-	<input name="INPUT2" description="The second input" />
+	<input name="INPUT1" description="The first input" type="flat" />
+	<input name="INPUT2" description="The second input" type="flat" />
 	<output name="OUTPUT" description="The output" size="INPUT1.size" /> <!-- , INPUT2.size -->
 </class>
 

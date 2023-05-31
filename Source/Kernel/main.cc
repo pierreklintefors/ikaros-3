@@ -25,12 +25,12 @@ main(int argc, char *argv[])
         //k.ListClasses();
         k.LoadFiles(o.filenames, o);
         k.ResolveParameters();
-    //    k.CalculateSizes();
+        k.CalculateSizes();
         k.InitComponents();
         //k.ListComponents();
         //k.ListConnections();
-    //    k.ListInputs();
-    //    k.ListOutputs();
+        k.ListInputs();
+        k.ListOutputs();
         k.ListParameters();
         k.PrintLog();
 
