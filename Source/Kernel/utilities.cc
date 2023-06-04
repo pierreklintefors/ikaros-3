@@ -166,11 +166,13 @@ const std::string head(std::string s, char token) // without token
         return s.substr(0, p);
 }
 
-const std::string tail(std::string s, char token) // including token
+const std::string tail(std::string s, char token, bool include_token) // including token
 {
     int p = s.find(token);
     if(p==std::string::npos)
         return "";
+    else if(include_token)
+        return s.substr(p, s.size()-p);
     else
         return s.substr(p+1, s.size()-p-1);
 }

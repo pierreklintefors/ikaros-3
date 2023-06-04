@@ -28,7 +28,7 @@ main(int argc, char *argv[])
         k.CalculateSizes();
         k.InitComponents();
         //k.ListComponents();
-        //k.ListConnections();
+        k.ListConnections();
         k.ListInputs();
         k.ListOutputs();
         k.ListParameters();

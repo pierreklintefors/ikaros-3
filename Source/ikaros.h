@@ -456,10 +456,8 @@ public:
 
 bool InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
-void SetInputSize_Copy(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
-void SetInputSize_Flat(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
-void SetInputSize_Stack(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
-void SetInputSize_Index(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections);
+void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections);
 void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
     virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
@@ -492,16 +490,16 @@ class Connection
     Connection(std::string s, std::string t)
     {
         source = head(s, '[');
-        source_range = range(tail(s, '[')); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
+        source_range = range(tail(s, '[', true)); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
         target = head(t, '[');
-        target_range = range(tail(t, '['));
+        target_range = range(tail(t, '[', true));
     };
 
 
     void
     Print()
     {
-        std::cout << "CONNECTION: " << source  << " => " << target << '\n'; 
+        std::cout << "\t" << source  <<  std::string(source_range) << " => " << target << std::string(target_range) << '\n'; 
     }
 };
 
@@ -730,7 +728,7 @@ void CalculateSizes()
     {
         std::cout << "\nInputs:" << std::endl;
         for(auto & i : inputs)
-            std::cout << "\t" << i.first <<  ": (rank:" << i.second.rank() << ", shape: " << i.second.shape() << ")" << std::endl;
+            std::cout << "\t" << i.first <<  i.second.shape() << std::endl;
     }
 
 
@@ -738,7 +736,7 @@ void CalculateSizes()
     {
         std::cout << "\nOutputs:" << std::endl;
         for(auto & o : outputs)
-            std::cout  << "\t" << o.first << ": (rank:" << o.second.rank() << ", shape: " << o.second.shape() << ")" << std::endl;
+            std::cout  << "\t" << o.first << o.second.shape() << std::endl;
     }
 
 

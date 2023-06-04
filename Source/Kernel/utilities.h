@@ -18,7 +18,7 @@ namespace ikaros
     bool starts_with(const std::string & s, const std::string & start); // waiting for C++20
     bool ends_with(const std::string & s, const std::string & end); // waiting for C++20
     const std::string head(std::string s, char token); // without token
-    const std::string tail(std::string s, char token); // without token
+    const std::string tail(std::string s, char token, bool include_token=false);
     const std::string rhead(std::string s, char token); // like head but split from end
     const std::string rtail(std::string s, char token); // like tail but split from end
     bool contains(std::string & s, std::string n);

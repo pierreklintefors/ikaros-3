@@ -214,92 +214,82 @@ Component::InputsReady(dictionary d, std::map<std::string,std::vector<Connection
 {
     Kernel& k = kernel();
 
-    std::cout << "CHECKING INPUT  " << name_ << "." << d["attributes"]["name"] << std::endl;
     std::string n = d["attributes"]["name"];
-    // Check that all connections to this input has a size
     for(auto & c : ingoing_connections[name_+'.'+n])
-    {
-        std::cout << "\tCHECKING CONNECTION FROM " << c->source << std::endl;
-        int r = k.outputs.at(c->source).rank();
-        std::cout << "\tRANK=" << r << std::endl;
-        if(r==0)
+        if(k.outputs.at(c->source).rank()==0)
             return false;
-    }
     return true;
 }
 
 
-
-void Component::SetInputSize_Copy(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
+void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
-    if(ingoing_connections[name].size() != 1)
-        throw exception("Input with type copy only accepts a single ingoing connection.");
-    std::vector<int> shape = kernel().outputs.at(ingoing_connections[name][0]->source).shape();
-    kernel().inputs[name].realloc(shape);
+    for(auto & c : ingoing_connections) // Copy source size to source_range if not set
+        if(c->source_range.size() == 0)
+            c->source_range = kernel().outputs[c->source].shape();
 
-    // TODO: SET CONNECTION RANGES *****************
-}
+            // FIXME: HANDLE INCOMPLETE RANGE WITH SOME EMPTY DIMENSIONS, e.g. [2][][3] ==[2][a:b][3]
 
-
-
-void Component::SetInputSize_Flat(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
-{
+    int begin_index = 0;
+    int end_index = 0;
     int flattened_input_size = 0;
-    for(auto & c : ingoing_connections[name])
-        flattened_input_size += kernel().outputs.at(ingoing_connections[name][0]->source).size();
+    for(auto & c : ingoing_connections)
+    {
+        int s = c->source_range.size();
+        end_index = begin_index + s;
+        c->target_range = range(begin_index, end_index);
+        begin_index += s;
+        flattened_input_size += s;
+    }
     kernel().inputs[name].realloc(flattened_input_size);
-
-    // TODO: SET CONNECTION RANGES
 }
 
 
-void Component::SetInputSize_Stack(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
+void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
-}
+    for(auto & c : ingoing_connections) // STEP 0a: copy source size to source_range if not set
+        if(c->source_range.size() == 0) // Source range not set (or []), use output shape
+            c->source_range = kernel().outputs[c->source].shape();
+            // FIXME: HANDLE INCOMPLETE RANGE WITH SOME EMPTY DIMENSIONS, e.g. [2][][3] ==[2][a:b][3]
 
+        for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
+        {
+            if(c->target_range.empty())
+            {
+                c->target_range = c->source_range;
+                continue;
+            }
 
-void Component::SetInputSize_Index(const std::string & name, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
-{
+            int si = c->source_range.index_.size()-1;
+        
+            for(int ti = c->target_range.index_.size()-1; ti>=0; ti--, si--)
+                if(c->target_range.b_[ti] == 0)
+                {
+                    c->target_range.inc_[ti] = c->source_range.inc_[si];
+                    c->target_range.a_[ti] = c->source_range.a_[si];
+                    c->target_range.b_[ti] = c->source_range.b_[si];
+                    c->target_range.index_[ti] = c->target_range.a_[si]; // FIXME: Check if this is necesary
+                }
+        }
+
+    range r;
+    for(auto & c : ingoing_connections)  // STEP 1: Calculate range extent
+        r |= c->target_range;
+
+    kernel().inputs[name].realloc(r.extent());  // STEP 2: Set input size
 }
 
 
 void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
 {
         Kernel& k = kernel();
-
-        std::cout << ">>>***** SETTING INPUT SIZE  " << name_ << "." << d["attributes"]["name"] << " as " << d["attributes"]["type"] <<  std::endl;
         std::string input_name = name_ + "." + std::string(d["attributes"]["name"]);
-        std::string type = d["attributes"]["type"];
+        std::string flatten = d["attributes"]["flatten"];
 
-        if(type == "copy")
-            SetInputSize_Copy(input_name, ingoing_connections);
-        else if(type == "flat")
-            SetInputSize_Flat(input_name, ingoing_connections);
-        else if(type == "stack")
-            SetInputSize_Stack(input_name, ingoing_connections);
-        else if(type == "index")
-            SetInputSize_Index(input_name, ingoing_connections);
-        else // keep_or_flatten [keep if one - flatten if several]
-            {
-                // Call one of two functions keep/flatten
-            }
-
-/*
-    Kernel& k = kernel();
-
-    std::cout << "CHECKING INPUT  " << name_ << "." << d["attributes"]["name"] << std::endl;
-    std::string n = d["attributes"]["name"];
-    // Check that all connections to this input has a size
-    for(auto & c : ingoing_connections[name_+'.'+n])
-    {
-        std::cout << "\tCHECKING CONNECTION FROM " << c->source << std::endl;
-        int r = k.outputs.at(c->source).rank();
-        std::cout << "\tRANK=" << r << std::endl;
-        if(r==0)
-            return false;
-    }
-*/
-    return;
+        if(flatten=="true") // FIXME: use is_true(str)
+            SetInputSize_Flat(input_name, ingoing_connections[input_name]);
+        else
+            SetInputSize_Index(input_name, ingoing_connections[input_name]);
 }
 
 
@@ -322,7 +312,6 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
     for(auto & d : info_["outputs"])
     {
         std::string n = d["attributes"]["name"];
-        std::cout << "SET SIZES " << name_ << "." << n << std::endl;
         std::string s = d["attributes"]["size"];
         std::vector<int> shape = EvaluateSize(s);
         matrix o;
@@ -339,3 +328,4 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
     else
         return 0; // needs to be called again - FIXME: Report progress later on
 }
+

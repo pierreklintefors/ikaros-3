@@ -1,5 +1,7 @@
 <group name="Test">
-	<module class = "Constant" name = "Constant" data="1, 2; 3, 4; 5, 6" />
+	<module class = "Constant" name = "Constant" data="1, 2, 3; 3, 4, 5; 5, 6, 7" />
+	<module class = "Constant" name = "Constant2" data="1, 2; 3, 4" />
+
 	<module class = "Print" name = "Print" />
 	<module class = "Logger" name = "Logger" />	
 

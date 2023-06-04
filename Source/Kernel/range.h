@@ -56,6 +56,12 @@ public:
      };
 
 
+    std::vector<int> extent()
+    {
+        return b_;
+    }
+
+
      range(std::string s) // parse range string: "[][7][1:2][10:20:-1]..."
     {                       // MEW: parse range string: ";7;1:2;10:20:-1"      ";" == two dimensions
         if(s.empty())
@@ -123,10 +129,26 @@ public:
         index_[d] = inc_[d]>0 ? a_[d] : a_[d]+inc_[d]*((b_[d]-a_[d]-1)/inc_[d]);
     };
 
+
+    void clear()
+    {
+        inc_.clear();
+        a_.clear();
+        b_.clear();
+        index_.clear();
+    }
+
+
     bool more(int d=0)
     {
         return (inc_[d] > 0 && index_[d] < b_[d]) || (inc_[d] < 0 && index_[d] >= a_[d]);
     };
+
+    bool empty()
+    {
+        return a_.size() == 0;
+    }
+
 
     operator std::vector<int> &() { return index(); };
 
@@ -140,8 +162,22 @@ public:
     };
 
 
+void operator=(const std::vector<int> & v)
+{
+    clear();
+    for(auto & i : v)
+        push(0, i);
+}
+
+
     friend void operator|=(range & r, range & s)
     {
+        if(r.index_.size()==0)
+        {
+            r = s;
+            return;
+        }
+
         for(int d=0; d<r.index_.size(); d++)
         {
             if(s.a_[d] < r.a_[d])
@@ -194,7 +230,7 @@ public:
         }
         s +=  "]";
         return s;   
-    };
+    }
 
     friend bool operator==(range & a, range & b)
     {
@@ -211,7 +247,7 @@ public:
         return false;
     }
 
-    int size()
+    int size() // FIXME: Change name and use size() for dimenions.
     {
         if(index_.size() == 0)
             return 0;
@@ -232,7 +268,6 @@ public:
 
     //rank(matrix m) {} // or conversion operator  probably better
 };
-
 
 
 
