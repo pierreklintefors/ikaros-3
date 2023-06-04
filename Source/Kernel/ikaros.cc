@@ -222,14 +222,32 @@ Component::InputsReady(dictionary d, std::map<std::string,std::vector<Connection
 }
 
 
-void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections)
+void Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
     for(auto & c : ingoing_connections) // Copy source size to source_range if not set
+    {
+        if(c->source_range.rank() != 0 && c->source_range.rank() != kernel().outputs[c->source].shape().size())
+            throw exception("Source range dimensionality does not match source.");
+
         if(c->source_range.size() == 0)
-            c->source_range = kernel().outputs[c->source].shape();
+        {
+            for(int si = c->source_range.rank()-1; si>=0; si--)
+                if(c->source_range.b_[si] == 0)
+                {
+                    c->source_range.inc_[si] = 1;
+                    c->source_range.a_[si] = 0;
+                    c->source_range.b_[si] = kernel().outputs[c->source].shape()[si];
+                    c->source_range.index_[si] = 0;
+                }
+        }
+    }
 
-            // FIXME: HANDLE INCOMPLETE RANGE WITH SOME EMPTY DIMENSIONS, e.g. [2][][3] ==[2][a:b][3]
+}
 
+
+void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections)
+{
+    SetSourceRanges(name, ingoing_connections);
     int begin_index = 0;
     int end_index = 0;
     int flattened_input_size = 0;
@@ -247,11 +265,7 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
 
 void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
-    for(auto & c : ingoing_connections) // STEP 0a: copy source size to source_range if not set
-        if(c->source_range.size() == 0) // Source range not set (or []), use output shape
-            c->source_range = kernel().outputs[c->source].shape();
-            // FIXME: HANDLE INCOMPLETE RANGE WITH SOME EMPTY DIMENSIONS, e.g. [2][][3] ==[2][a:b][3]
-
+        SetSourceRanges(name, ingoing_connections);
         for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
         {
             if(c->target_range.empty())
@@ -260,9 +274,9 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
                 continue;
             }
 
-            int si = c->source_range.index_.size()-1;
+            int si = c->source_range.rank()-1;
         
-            for(int ti = c->target_range.index_.size()-1; ti>=0; ti--, si--)
+            for(int ti = c->target_range.rank()-1; ti>=0; ti--, si--)
                 if(c->target_range.b_[ti] == 0)
                 {
                     c->target_range.inc_[ti] = c->source_range.inc_[si];
