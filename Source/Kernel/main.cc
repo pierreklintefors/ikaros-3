@@ -9,6 +9,34 @@ using namespace ikaros;
 int
 main(int argc, char *argv[])
 {
+
+/*
+    matrix m;
+    matrix m0 = {0};
+    matrix m1 = {1};
+    matrix m2 = {2};
+    matrix m3 = {3};
+
+    CircularBuffer circ(m, 5);
+
+    circ.rotate(m1);
+    circ.rotate(m2);
+    circ.rotate(m3);
+    circ.rotate(m0);
+    circ.rotate(m0);
+    circ.rotate(m0);
+    circ.rotate(m0);
+    circ.rotate(m0);
+    circ.rotate(m0);
+
+    matrix m0 = {0, 0};
+    matrix m = {1, 2};
+
+    matrix l = m.last();
+    m = m0;
+
+*/
+
     try
     { 
         Kernel & k = kernel();
@@ -22,9 +50,12 @@ main(int argc, char *argv[])
 
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
 
+        k.stop_after = o.get_long("stop");
+
         //k.ListClasses();
         k.LoadFiles(o.filenames, o);
         k.ResolveParameters();
+        k.InitDelays();
         k.CalculateSizes();
         k.InitComponents();
         //k.ListComponents();
@@ -34,12 +65,12 @@ main(int argc, char *argv[])
         k.ListParameters();
         k.PrintLog();
 
-
-        for(int i=0; i<0; i++)
+        while(false && k.IsRunning())
         {   
             k.Tick();
             k.Propagate();
         }
+
         //k.ListInputs();
         //k.ListOutputs();
 

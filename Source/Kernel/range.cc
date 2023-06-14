@@ -131,6 +131,18 @@ namespace ikaros
     }
 
 
+    range range::trim()
+    {
+        range r = *this;
+        for(int d=0; d<index_.size(); d++)
+        {
+            r.b_[d] -= r.a_[d];
+            r.a_[d] = 0;
+        }
+        return r;
+    }
+
+
     range::operator std::vector<int> &() { return index(); };
 
     range & range::set(int d, int a, int b, int inc)

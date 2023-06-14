@@ -116,6 +116,7 @@ namespace ikaros
 
         std::shared_ptr<matrix_info> info_;             // The description of the matrix, can be shared by different matrices
         std::shared_ptr<std::vector<float>> data_;      // The raw data for the matrix, shared by submatrices
+        std::shared_ptr<matrix> last_;                  // Copy of the matrix
         std::vector<float *> row_pointers_;             // used for backward compatibility with old float ** matrices - deprecated
 
         // iterator
@@ -476,6 +477,9 @@ namespace ikaros
         matrix & 
         copy(matrix m)  // asign matrix or submatrix - copy data
         {
+            if(rank()==0)   // Allow copy to empty matrix aftare reallocation - //TODO: Check if this is always appropriate
+                realloc(m.shape());
+
             #ifndef NO_MATRIX_CHECKS
                 if(info_->shape_ != m.info_->shape_)
                     throw std::out_of_range("Assignment requires matrices of the same size");
@@ -898,19 +902,39 @@ namespace ikaros
             return *this;   
         }
 
-    friend std::ostream& operator<<(std::ostream& os, matrix & m)
-        {
-            if(m.rank() == 0)
+        friend std::ostream& operator<<(std::ostream& os, matrix & m)
             {
-                if(m.info_->size_ == 0)
-                    os << "{}";
-                else if(m.info_->size_ == 1)
-                    os << m.data_->at(m.info_->offset_);
+                if(m.rank() == 0)
+                {
+                    if(m.info_->size_ == 0)
+                        os << "{}";
+                    else if(m.info_->size_ == 1)
+                        os << m.data_->at(m.info_->offset_);
+                }
+                else
+                    //os << "{...}";
+                    m.print();
+                return os;
             }
-            else
-                //os << "{...}";
-                m.print();
-            return os;
+
+
+        // Last Functions
+
+        void save()
+        {
+            if(last_!=nullptr)
+                last_->copy(*this);
+        }
+
+
+        matrix & last()
+        {
+            if(last_==nullptr)
+            {
+                last_ = std::make_shared<matrix>();
+                save();
+            }
+            return *last_;
         }
 
 

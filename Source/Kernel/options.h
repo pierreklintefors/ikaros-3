@@ -77,7 +77,15 @@ public:
              return d.at(o);
         else
             return "";
-    };
+    }
+
+    long get_long(std::string o)
+    { 
+        if(d.count(o)>0)
+             return std::stol(d.at(o));
+        else
+            return 0;
+    }
 };
 
 };

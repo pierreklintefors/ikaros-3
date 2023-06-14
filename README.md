@@ -11,7 +11,6 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-
 ## Ikaros 3 Status
 
 | Component | State | Comments |
@@ -27,15 +26,17 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | XML          |<div style="color:green">OK | some std::string functions missing |
 | Kernel            |<div style="color:#c60">Partial |  |
 | Scheduler         |<div style="color:#c60">Minimal | delay = 1 only, single thread |
-| SetSizes    |     <div style="color:#c60">Partial | almost complete|
-| Input resizing    |<div style="color:#e00">Pending | only 1-1 |
+| SetSizes    |     <div style="color:green">OK | 
+| Input resizing    |<div style="color:green">OK     |  |
 | Delays            |<div style="color:#e00">Pending |  |
 | Task Sorting      |<div style="color:#e00">Pending |  |
 | Real Time         |<div style="color:#e00">Pending |  |
 | WebUI             |<div style="color:#e00">Pending |  |
+| Message queue     |<div style="color:#e00">Pending |  |
+| Log               |<div style="color:#c60">Partial |  |
 | Encryption        |<div style="color:#e00">Pending |  |
 | Editing           |<div style="color:#e00">Pending |  |
 | Sockets           |<div style="color:#c60">Partial | std::string not supported |
 | UtilityModules    |<div style="color:#c60">Partial | 4 modules |
-| Named Dimensions    |<div style="color:#e00">Pending | only in matrices |
+| Named Dimensions  |<div style="color:#c60">Partial | only in matrices |
 

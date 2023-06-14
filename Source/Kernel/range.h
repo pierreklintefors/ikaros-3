@@ -33,6 +33,8 @@ namespace ikaros
 
         void reset(int d=0);
         void clear();
+        
+        range trim();
 
         bool more(int d=0);
         bool empty();

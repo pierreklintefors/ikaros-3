@@ -266,6 +266,7 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
 void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
         SetSourceRanges(name, ingoing_connections);
+        std::cout<< name << std::endl;
         for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
         {
             if(c->target_range.empty())
@@ -298,6 +299,7 @@ void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Conn
 {
         Kernel& k = kernel();
         std::string input_name = name_ + "." + std::string(d["attributes"]["name"]);
+        std::cout << input_name << "::::" << std::endl;
         std::string flatten = d["attributes"]["flatten"];
 
         if(flatten=="true") // FIXME: use is_true(str)
@@ -312,6 +314,7 @@ void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Conn
 int
 Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: add more exception handling
 {
+    std::cout << "SETSIZES: " << name_ << std::endl;
     Kernel& k = kernel();
 
     // Set input sizes (if possible)

@@ -49,6 +49,37 @@ class Kernel;
 
 Kernel& kernel();
 
+class CircularBuffer
+{
+    public:
+    std::vector<matrix> buffer_;
+    int                 index_;
+
+    CircularBuffer(matrix &  m,  int size):
+        index_(0),
+        buffer_(std::vector<matrix>(size))
+    {}
+
+    void rotate(matrix &  m)
+    {
+        std::cout << "ROTATE " << index_ << std::endl;
+
+        //for(auto & x : buffer_)
+         //   x.print();
+         get(2).print();
+
+        buffer_[index_].copy(m);
+
+         index_ = ++index_ % buffer_.size();
+    }
+
+    matrix & get(int i) // Get output with delay i
+    {
+        return buffer_[(index_+i-1) % buffer_.size()];
+    }
+};
+
+
 enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type };
 static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options"};
 
@@ -427,7 +458,7 @@ public:
         expression e = expression(s);
         std::map<std::string, std::string> vars;
         //for(auto v : e.variables())
-        //    vars[v] = Lookup(v); // FIXME: Use Evaluate() instead later
+        //    vars[v] = Lookup(v); // FIXME: Use Evaluate() instead later **************
         return expression(s).evaluate(vars);
     }
 
@@ -483,24 +514,28 @@ public:
 class Connection
 {
     public:
-    std::string source;
+    std::string source;             // FIXME: Add undescore to names ****
     range       source_range;
     std::string target;
     range       target_range;
+    range       source_delay_range_;
+    range       target_delay_range_;
 
-    Connection(std::string s, std::string t)
+    Connection(std::string s, std::string t, range & delay_range)
     {
         source = head(s, '[');
         source_range = range(tail(s, '[', true)); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
         target = head(t, '[');
         target_range = range(tail(t, '[', true));
-    };
+        source_delay_range_ = delay_range;
+        target_delay_range_ = delay_range.trim();
+    }
 
 
     void
     Print()
     {
-        std::cout << "\t" << source  <<  std::string(source_range) << " => " << target << std::string(target_range) << '\n'; 
+        std::cout << "\t" << source  <<  std::string(source_range) << " => " << target << std::string(target_range) << "\t" << std::string(source_delay_range_) << "=>"<< std::string(target_delay_range_) << '\n'; 
     }
 };
 
@@ -539,10 +574,12 @@ public:
     dictionary                          current_module_info;
 
     long tick;
+    long stop_after;
     float tick_duration; // actual or simulated time for each tick
 
     std::vector<std::string>            log;
 
+    bool IsRunning() { return stop_after== 0 ||  tick < stop_after; }
     long GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
     double GetTime() { return GetTickTime(); }   // Time since start (in real time or simulated (tick) time depnding on mode)
@@ -637,78 +674,23 @@ public:
     }
 
 
-
-/* OLD ************** */
-/*
-
-void CalculateSizes()
+    void InitDelays()
     {
-        // Copy the table of all components
-        std::map<std::string, Component *> init_components = components;
-
-        // Build input table
-
-        std::map<std::string,std::vector<Connection *>> ingoing_connections; 
-    for(auto & c : connections)
-        ingoing_connections[c.target].push_back(&c);
-
-        // Propagate output size to inputs as long as at least one module sets one of it output sizes
-
-        int iteration_counter = 0;
-        bool progress = true;
-        while(progress)
+        std::map<std::string, int> max_delays;
+        for(auto & c : connections)
         {
-     
-            //progress = false; // FIXME: turn on again when progress reporting is implemented
-
-            // STEP 1: Calculate input sizes
-
-            std::set<std::string> waiting; // Put inputs that cannot be set on the waiting list, remove when set
-            for(auto & c : connections)
-            {
-                if (waiting.count(c.target)) // skip waiting inputs
-                    continue;
-
-                if(outputs[c.source].rank() == 0)
-                {
-                    waiting.insert(c.target);
-                    inputs[c.target].realloc(); // clear input size if set
-                    continue;
-                }
-
-                inputs[c.target].realloc(outputs[c.source].shape());   // FIXME: Only works for 1-1 connection: type = copy!!!, update target size for different alternatives
-            }
-
-            // STEP 2: Try to set output sizes and remove from list if complete
-
-            auto it = init_components.begin();
-            while( it!=init_components.end())
-                if(it->second->SetSizes() == 1) // 1 = completed
-                {
-                    it = init_components.erase(it);
-                    //progress = true;
-                }
-                else
-                    it++;
-            // If we reached the maximum number of iterations, exit.
-
-            iteration_counter++;
-            if(iteration_counter > connections.size())
-                break;
+            if(!max_delays.count(c.source))
+                max_delays[c.source] = 0;
+            if(c.source_delay_range_.extent()[0] > max_delays[c.source])
+                max_delays[c.source] = c.source_delay_range_.extent()[0];
         }
 
-        // List remaining components
-
-        if(init_components.size() > 0)
-        {
-            std::cout << "--- Components with unset input sizes ---" << std::endl;
-            for(auto & m : init_components)
-                std::cout << m.first << std::endl;
-            std::cout << "--------------------------------------" << std::endl;
-        }
+        std::cout << "\nDelays:" << std::endl;
+        for(auto & o : outputs)
+            std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
     }
 
-*/
+
     void ListComponents()
     {
         std::cout << "\nComponents:" << std::endl;
@@ -756,11 +738,11 @@ void CalculateSizes()
     }
 
 
-    Kernel()
+    Kernel():
+        tick(0),
+        stop_after(0),
+        tick_duration(0.01) // 10 ms
     {
-            tick = 0;
-            tick_duration = 0.01; // 10 ms
-
             ScanClasses("Source/Modules");
     }
 
@@ -816,14 +798,19 @@ void CalculateSizes()
         current_module_info = info;
         current_module_info["name"] = name;
         components[name] = classes[classname].module_creator(); // throws bad function call if not defined
-
     }
 
 
-    void AddConnection(std::string souce, std::string target) // TODO: Add ranges later
+    void AddConnection(std::string souce, std::string target, std::string delay_range) // TODO: Add delay ranges later
     {
         //std::cout << "ADD CONNECTION: " << souce << "=>" << target <<  std::endl;
-        connections.push_back(Connection(souce, target));
+
+        if(delay_range.empty())
+            delay_range = "[1]";
+        else if(delay_range[0] != '[')
+            delay_range = "["+delay_range+"]";
+        range r(delay_range);
+        connections.push_back(Connection(souce, target, r));
     }
 
     // Functions for reading from file
@@ -847,7 +834,7 @@ void CalculateSizes()
             }
             else if(xml_node->IsElement("connection"))
             {
-                AddConnection(name+"."+(*xml_node)["source"], name+"."+(*xml_node)["target"]);
+                AddConnection(name+"."+(*xml_node)["source"], name+"."+(*xml_node)["target"], (*xml_node)["delay"]);
             }
         }
     }
@@ -914,8 +901,7 @@ void CalculateSizes()
     {
          for(auto & c : connections)
         {
-            //std::cout << "Propagating: " << c.source << " => " << c.target << std::endl;
-            inputs[c.target].copy(outputs[c.source]);
+            inputs[c.target].copy(outputs[c.source], c.target_range, c.source_range);
         }
     }
 
