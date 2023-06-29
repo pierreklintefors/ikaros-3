@@ -213,6 +213,24 @@ bool is_integer(std::string & s)
         return true;
     }
 
+
+bool is_true(std::string & s)
+{
+    if(s.empty())
+        return false;
+    if(s[0] == 'T')
+        return true;
+     if(s[0] == 't')
+        return true;
+    if(s[0] == 'Y')
+        return true;
+    if(s[0] == 'y')
+        return true;
+    if(s=="1")
+        return true;
+    return false;
+}
+
 std::ostream& operator<<(std::ostream& os, const std::vector<int> & v)
 {
     std::string sep;
