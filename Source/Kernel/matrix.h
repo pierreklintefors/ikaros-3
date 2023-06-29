@@ -360,6 +360,12 @@ namespace ikaros
         }
 
 
+        const bool empty() const
+        {
+            return rank() == 0;
+        }
+
+
         bool
         print_(int depth=0)
         {
@@ -420,7 +426,7 @@ namespace ikaros
     matrix &
         apply(std::function< float(float) > f) // Apply a lambda to elements of a matrix
         {
-            if(rank() == 0)
+            if(empty())
                 (*data_)[info_->offset_] = f((*data_)[info_->offset_]);
             else
                 for(int i=0; i<info_->shape_.front(); i++)
@@ -432,7 +438,7 @@ namespace ikaros
         matrix &
         apply(matrix A, std::function<float(float, float)> f) // e = f(A[], x)
         {
-            if(rank() == 0)
+            if(empty())
                 (*data_)[info_->offset_] = f((*data_)[info_->offset_], (*A.data_)[info_->offset_]);
             else
                 for(int i=0; i<info_->shape_.front(); i++)
@@ -447,7 +453,7 @@ namespace ikaros
         matrix &
         apply(matrix A, matrix B, std::function<float(float, float)> f) // e[] = f(A[], B[])
         {
-            if(rank() == 0)
+            if(empty())
             {
                 if(info_->size_ == 1)
                 (*data_)[info_->offset_] = f((*A.data_)[info_->offset_], (*B.data_)[info_->offset_]);
@@ -467,7 +473,7 @@ namespace ikaros
         dot(matrix A)
         {
             float s = 0;
-            if(rank() == 0)
+            if(empty())
                 return (*data_)[info_->offset_] * (*A.data_)[info_->offset_];
             else
                 for(int i=0; i<info_->shape_.front(); i++)
@@ -914,7 +920,7 @@ namespace ikaros
 
         friend std::ostream& operator<<(std::ostream& os, matrix & m)
             {
-                if(m.rank() == 0)
+                if(m.empty())
                 {
                     if(m.info_->size_ == 0)
                         os << "{}";
