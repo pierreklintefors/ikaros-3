@@ -327,6 +327,16 @@ namespace ikaros
 
 
 
+        range get_range()
+        {
+            range r;
+            for(auto b : info_->shape_)
+                r.push(0, b);
+            return r;
+        }
+
+
+
         matrix &
         set_name(std::string n)
         {

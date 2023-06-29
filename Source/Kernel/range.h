@@ -25,6 +25,8 @@ namespace ikaros
         range & push(int a);
         range & push();
 
+        range & push_front(int a, int b, int inc=1);
+
         int rank();
         int size();
         std::vector<int> extent();
@@ -50,6 +52,7 @@ namespace ikaros
         void print_index();
 
         operator std::string();
+        std::string curly(); // empty string or range within curly brackets
 
         friend bool operator==(range & a, range & b);
         friend bool operator!=(range & a, range & b);

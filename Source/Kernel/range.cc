@@ -38,6 +38,20 @@ namespace ikaros
         return push(0, 0, 0);
      }
 
+
+    range & range::push_front(int a, int b, int inc)
+    {
+        a_.insert(a_.begin(), a);
+        b_.insert(b_.begin(), b);
+        inc_.insert(inc_.begin(), inc);
+        if(inc == 0)
+            index_.insert(index_.begin(), 0);
+        else
+            index_.insert(index_.begin(),inc>0 ? a : a+inc*((b-a)/inc));
+        return *this;
+    }
+
+
     std::vector<int> range::extent()
     {
         return b_;
@@ -220,6 +234,46 @@ namespace ikaros
         s +=  "]";
         return s;   
     }
+
+
+    std::string range::curly()
+    {
+        if(index_.empty())
+            return "";
+
+        std::string s;
+        std::string sep;
+        s += "{";
+        for(int d=0; d< index_.size(); d++)
+        {
+            s +=  sep;
+
+            if(inc_[d] == 0) // empty/full range
+                ;
+
+            else if(a_[d] == b_[d]-1 && inc_[d]==1) // single index
+                s+=std::to_string(a_[d]);
+
+            else
+            {
+                if(a_[d] != 0)
+                    s+= std::to_string(a_[d]); // always print start of range
+
+                if(b_[d] == 0)
+                    s += ":";
+                else 
+                    s += ":"+std::to_string(b_[d]);
+
+                if(inc_[d] != 1)
+                    s += ":"+std::to_string(inc_[d]);
+            }
+            sep = "}{";
+        }
+        s +=  "}";
+        return s;   
+    }
+
+
 
     bool operator==(range & a, range & b)
     {
