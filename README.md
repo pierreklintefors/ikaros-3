@@ -25,13 +25,14 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Expressions       |<div style="color:green">OK |  |
 | XML          |<div style="color:green">OK | some std::string functions missing |
 | Kernel            |<div style="color:#c60">Partial |  |
-| Scheduler         |<div style="color:#c60">Minimal | delay = 1 only, single thread |
+| Scheduler         |<div style="color:#c60">Minimal | no zero-delays, single thread |
 | SetSizes    |     <div style="color:green">OK | 
 | Input resizing    |<div style="color:green">OK     |  |
-| Delays            |<div style="color:#e00">Pending |  |
+| Delays            |<div style="color:#c60">Partial | copy not completed |
 | Task Sorting      |<div style="color:#e00">Pending |  |
 | Real Time         |<div style="color:#e00">Pending |  |
 | WebUI             |<div style="color:#e00">Pending |  |
+| BrainStudio       |<div style="color:#e00">Pending | templates & editing |
 | Message queue     |<div style="color:#e00">Pending |  |
 | Log               |<div style="color:#c60">Partial |  |
 | Encryption        |<div style="color:#e00">Pending |  |
