@@ -518,8 +518,7 @@ class Connection
     range       source_range;
     std::string target;
     range       target_range;
-    range       source_delay_range_;
-    range       target_delay_range_;
+    range       delay_range_;
 
     Connection(std::string s, std::string t, range & delay_range)
     {
@@ -527,15 +526,14 @@ class Connection
         source_range = range(tail(s, '[', true)); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
         target = head(t, '[');
         target_range = range(tail(t, '[', true));
-        source_delay_range_ = delay_range;
-        target_delay_range_ = delay_range.trim();
+        delay_range_ = delay_range;
     }
 
 
     void
     Print()
     {
-        std::cout << "\t" << source <<  source_delay_range_.curly() <<  std::string(source_range) << " => " << target << target_delay_range_.curly() << std::string(target_range) << '\n'; 
+        std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range) << '\n'; 
     }
 };
 
@@ -681,10 +679,10 @@ public:
         {
             if(!max_delays.count(c.source))
                 max_delays[c.source] = 0;
-            if(c.source_delay_range_.extent()[0] > max_delays[c.source])
+            if(c.delay_range_.extent()[0] > max_delays[c.source])
             {
-                int xxx = c.source_delay_range_.extent()[0];
-                max_delays[c.source] = c.source_delay_range_.extent()[0];
+                int xxx = c.delay_range_.extent()[0];
+                max_delays[c.source] = c.delay_range_.extent()[0];
             }
         }
 
@@ -763,7 +761,6 @@ public:
 
     void AddParameter(std::string name, dictionary params=dictionary())
     {
-        //std::cout << "ADDING PARAMETER: " << name << ": " <<  std::endl;
         std::string type_string = params["type"];
         std::string default_value = params["default"];
         std::string options = params["options"];
@@ -775,7 +772,6 @@ public:
     {
         if(parameters.count(name))
         {
-            //std::cout << "Setting parameter: " << name << ": " << value << std::endl;
             parameters[name] = value;
         }
     }
@@ -806,8 +802,6 @@ public:
 
     void AddConnection(std::string souce, std::string target, std::string delay_range)
     {
-        //std::cout << "ADD CONNECTION: " << souce << "=>" << target <<  std::endl;
-
         if(delay_range.empty())
             delay_range = "[1]";
         else if(delay_range[0] != '[')
@@ -924,7 +918,6 @@ class InitClass
 public:
     InitClass(const char * name, ModuleCreator mc)
     {
-        // std::cout << "INSTALLING: " << name << std::endl;
         kernel().classes.at(name).module_creator = mc;
     }
 };

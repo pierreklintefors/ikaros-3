@@ -168,15 +168,9 @@ std::string Component::Lookup(const std::string & name) const
     info_(kernel().current_component_info),
     name_(info_["name"])
 {
-    //std::cout << "COMPONENT CREATOR: " << name_ << std::endl;
-
     for(auto p: info_["parameters"])
         AddParameter(p["attributes"]);
-
-/*
-    for(auto p: dictionary(info_["attributes"]))
-        SetParameter(p.first, p.second);
-*/
+        
     for(auto & input: info_["inputs"])
         AddInput(input["attributes"]);
 
@@ -238,14 +232,12 @@ void Component::SetSourceRanges(const std::string & name, std::vector<Connection
 void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
     SetSourceRanges(name, ingoing_connections);
-    std::cout<< "SetInputSize_Flat: " << name << std::endl;
     int begin_index = 0;
     int end_index = 0;
     int flattened_input_size = 0;
     for(auto & c : ingoing_connections)
     {
-        int s = c->source_range.size() * c->target_delay_range_.b_[0];
-        c->target_delay_range_.clear(); // TODO: Check that this is not destructive
+        int s = c->source_range.size() * c->delay_range_.trim().b_[0];
         end_index = begin_index + s;
         c->target_range = range(begin_index, end_index);
         begin_index += s;
@@ -258,12 +250,11 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
 void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
         SetSourceRanges(name, ingoing_connections);
-        std::cout<< "SetInputSize_Index: " << name << std::endl;
         int max_delay = 0;
         for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
         {
-            if(!c->target_delay_range_.empty() && c->target_delay_range_.b_[0] > max_delay)
-                max_delay = c->target_delay_range_.b_[0];
+            if(!c->delay_range_.empty() && c->delay_range_.trim().b_[0] > max_delay)
+                max_delay = c->delay_range_.trim().b_[0];
 
             if(c->target_range.empty())
             {
@@ -281,6 +272,9 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
                     c->target_range.b_[ti] = c->source_range.b_[si];
                     c->target_range.index_[ti] = c->target_range.a_[si]; // FIXME: Check if this is necesary
                 }
+
+                if(!c->delay_range_.empty())
+                    c->target_range.push_front(0, c->delay_range_.trim().b_[0]);
         }
 
     range r;
@@ -315,17 +309,16 @@ void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Conn
 int
 Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: add more exception handling
 {
-    std::cout << "SETSIZES: " << name_ << std::endl;
     Kernel& k = kernel();
 
     // Set input sizes (if possible)
 
     for(auto & d : info_["inputs"])
-    {   
-        std::cout << "\tSET INPUT SIZE: " << d["attributes"]["name"] << std::endl;
-        if(InputsReady(dictionary(d), ingoing_connections))
-            SetInputSize(dictionary(d), ingoing_connections);
-    }
+        if(k.inputs[name_+"."+std::string(d["attributes"]["name"])].empty())
+        {   
+             if(InputsReady(dictionary(d), ingoing_connections))
+                SetInputSize(dictionary(d), ingoing_connections);
+        }
 
     // Set output sizes // FIXME: Move to separate function
 
