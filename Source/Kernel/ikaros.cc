@@ -226,20 +226,10 @@ void Component::SetSourceRanges(const std::string & name, std::vector<Connection
 {
     for(auto & c : ingoing_connections) // Copy source size to source_range if not set
     {
-        if(c->source_range.rank() != 0 && c->source_range.rank() != kernel().outputs[c->source].shape().size())
-            throw exception("Source range dimensionality does not match source.");
-
-        if(c->source_range.size() == 0)
-        {
-            for(int si = c->source_range.rank()-1; si>=0; si--)
-                if(c->source_range.b_[si] == 0)
-                {
-                    c->source_range.inc_[si] = 1;
-                    c->source_range.a_[si] = 0;
-                    c->source_range.b_[si] = kernel().outputs[c->source].shape()[si];
-                    c->source_range.index_[si] = 0;
-                }
-        }
+        if(c->source_range.empty())
+            c->source_range = kernel().outputs[c->source].get_range();
+        else if(c->source_range.rank() != kernel().outputs[c->source].rank())
+            throw exception("Expicitly set source range dimensionality does not match source.");
     }
 
 }
@@ -248,12 +238,14 @@ void Component::SetSourceRanges(const std::string & name, std::vector<Connection
 void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
     SetSourceRanges(name, ingoing_connections);
+    std::cout<< "SetInputSize_Flat: " << name << std::endl;
     int begin_index = 0;
     int end_index = 0;
     int flattened_input_size = 0;
     for(auto & c : ingoing_connections)
     {
-        int s = c->source_range.size();
+        int s = c->source_range.size() * c->target_delay_range_.b_[0];
+        c->target_delay_range_.clear(); // TODO: Check that this is not destructive
         end_index = begin_index + s;
         c->target_range = range(begin_index, end_index);
         begin_index += s;
@@ -266,9 +258,13 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
 void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
 {
         SetSourceRanges(name, ingoing_connections);
-        std::cout<< name << std::endl;
+        std::cout<< "SetInputSize_Index: " << name << std::endl;
+        int max_delay = 0;
         for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
         {
+            if(!c->target_delay_range_.empty() && c->target_delay_range_.b_[0] > max_delay)
+                max_delay = c->target_delay_range_.b_[0];
+
             if(c->target_range.empty())
             {
                 c->target_range = c->source_range;
@@ -280,7 +276,7 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
             for(int ti = c->target_range.rank()-1; ti>=0; ti--, si--)
                 if(c->target_range.b_[ti] == 0)
                 {
-                    c->target_range.inc_[ti] = c->source_range.inc_[si];
+                    c->target_range.inc_[ti] = c->source_range.inc_[si]; // FIXME: Is this correct? Or should it shrink?
                     c->target_range.a_[ti] = c->source_range.a_[si];
                     c->target_range.b_[ti] = c->source_range.b_[si];
                     c->target_range.index_[ti] = c->target_range.a_[si]; // FIXME: Check if this is necesary
@@ -288,8 +284,12 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
         }
 
     range r;
+
     for(auto & c : ingoing_connections)  // STEP 1: Calculate range extent
         r |= c->target_range;
+
+    if(max_delay > 1)
+        r.push_front(0, max_delay);
 
     kernel().inputs[name].realloc(r.extent());  // STEP 2: Set input size
 }
@@ -299,10 +299,11 @@ void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Conn
 {
         Kernel& k = kernel();
         std::string input_name = name_ + "." + std::string(d["attributes"]["name"]);
-        std::cout << input_name << "::::" << std::endl;
-        std::string flatten = d["attributes"]["flatten"];
 
-        if(flatten=="true") // FIXME: use is_true(str)
+// FIXME: Use input type heuristics here ************
+
+        std::string flatten = d["attributes"]["flatten"];
+        if(is_true(flatten))
             SetInputSize_Flat(input_name, ingoing_connections[input_name]);
         else
             SetInputSize_Index(input_name, ingoing_connections[input_name]);
@@ -320,8 +321,11 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
     // Set input sizes (if possible)
 
     for(auto & d : info_["inputs"])
+    {   
+        std::cout << "\tSET INPUT SIZE: " << d["attributes"]["name"] << std::endl;
         if(InputsReady(dictionary(d), ingoing_connections))
             SetInputSize(dictionary(d), ingoing_connections);
+    }
 
     // Set output sizes // FIXME: Move to separate function
 

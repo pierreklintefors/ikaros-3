@@ -535,7 +535,7 @@ class Connection
     void
     Print()
     {
-        std::cout << "\t" << source  <<  std::string(source_range) << " => " << target << std::string(target_range) << "\t" << std::string(source_delay_range_) << "=>"<< std::string(target_delay_range_) << '\n'; 
+        std::cout << "\t" << source <<  source_delay_range_.curly() <<  std::string(source_range) << " => " << target << target_delay_range_.curly() << std::string(target_range) << '\n'; 
     }
 };
 
@@ -682,7 +682,10 @@ public:
             if(!max_delays.count(c.source))
                 max_delays[c.source] = 0;
             if(c.source_delay_range_.extent()[0] > max_delays[c.source])
+            {
+                int xxx = c.source_delay_range_.extent()[0];
                 max_delays[c.source] = c.source_delay_range_.extent()[0];
+            }
         }
 
         std::cout << "\nDelays:" << std::endl;
@@ -801,7 +804,7 @@ public:
     }
 
 
-    void AddConnection(std::string souce, std::string target, std::string delay_range) // TODO: Add delay ranges later
+    void AddConnection(std::string souce, std::string target, std::string delay_range)
     {
         //std::cout << "ADD CONNECTION: " << souce << "=>" << target <<  std::endl;
 
