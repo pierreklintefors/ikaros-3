@@ -1,4 +1,4 @@
 <class name="Add" description="prints its input to the console each tick">
-	<input name="INPUT" description="The input to be printed" />
+	<input name="INPUT" description="The input to be printed" flatten="yes" />
 </class>
 
