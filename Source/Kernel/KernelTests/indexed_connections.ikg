@@ -8,12 +8,12 @@
     </group>
 
 
-	<connection  source = "Constant1.OUTPUT"  	target = "T.INPUT_F" delay="0:5" />
-	<connection  source = "Constant2.OUTPUT"  	target = "T.INPUT_F" delay="10:15" />
+	<connection  source = "Constant1.OUTPUT"  	target = "T.INPUT_F" _delay="0:5" />
+	<connection  source = "Constant2.OUTPUT"  	target = "T.INPUT_F" _delay="10:15" />
 
 
-	<connection  source = "Constant1.OUTPUT"  	target = "T.INPUT_I[0][][]" delay="0:5" />
-	<connection  source = "Constant2.OUTPUT"  	target = "T.INPUT_I[1][][]" delay="10:15" />
+	<connection  source = "Constant1.OUTPUT"  	target = "T.INPUT_I[0][][]" _delay="0:5" />
+	<connection  source = "Constant2.OUTPUT"  	target = "T.INPUT_I[1][][]" _delay="10:15" />
 
     <module class = "Logger" name = "Logger" />	
 </group>
