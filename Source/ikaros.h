@@ -55,6 +55,12 @@ class CircularBuffer
     std::vector<matrix> buffer_;
     int                 index_;
 
+
+    CircularBuffer()
+    {
+
+    }
+
     CircularBuffer(matrix &  m,  int size):
         index_(0),
         buffer_(std::vector<matrix>(size))
@@ -77,8 +83,9 @@ class CircularBuffer
     {
         return buffer_[(index_+i-1) % buffer_.size()];
     }
-};
 
+};
+ 
 
 enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type };
 static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options"};
@@ -561,12 +568,14 @@ public:
 class Kernel
 {
 public:
-    std::map<std::string, Class>        classes;
-    std::map<std::string, Component *>  components;
-    std::vector<Connection>             connections;
-    std::map<std::string, matrix>       inputs;         // Use IO-structure later: or only matrix?
-    std::map<std::string, matrix>       outputs;        // Use IO-structure later: Output
-    std::map<std::string, parameter>    parameters;
+    std::map<std::string, Class>            classes;
+    std::map<std::string, Component *>      components;
+    std::vector<Connection>                 connections;
+    std::map<std::string, matrix>           inputs;         // Use IO-structure later: or only matrix?
+    std::map<std::string, matrix>           outputs;        // Use IO-structure later: Output
+    std::map<std::string, int>              max_delays;     // Maximum delay needed for each output
+    std::map<std::string, CircularBuffer>   buffers;        // Circular buffers for delayed outputs
+    std::map<std::string, parameter>        parameters;
 
     dictionary                          current_component_info; // From class or group
     dictionary                          current_module_info;
@@ -672,9 +681,8 @@ public:
     }
 
 
-    void InitDelays()
+    void CalculateDelays()
     {
-        std::map<std::string, int> max_delays;
         for(auto & c : connections)
         {
             if(!max_delays.count(c.source))
@@ -690,6 +698,32 @@ public:
         for(auto & o : outputs)
             std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
     }
+
+
+    void InitBuffers()
+    {
+        std::cout << "\nInitBuffers:" << std::endl;
+        for(auto it : max_delays)
+        {
+            if(it.second == 1)
+                continue;
+            std::cout << "\t" << it.first << std::endl;
+            buffers.emplace(it.first, CircularBuffer(outputs[it.first], it.second)); // FIXME: Change to initialization list in C++20
+        }
+
+        std::cout << "\nBuffers:" << std::endl;
+        for(auto it : buffers)
+            std::cout << "\t" << it.first << "  " << it.second.buffer_.size() <<  std::endl;
+    }
+
+
+    void RotateBuffers()
+    {
+        std::cout << "Rotate Buffers" << std::endl;
+        for(auto it : buffers)
+            it.second.rotate(outputs[it.first]);
+    }
+
 
 
     void ListComponents()
@@ -898,7 +932,22 @@ public:
     {
          for(auto & c : connections)
         {
-            inputs[c.target].copy(outputs[c.source], c.target_range, c.source_range);
+            if(c.delay_range_.empty())
+                inputs[c.target].copy(outputs[c.source], c.target_range, c.source_range);
+
+            else // Copy delayed values
+            {
+                // FIX ME HERE ***********************
+
+                for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // assuming continous range (inc==1)
+                {   
+                    matrix s = buffers[c.source].get(0);
+
+                    inputs[c.target][i].copy(s, c.target_range, c.source_range);
+
+                    std::cout << std::endl;
+                }
+            }
         }
     }
 

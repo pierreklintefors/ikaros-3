@@ -15,7 +15,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 
 | Component | State | Comments |
 | ----|----|----| 
-| CMake          |<div style="color:green">OK |   |
+| CMake             |<div style="color:green">OK |   |
 | Matrices          |<div style="color:green">OK | not optimized |
 | Ranges            |<div style="color:green">OK | no enumerated ranges |
 | Dictionary        |<div style="color:green">OK |  |
@@ -23,7 +23,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Maths             |<div style="color:#c60">Partial | only essential functions |
 | Parameters        |<div style="color:green">OK | some conversions misssing |
 | Expressions       |<div style="color:green">OK |  |
-| XML          |<div style="color:green">OK | some std::string functions missing |
+| XML               |<div style="color:green">OK | some std::string functions missing |
 | Kernel            |<div style="color:#c60">Partial |  |
 | Scheduler         |<div style="color:#c60">Minimal | no zero-delays, single thread |
 | SetSizes    |     <div style="color:green">OK | 

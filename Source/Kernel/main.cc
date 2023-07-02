@@ -55,8 +55,10 @@ main(int argc, char *argv[])
         //k.ListClasses();
         k.LoadFiles(o.filenames, o);
         k.ResolveParameters();
-        k.InitDelays();
+        k.CalculateDelays();
         k.CalculateSizes();
+        k.InitBuffers();
+
         k.InitComponents();
         //k.ListComponents();
         k.ListConnections();
@@ -65,9 +67,10 @@ main(int argc, char *argv[])
         k.ListParameters();
         k.PrintLog();
 
-        while(false && k.IsRunning())
+        while(true && k.IsRunning())
         {   
             k.Tick();
+            k.RotateBuffers();
             k.Propagate();
         }
 
