@@ -64,24 +64,29 @@ class CircularBuffer
     CircularBuffer(matrix &  m,  int size):
         index_(0),
         buffer_(std::vector<matrix>(size))
-    {}
+    {
+        for(int i=0; i<size;i++)
+        {
+            buffer_[i].copy(m);
+            buffer_[i].reset(); // FIXME: use other function
+        }
+    }
 
     void rotate(matrix &  m)
     {
-        std::cout << "ROTATE " << index_ << std::endl;
-
-        //for(auto & x : buffer_)
-         //   x.print();
-         get(2).print();
-
         buffer_[index_].copy(m);
-
-         index_ = ++index_ % buffer_.size();
+        index_ = ++index_ % buffer_.size();
+        /*
+        for(int i=1; i<=buffer_.size(); i++)
+            std::cout << i << " " << get(i); 
+        std::cout << std::endl;
+        */
     }
+
 
     matrix & get(int i) // Get output with delay i
     {
-        return buffer_[(index_+i-1) % buffer_.size()];
+        return buffer_[(buffer_.size()+index_-i) % buffer_.size()];
     }
 
 };
@@ -526,6 +531,7 @@ class Connection
     std::string target;
     range       target_range;
     range       delay_range_;
+    bool        flatten;
 
     Connection(std::string s, std::string t, range & delay_range)
     {
@@ -534,6 +540,7 @@ class Connection
         target = head(t, '[');
         target_range = range(tail(t, '[', true));
         delay_range_ = delay_range;
+        flatten = false;
     }
 
 
@@ -702,12 +709,12 @@ public:
 
     void InitBuffers()
     {
-        std::cout << "\nInitBuffers:" << std::endl;
+        //std::cout << "\nInitBuffers:" << std::endl;
         for(auto it : max_delays)
         {
             if(it.second == 1)
                 continue;
-            std::cout << "\t" << it.first << std::endl;
+            //std::cout << "\t" << it.first << std::endl;
             buffers.emplace(it.first, CircularBuffer(outputs[it.first], it.second)); // FIXME: Change to initialization list in C++20
         }
 
@@ -719,8 +726,8 @@ public:
 
     void RotateBuffers()
     {
-        std::cout << "Rotate Buffers" << std::endl;
-        for(auto it : buffers)
+        //std::cout << "Rotate Buffers"   << std::endl;
+        for(auto & it : buffers)
             it.second.rotate(outputs[it.first]);
     }
 
@@ -932,25 +939,45 @@ public:
     {
          for(auto & c : connections)
         {
-            if(c.delay_range_.empty())
+            if(c.delay_range_.empty() || c.delay_range_.is_delay_0())
+            {
+                // Do not handle here yet
+            }
+
+            else if(c.delay_range_.empty() || c.delay_range_.is_delay_1())
                 inputs[c.target].copy(outputs[c.source], c.target_range, c.source_range);
 
-            else // Copy delayed values
+            else if(c.flatten) // Copy flattened delayed values
             {
-                // FIX ME HERE ***********************
-
-                for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // assuming continous range (inc==1)
+                matrix target = inputs[c.target];
+                int target_offset = c.target_range.a_[0];
+                for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
                 {   
-                    matrix s = buffers[c.source].get(0);
+                    matrix s = buffers[c.source].get(i);
 
-                    inputs[c.target][i].copy(s, c.target_range, c.source_range);
+                    for(auto ix=c.source_range; ix.more(); ix++)
+                    {
+                        int source_index = s.compute_index(ix.index());
+                        target[target_offset++] = (*(s.data_))[source_index];
+                    }
+                }
+            }
 
-                    std::cout << std::endl;
+            else // Copy indexed delayed values
+            {
+                for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
+                {   
+                    matrix s = buffers[c.source].get(i);
+                    int target_ix = i - c.delay_range_.a_[0]; // trim!
+                    range tr = c.target_range.tail();
+                    matrix t = inputs[c.target][target_ix];
+                    t.copy(s, tr, c.source_range);
+
+                    //std::cout << std::endl;
                 }
             }
         }
     }
-
 
     void Tick()
     {

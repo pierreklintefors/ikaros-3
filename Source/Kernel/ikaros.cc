@@ -170,7 +170,7 @@ std::string Component::Lookup(const std::string & name) const
 {
     for(auto p: info_["parameters"])
         AddParameter(p["attributes"]);
-        
+
     for(auto & input: info_["inputs"])
         AddInput(input["attributes"]);
 
@@ -237,6 +237,7 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
     int flattened_input_size = 0;
     for(auto & c : ingoing_connections)
     {
+        c->flatten = true;
         int s = c->source_range.size() * c->delay_range_.trim().b_[0];
         end_index = begin_index + s;
         c->target_range = range(begin_index, end_index);
@@ -257,24 +258,23 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
                 max_delay = c->delay_range_.trim().b_[0];
 
             if(c->target_range.empty())
-            {
                 c->target_range = c->source_range;
-                continue;
+            else
+            {
+                int si = c->source_range.rank()-1;
+            
+                for(int ti = c->target_range.rank()-1; ti>=0; ti--, si--)
+                    if(c->target_range.b_[ti] == 0)
+                    {
+                        c->target_range.inc_[ti] = c->source_range.inc_[si]; // FIXME: Is this correct? Or should it shrink?
+                        c->target_range.a_[ti] = c->source_range.a_[si];
+                        c->target_range.b_[ti] = c->source_range.b_[si];
+                        c->target_range.index_[ti] = c->target_range.a_[si]; // FIXME: Check if this is necesary
+                    }
             }
 
-            int si = c->source_range.rank()-1;
-        
-            for(int ti = c->target_range.rank()-1; ti>=0; ti--, si--)
-                if(c->target_range.b_[ti] == 0)
-                {
-                    c->target_range.inc_[ti] = c->source_range.inc_[si]; // FIXME: Is this correct? Or should it shrink?
-                    c->target_range.a_[ti] = c->source_range.a_[si];
-                    c->target_range.b_[ti] = c->source_range.b_[si];
-                    c->target_range.index_[ti] = c->target_range.a_[si]; // FIXME: Check if this is necesary
-                }
-
-                if(!c->delay_range_.empty())
-                    c->target_range.push_front(0, c->delay_range_.trim().b_[0]);
+            if(!c->delay_range_.empty())
+                 c->target_range.push_front(0, c->delay_range_.trim().b_[0]);
         }
 
     range r;
@@ -282,8 +282,8 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
     for(auto & c : ingoing_connections)  // STEP 1: Calculate range extent
         r |= c->target_range;
 
-    if(max_delay > 1)
-        r.push_front(0, max_delay);
+    //if(max_delay > 1)
+    //    r.push_front(0, max_delay);
 
     kernel().inputs[name].realloc(r.extent());  // STEP 2: Set input size
 }
