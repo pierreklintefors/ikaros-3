@@ -139,12 +139,7 @@ namespace ikaros
         return (inc_[d] > 0 && index_[d] < b_[d]) || (inc_[d] < 0 && index_[d] >= a_[d]);
     };
 
-    bool range::empty()
-    {
-        return a_.size() == 0;
-    }
-
-
+    
     range range::trim()
     {
         range r = *this;
@@ -155,6 +150,37 @@ namespace ikaros
         }
         return r;
     }
+
+
+    range range::tail()
+    {
+        range r = *this;
+        r.a_.erase(r.a_.begin());
+        r.b_.erase(r.b_.begin());
+        r.inc_.erase(r.inc_.begin());
+        r.index_.erase(r.index_.begin());
+        return r;
+    }
+
+
+    bool range::is_delay_0()
+    {
+        return a_.size() == 1 && a_[0] == 0 and b_[0] == 1;
+    }
+
+
+    bool range::is_delay_1()
+    {
+        return a_.size() == 1 && a_[0] == 1 and b_[0] == 2;
+    }
+
+
+
+    bool range::empty()
+    {
+        return a_.size() == 0;
+    }
+
 
 
     range::operator std::vector<int> &() { return index(); };

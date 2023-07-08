@@ -11,7 +11,7 @@ namespace ikaros
     class range
     {
     public:
-        std::vector<int>    inc_;
+        std::vector<int>    inc_;   // FIXME: change to vector of individual ranges instead for clearer code
         std::vector<int>    a_;
         std::vector<int>    b_;
         std::vector<int>    index_;
@@ -36,7 +36,11 @@ namespace ikaros
         void reset(int d=0);
         void clear();
         
-        range trim();
+        range trim();  // move range to 0..
+        range tail(); // drop first dimension // FIXME: pop_front?
+
+        bool is_delay_0(); // FIXME: rename
+        bool is_delay_1();
 
         bool more(int d=0);
         bool empty();
