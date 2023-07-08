@@ -1,0 +1,20 @@
+<group name="Test">
+	<module class = "Constant" name = "Constant1" data="1,2;3,4" />
+	<module class = "Constant" name = "Constant2" data="8,9;-8,-9" />
+
+    <group name="T">
+        <input name="INPUT_I" />
+        <input name="INPUT_F" flatten="yes" />
+    </group>	
+
+	<_connection  source = "Constant1.OUTPUT"  	target = "T.INPUT_F" delay="1:6" />
+	<_connection  source = "Constant2.OUTPUT"  	target = "T.INPUT_F" delay="11:16" />
+
+	<connection  source = "Constant1.OUTPUT"  	target = "T.Print" _delay="1:6" />
+	<_connection  source = "Constant2.OUTPUT"  	target = "T.Print[1][][]" delay="11:16" />
+
+    <module class = "Print" name = "Print" />	
+
+    <module class = "Logger" name = "Logger" />	
+</group>
+
