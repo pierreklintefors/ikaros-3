@@ -67,11 +67,15 @@ main(int argc, char *argv[])
         k.ListParameters();
         k.PrintLog();
 
+        int iteration = 0;
+
         while(true && k.IsRunning())
         {   
             k.Tick();
             k.RotateBuffers();
             k.Propagate();
+            if(iteration++ > 10)
+                break;
         }
 
         //k.ListInputs();
