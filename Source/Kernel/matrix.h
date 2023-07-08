@@ -513,9 +513,9 @@ namespace ikaros
         {
             for(;source.more() & target.more(); source++, target++)
             {
-                source.print_index();
-                target.print_index();
-                std::cout << std::endl;
+                //source.print_index();
+                //target.print_index();
+                //std::cout << std::endl;
 
                 m.check_bounds(source.index()); // FIXME: Do this once before starting instead e.g. matrix.check_bounds(range)
                 check_bounds(target.index());
@@ -982,7 +982,6 @@ namespace ikaros
         // operator<=
         // operator  
     };
-
 
 }
 
