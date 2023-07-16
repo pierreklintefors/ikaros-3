@@ -60,7 +60,7 @@ public:
             else
             {
                 if (!std::filesystem::exists(s))
-                        throw std::runtime_error(std::string(s) + ": File not found");
+                        throw std::runtime_error("File not found: "+std::string(s));
                 filenames.push_back(s);
             }
         }

@@ -37,6 +37,9 @@ main(int argc, char *argv[])
 
 */
 
+    matrix m(2,2);
+    m.set_labels(0, "A", "B");
+
     try
     { 
         Kernel & k = kernel();
@@ -67,15 +70,11 @@ main(int argc, char *argv[])
         k.ListParameters();
         k.PrintLog();
 
-        int iteration = 0;
-
-        while(true && k.IsRunning())
+        while(k.IsRunning())
         {   
             k.Tick();
             k.RotateBuffers();
             k.Propagate();
-            if(iteration++ > 10)
-                break;
         }
 
         //k.ListInputs();

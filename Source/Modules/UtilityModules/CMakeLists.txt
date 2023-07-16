@@ -5,6 +5,7 @@ add_subdirectory(Add)
 add_subdirectory(Scale)
 add_subdirectory(Oscillator)
 add_subdirectory(Print)
+add_subdirectory(OutputFile)
 
 set(SOURCE ${SOURCE} PARENT_SCOPE)
 set(MODULES_INCLUDS ${MODULES_INCLUDS} PARENT_SCOPE)

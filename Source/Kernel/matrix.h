@@ -250,6 +250,8 @@ namespace ikaros
                 r.info_->name_ += "["+std::to_string(i)+"]";
             r.info_->labels_.erase(r.info_->labels_.begin());
 
+            // FIX ME: Label starts
+
             return r;
         }
 
@@ -346,12 +348,39 @@ namespace ikaros
 
 
         template <typename... Args>
-        void
+        matrix &
         set_labels(int dimension, Args... labels)
         {
             info_->labels_.at(dimension) = {labels...};
+            return *this;
         }
 
+
+        matrix &
+        clear_labels(int dimension)
+        {
+            set_labels(dimension);
+            return *this;
+        }
+
+
+        matrix &
+        push_label(int dimension, std::string label, int no_of_columns=1)
+        {
+
+            if(no_of_columns == 1)
+                info_->labels_.at(dimension).push_back(label);
+            else
+                for(int i=0; i<no_of_columns; i++)
+                    info_->labels_.at(dimension).push_back(label+":"+std::to_string(i));
+            return *this;
+        }
+
+
+        const std::vector<std::string> labels(int dimension=0)
+        {
+            return info_->labels_.at(dimension);
+        }
 
 
         const int rank() const 

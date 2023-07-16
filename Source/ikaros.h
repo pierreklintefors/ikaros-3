@@ -93,7 +93,7 @@ class CircularBuffer
  
 
 enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type };
-static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options"};
+static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options"}; // TODO: Add list of strings?
 
 class parameter // FIXME: check all types everywhere
 {
@@ -531,16 +531,18 @@ class Connection
     std::string target;
     range       target_range;
     range       delay_range_;
-    bool        flatten;
+    std::string alias_;
+    bool        flatten_;
 
-    Connection(std::string s, std::string t, range & delay_range)
+    Connection(std::string s, std::string t, range & delay_range, std::string alias="")
     {
         source = head(s, '[');
         source_range = range(tail(s, '[', true)); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
         target = head(t, '[');
         target_range = range(tail(t, '[', true));
         delay_range_ = delay_range;
-        flatten = false;
+        flatten_ = false;
+        alias_ = alias;
     }
 
 
@@ -589,16 +591,16 @@ public:
 
     long tick;
     long stop_after;
-    float tick_duration; // actual or simulated time for each tick
+    double tick_duration; // actual or simulated time for each tick
 
     std::vector<std::string>            log;
 
     bool IsRunning() { return stop_after== 0 ||  tick < stop_after; }
     long GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
-    double GetTime() { return GetTickTime(); }   // Time since start (in real time or simulated (tick) time depnding on mode)
+    double GetTime() { return GetTickTime(); }   // Time since start (in real time or simulated (tick) time dending on mode)
     double GetRealTime() { return GetTickTime(); }    // Time since start in real time  (s) - is equal to GetTickTime when not in real-time mode // FIXME: Handle real-time mode
-    double GetTickTime() { return float(GetTick())*GetTickDuration(); }    // Nominal time since start for current tick (s)
+    double GetTickTime() { return static_cast<double>(GetTick())*GetTickDuration(); }    // Nominal time since start for current tick (s)
     double GetLag() { return GetTickTime() - GetRealTime(); }
 
     void ScanClasses(std::string path)
@@ -712,7 +714,7 @@ public:
         //std::cout << "\nInitBuffers:" << std::endl;
         for(auto it : max_delays)
         {
-            if(it.second == 1)
+            if(it.second <= 1)
                 continue;
             //std::cout << "\t" << it.first << std::endl;
             buffers.emplace(it.first, CircularBuffer(outputs[it.first], it.second)); // FIXME: Change to initialization list in C++20
@@ -730,7 +732,6 @@ public:
         for(auto & it : buffers)
             it.second.rotate(outputs[it.first]);
     }
-
 
 
     void ListComponents()
@@ -837,18 +838,22 @@ public:
         current_component_info["name"] = name;
         current_module_info = info;
         current_module_info["name"] = name;
+        if(!classes.count(classname))
+            throw exception("Class \""+classname+"\" does not exist.");
+        if(classes[classname].module_creator == nullptr)
+            throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
         components[name] = classes[classname].module_creator(); // throws bad function call if not defined
     }
 
 
-    void AddConnection(std::string souce, std::string target, std::string delay_range)
+    void AddConnection(std::string souce, std::string target, std::string delay_range, std::string alias)
     {
         if(delay_range.empty())
             delay_range = "[1]";
         else if(delay_range[0] != '[')
             delay_range = "["+delay_range+"]";
         range r(delay_range);
-        connections.push_back(Connection(souce, target, r));
+        connections.push_back(Connection(souce, target, r, alias));
     }
 
     // Functions for reading from file
@@ -872,7 +877,7 @@ public:
             }
             else if(xml_node->IsElement("connection"))
             {
-                AddConnection(name+"."+(*xml_node)["source"], name+"."+(*xml_node)["target"], (*xml_node)["delay"]);
+                AddConnection(name+"."+(*xml_node)["source"], name+"."+(*xml_node)["target"], (*xml_node)["delay"], (*xml_node)["alias"]);
             }
         }
     }
@@ -947,7 +952,7 @@ public:
             else if(c.delay_range_.empty() || c.delay_range_.is_delay_1())
                 inputs[c.target].copy(outputs[c.source], c.target_range, c.source_range);
 
-            else if(c.flatten) // Copy flattened delayed values
+            else if(c.flatten_) // Copy flattened delayed values
             {
                 matrix target = inputs[c.target];
                 int target_offset = c.target_range.a_[0];

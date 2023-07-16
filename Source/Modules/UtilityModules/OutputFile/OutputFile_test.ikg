@@ -1,0 +1,12 @@
+<group name="Test">
+	<module class = "Oscillator" name = "Oscillator_1" type="square" frequency="1, 2, 3, 4" />
+    <module class = "Oscillator" name = "Oscillator_2" type="square" frequency="5, 6" />
+    
+	<module class = "OutputFile" name = "Output" />
+
+	<connection  source = "Oscillator_1.OUTPUT" target = "Output.INPUT" alias = "X" />
+	<connection  source = "Oscillator_2.OUTPUT" target = "Output.INPUT" alias = "Y" />
+
+	<module class = "Logger" name = "Logger"/>	
+</group>
+

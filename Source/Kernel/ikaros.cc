@@ -68,13 +68,21 @@ std::string  validate_identifier(std::string s)
 
     void Component::AddParameter(dictionary parameters)
     {
-        std::string pn = parameters["name"];
-        if(pn=="name")
-            return;
-        if(pn=="class")
-            return;            
-        std::string parameter_name = std::string(info_["name"])+"."+validate_identifier(pn);
-        kernel().AddParameter(parameter_name, parameters);
+        std::string parameter_name;
+        try
+        {
+            std::string pn = parameters["name"];
+            if(pn=="name")
+                return;
+            if(pn=="class")
+                return;            
+            parameter_name = std::string(info_["name"])+"."+validate_identifier(pn);
+            kernel().AddParameter(parameter_name, parameters);
+            }
+        catch(const std::exception& e)
+        {
+            throw exception("While adding parameter \""+parameter_name+"\": "+ e.what());
+        }
     }
 
 
@@ -223,7 +231,7 @@ void Component::SetSourceRanges(const std::string & name, std::vector<Connection
         if(c->source_range.empty())
             c->source_range = kernel().outputs[c->source].get_range();
         else if(c->source_range.rank() != kernel().outputs[c->source].rank())
-            throw exception("Expicitly set source range dimensionality does not match source.");
+            throw exception("Explicitly set source range dimensionality does not match source.");
     }
 
 }
@@ -237,7 +245,7 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
     int flattened_input_size = 0;
     for(auto & c : ingoing_connections)
     {
-        c->flatten = true;
+        c->flatten_ = true;
         int s = c->source_range.size() * c->delay_range_.trim().b_[0];
         end_index = begin_index + s;
         c->target_range = range(begin_index, end_index);
@@ -245,6 +253,19 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
         flattened_input_size += s;
     }
     kernel().inputs[name].realloc(flattened_input_size);
+
+    if(!true)  // FIXME: only if named inputs are not set
+        return;
+
+    begin_index = 0;
+    for(auto & c : ingoing_connections)
+    {
+        int s = c->source_range.size() * c->delay_range_.trim().b_[0];
+        if(c->alias_.empty())
+            kernel().inputs[name].push_label(0, c->source, s);
+        else
+            kernel().inputs[name].push_label(0, c->alias_, s);
+    }
 }
 
 
