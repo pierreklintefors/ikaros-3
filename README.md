@@ -16,7 +16,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 
 | Component | State | Comments |
 | ----|----|----| 
-| CMake             |<div style="color:green">OK |   |
+| CMake             |<div style="color:green">🟢 OK |   |
 | Matrices          |<div style="color:green">OK | not optimized |
 | Ranges            |<div style="color:green">OK | no enumerated ranges |
 | Dictionary        |<div style="color:green">OK |  |
