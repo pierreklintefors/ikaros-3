@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - July, 2023
+## Ikaros 3 Status - August, 2023
 
 | Component | State | Comments |
 | ----|----|----| 
