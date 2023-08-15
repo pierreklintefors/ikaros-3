@@ -19,8 +19,11 @@
 #include "Kernel/expression.h"
 #include "Kernel/matrix.h"
 #include "Kernel/socket.h"
+#include "Kernel/timing.h"
 
 namespace ikaros {
+
+using tick_count = long long int;
 
 std::string  validate_identifier(std::string s);
 
@@ -379,9 +382,6 @@ public:
     virtual void Init() {}
 
 
-
-
-
     std::string GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component
     {        
         if(dictionary(info_["attributes"]).contains(name))
@@ -500,7 +500,7 @@ public:
 bool InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
 void SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections);
-void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections);
+void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections, bool add_labels);
 void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections);
 void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
@@ -549,7 +549,10 @@ class Connection
     void
     Print()
     {
-        std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range) << '\n'; 
+        std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range);
+        if(!alias_.empty())
+            std::cout << " \"" << alias_ << "\"";
+        std::cout << '\n'; 
     }
 };
 
@@ -589,19 +592,47 @@ public:
     dictionary                          current_component_info; // From class or group
     dictionary                          current_module_info;
 
-    long tick;
-    long stop_after;
-    double tick_duration; // actual or simulated time for each tick
+    float                               idle_time;              // TODO: change to duration<float>             
+    float                               time_usage;             // TODO: change to duration<float>
+
+    Timer                               timer;                  // Main timer
+    
+    bool                                is_running;
+    std::atomic<bool>                   tick_is_running;
+    bool                                start;          // Start automatically                   
+
+    // Timing parameters and functions
+
+    double    tick_duration;  // Desired actual or simulated duration for each tick
+
+    tick_count  tick;
+    tick_count  stop_after;
+    double    lag;            // Lag of a tick in real-time mode
+    double    jitter_min;     // Largest negative lag
+    double    jitter_max;     // Largest positive lag
+    double    jitter_sum;     // Sum |lag|
+
+
+    double GetTime() { return 0; }   // Time since start (in real time or simulated (tick) time dending on mode)
+    double GetTickTime() { return 0; }
+double GetRealTime();
+
+/*
+    tick_count GetTick() { return tick; }
+    double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
+    //
+    double GetRealTime();   // Time since start in real time  (s) - is equal to GetTickTime when not in real-time mode // FIXME: Handle real-time mode
+//    double GetTickTime() { return static_cast<double>(GetTick())*GetTickDuration(); }    // Nominal time since start for current tick (s)
+    double GetLag() { return GetTickTime() - GetRealTime(); }
+*/
+
 
     std::vector<std::string>            log;
 
-    bool IsRunning() { return stop_after== 0 ||  tick < stop_after; }
-    long GetTick() { return tick; }
-    double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
-    double GetTime() { return GetTickTime(); }   // Time since start (in real time or simulated (tick) time dending on mode)
-    double GetRealTime() { return GetTickTime(); }    // Time since start in real time  (s) - is equal to GetTickTime when not in real-time mode // FIXME: Handle real-time mode
-    double GetTickTime() { return static_cast<double>(GetTick())*GetTickDuration(); }    // Nominal time since start for current tick (s)
-    double GetLag() { return GetTickTime() - GetRealTime(); }
+    bool Terminate()
+    {
+        return stop_after!= 0 &&  tick >= stop_after;
+    }
 
     void ScanClasses(std::string path)
     {
@@ -773,6 +804,7 @@ public:
             std::cout  << "\t" << p.first << ": " << p.second << std::endl;
     }
 
+
     void PrintLog()
     {
         for(auto & s : log)
@@ -783,6 +815,10 @@ public:
 
     Kernel():
         tick(0),
+        is_running(false),
+        tick_is_running(false),
+        time_usage(0),
+        idle_time(0),
         stop_after(0),
         tick_duration(0.01) // 10 ms
     {
@@ -984,13 +1020,11 @@ public:
         }
     }
 
-    void Tick()
-    {
-        for(auto & m : components)
-            m.second->Tick();
-        tick++;
-    }
+    void Tick();
+    void Run();
 };
+
+
 
 // Initialization class
 

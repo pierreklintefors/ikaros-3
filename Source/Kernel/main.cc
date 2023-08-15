@@ -10,42 +10,62 @@ int
 main(int argc, char *argv[])
 {
 
-/*
-    matrix m;
-    matrix m0 = {0};
-    matrix m1 = {1};
-    matrix m2 = {2};
-    matrix m3 = {3};
 
-    CircularBuffer circ(m, 5);
+    Timer   t;
 
-    circ.rotate(m1);
-    circ.rotate(m2);
-    circ.rotate(m3);
-    circ.rotate(m0);
-    circ.rotate(m0);
-    circ.rotate(m0);
-    circ.rotate(m0);
-    circ.rotate(m0);
-    circ.rotate(m0);
+    double x = t.WaitUntil(1);
+    double a = t.GetTime();
 
-    matrix m0 = {0, 0};
-    matrix m = {1, 2};
+    Sleep(2.5);
+    double b = t.GetTime();
 
-    matrix l = m.last();
-    m = m0;
+    std::cout << "lag: " << x << std::endl;
 
-*/
+    std::cout << a << "\n" << b << std::endl;
+    std::cout << TimeString(a) << std::endl;
+    std::cout << TimeString(b) << std::endl;
+    std::cout << GetClockTimeString() << std::endl;
+    std::cout << GetTimeStamp() << std::endl;
 
-    matrix m(2,2);
-    m.set_labels(0, "A", "B");
+    for(int i=0; i<5; i++)
+    {
+        std::cout << GetClockTimeString() << std::endl;
+        Sleep(1);
+    }
+
+
+exit(0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     try
     { 
         Kernel & k = kernel();
 
         options o;
+ 
+        //o.add_option("l", "loglevel", "what to print to the log");
+        //o.add_option("q", "quiet", "do not print log to terminal; equal to loglevel=0");
+    
+        //o.add_option("c", "lagcutoff", "reset lag and restart timing if it exceed this value", "10s");
+
+        o.add_option("t", "tickduration", "duration of each tick");
         o.add_option("r", "realtime", "run in real-time mode");
+        o.add_option("S", "start", " start-up automatically without waiting for commands (from WebUI)");
         o.add_option("s", "stop", "stop Ikaros after this tick");
         o.add_option("w", "webuiport", "port for ikaros WebUI", "8000");
  
@@ -53,8 +73,14 @@ main(int argc, char *argv[])
 
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
 
+    // TODO: GET THESE FROM OUTER GROUP WHERE THEY SHOULD HAVE BEEN ADDED **************************
+        k.start = o.is_set("start");
         k.stop_after = o.get_long("stop");
+        k.tick_duration = o.get_double("tickduration");
 
+
+    // Move the rest to ikaros kernel - load and restart
+    
         //k.ListClasses();
         k.LoadFiles(o.filenames, o);
         k.ResolveParameters();
@@ -63,20 +89,13 @@ main(int argc, char *argv[])
         k.InitBuffers();
 
         k.InitComponents();
-        //k.ListComponents();
+        k.ListComponents();
         k.ListConnections();
         k.ListInputs();
         k.ListOutputs();
         k.ListParameters();
         k.PrintLog();
-
-        while(k.IsRunning())
-        {   
-            k.Tick();
-            k.RotateBuffers();
-            k.Propagate();
-        }
-
+        k.Run();
         //k.ListInputs();
         //k.ListOutputs();
 
@@ -98,3 +117,12 @@ main(int argc, char *argv[])
     return 0;
 }
 
+
+/*
+
+    main-loop
+    handle-command / command line parameters
+    
+
+
+*/

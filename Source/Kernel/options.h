@@ -86,6 +86,15 @@ public:
         else
             return 0;
     }
+
+    double get_double(std::string o)
+    { 
+        if(d.count(o)>0)
+             return std::stod(d.at(o));
+        else
+            return 0;
+    }
+
 };
 
 };

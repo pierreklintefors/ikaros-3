@@ -31,7 +31,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Input resizing    |<div style="color:green">OK     |  |
 | Delays            |<div style="color:#c60">Partial | copy not completed |
 | Task Sorting      |<div style="color:#e00">Pending |  |
-| Real Time         |<div style="color:#e00">Pending |  |
+| Real Time         |<div style="color:green">OK |  |
 | WebUI             |<div style="color:#e00">Pending |  |
 | BrainStudio       |<div style="color:#e00">Pending | templates & editing |
 | Message queue     |<div style="color:#e00">Pending |  |
@@ -42,3 +42,32 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | UtilityModules    |<div style="color:#c60">Partial | 4 modules |
 | Named Dimensions  |<div style="color:#c60">Partial | only in matrices |
 
+
+
+# Timing
+
+Timing is set by the *real-time* flag together with the desired *tickduation*. Tickduation defaults to 1s.
+
+All times are set in seconds as a double.
+
+On Mac OS the timing error is below 0.2 microseconds.
+
+ Function | return type |Real-time | Simulated time | Comment
+| ----|----|----|----|---|
+| GetTick() | tick_count  |tick | tick | 
+| GetTickDuration() | double  | tickduration | tickduration 
+| GetTime() | double  | GetRealtime() | tick * tickduration 
+| GetRealTime() | double  | "realtime" | tick * tickduration 
+| GetLag()  | double  | tick * tickduration - GetRealtime() | 0 
+
+# Basic Start-up Parameters
+
+filename :   ikg-file to load
+
+-w: wait for command from WebUI; default if no filename is given
+
+-r: real-time mode
+
+-d# : tick duration (in seconds)
+
+All parameters have can be set in the top element of the ikg-file as well.

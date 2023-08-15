@@ -4,6 +4,7 @@ add_subdirectory(Constant)
 add_subdirectory(Add)
 add_subdirectory(Scale)
 add_subdirectory(Oscillator)
+add_subdirectory(Protocol)
 add_subdirectory(Print)
 add_subdirectory(OutputFile)
 
