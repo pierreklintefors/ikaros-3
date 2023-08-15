@@ -237,7 +237,7 @@ void Component::SetSourceRanges(const std::string & name, std::vector<Connection
 }
 
 
-void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections)
+void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool add_labels)
 {
     SetSourceRanges(name, ingoing_connections);
     int begin_index = 0;
@@ -254,7 +254,7 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
     }
     kernel().inputs[name].realloc(flattened_input_size);
 
-    if(!true)  // FIXME: only if named inputs are not set
+    if(!add_labels)
         return;
 
     begin_index = 0;
@@ -317,9 +317,11 @@ void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Conn
 
 // FIXME: Use input type heuristics here ************
 
+        std::string add_labels = d["attributes"]["add_labels"];
+
         std::string flatten = d["attributes"]["flatten"];
         if(is_true(flatten))
-            SetInputSize_Flat(input_name, ingoing_connections[input_name]);
+            SetInputSize_Flat(input_name, ingoing_connections[input_name],is_true(add_labels));
         else
             SetInputSize_Index(input_name, ingoing_connections[input_name]);
 }
@@ -362,5 +364,85 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
         return 0; // all outputs have been set
     else
         return 0; // needs to be called again - FIXME: Report progress later on
+}
+
+
+
+double
+Kernel::GetRealTime()
+{
+    return timer.GetTime();
+}
+
+
+void
+Kernel::Tick()
+{
+    for(auto & m : components)
+        m.second->Tick();
+
+    RotateBuffers();
+    Propagate();
+
+    tick++;
+}
+
+
+
+void
+Kernel::Run()
+{
+    // chdir(ikc_dir);
+
+    timer.Restart();
+    tick = 0;
+    is_running = start;
+
+    while (!Terminate())
+    {
+        if (!is_running)
+        {
+            std::cout << "Idle" << std::endl;
+            Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
+        }
+    /*
+        while(sending_ui_data)
+            {}
+        while(handling_request)
+            {}
+
+*/
+        if (is_running)
+        {
+            tick_is_running = true; // Flag that state changes are not allowed
+            Tick();
+            tick_is_running = false;
+            
+            // Calculate idle_time
+            
+            if(tick_duration > 0)
+            {
+                idle_time = (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
+                time_usage = 1 - idle_time;
+            }
+
+            if (tick_duration > 0)
+            {
+                lag = timer.WaitUntil(float(tick*tick_duration));
+                //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
+            }
+/*            
+            else if (ui_state == ui_state_realtime)
+            {
+                while(sending_ui_data)
+                    {}
+                while(handling_request)
+                    {}
+            }
+*/            
+        }
+
+        // std::cout << "Tick()" << std::endl;
+    }
 }
 
