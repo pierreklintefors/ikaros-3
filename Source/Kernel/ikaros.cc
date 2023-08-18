@@ -367,18 +367,10 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
 }
 
 
-
-double
-Kernel::GetRealTime()
-{
-    return timer.GetTime();
-}
-
-
 void
 Kernel::Tick()
 {
-    for(auto & m : components)
+     for(auto & m : components)
         m.second->Tick();
 
     RotateBuffers();
@@ -411,7 +403,7 @@ Kernel::Run()
         while(handling_request)
             {}
 
-*/
+    */
         if (is_running)
         {
             tick_is_running = true; // Flag that state changes are not allowed
@@ -420,15 +412,22 @@ Kernel::Run()
             
             // Calculate idle_time
             
-            if(tick_duration > 0)
+            if(real_time)
             {
                 idle_time = (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
                 time_usage = 1 - idle_time;
             }
 
-            if (tick_duration > 0)
+            if (real_time)
             {
-                lag = timer.WaitUntil(float(tick*tick_duration));
+                lag = timer.WaitUntil(static_cast<double>(tick)*tick_duration);
+
+                if(lag > lag_max)
+                    lag_max = lag;
+
+                if(lag < lag_min)
+                    lag_min = lag;
+
                 //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
             }
 /*            
@@ -439,10 +438,7 @@ Kernel::Run()
                 while(handling_request)
                     {}
             }
-*/            
+*/
         }
-
-        // std::cout << "Tick()" << std::endl;
-    }
 }
-
+}

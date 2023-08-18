@@ -200,7 +200,7 @@ public:
             case bool_type:
                 if(int_value)
                 {
-                    if(v=="True"||v=="true" ||v=="yes")
+                    if(is_true(v))
                         *int_value = 1;
                     else
                         *int_value = 0;
@@ -603,29 +603,23 @@ public:
 
     // Timing parameters and functions
 
-    double    tick_duration;  // Desired actual or simulated duration for each tick
+    bool                real_time;
+    double              tick_duration;  // Desired actual or simulated duration for each tick
 
-    tick_count  tick;
-    tick_count  stop_after;
-    double    lag;            // Lag of a tick in real-time mode
-    double    jitter_min;     // Largest negative lag
-    double    jitter_max;     // Largest positive lag
-    double    jitter_sum;     // Sum |lag|
+    tick_count          tick;
+
+    tick_count          stop_after;
+    double              lag;            // Lag of a tick in real-time mode
+    double              lag_min;     // Largest negative lag
+    double              lag_max;     // Largest positive lag
+    double              lag_sum;     // Sum |lag|
 
 
-    double GetTime() { return 0; }   // Time since start (in real time or simulated (tick) time dending on mode)
-    double GetTickTime() { return 0; }
-double GetRealTime();
-
-/*
     tick_count GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
-    //
-    double GetRealTime();   // Time since start in real time  (s) - is equal to GetTickTime when not in real-time mode // FIXME: Handle real-time mode
-//    double GetTickTime() { return static_cast<double>(GetTick())*GetTickDuration(); }    // Nominal time since start for current tick (s)
-    double GetLag() { return GetTickTime() - GetRealTime(); }
-*/
-
+    double GetTime() { return real_time ? GetRealTime() : static_cast<double>(tick)*tick_duration; }   // Time since start (in real time or simulated (tick) time dending on mode)
+    double GetRealTime() { return real_time ? timer.GetTime() : static_cast<double>(tick)*tick_duration; } 
+    double GetLag() { return real_time ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
 
     std::vector<std::string>            log;
 
@@ -961,6 +955,16 @@ double GetRealTime();
                         if(!xmlDoc->xml->GetAttribute(x.first.c_str())) 
                             ((XMLElement *)(xmlDoc->xml))->attributes = new XMLAttribute(create_string(x.first.c_str()), create_string(x.second.c_str()),0,((XMLElement *)(xmlDoc->xml))->attributes);          
                     ParseGroupFromXML(xmlDoc->xml);
+
+                    // Set basic parameters from loaded file
+
+                      dictionary d = components.begin()->second->info_["attributes"];
+                      
+            start = is_true(d["start"]);
+                stop_after = d["stop"];
+                tick_duration = d["tick_duration"];
+                real_time = is_true(d["real_time"]);
+
                 }
                 catch(const std::exception& e)
                 {
