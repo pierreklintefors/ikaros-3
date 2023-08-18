@@ -115,7 +115,12 @@ struct value
 
     bool is_list() { return std::holds_alternative<list>(value_); };
 
-    value & operator[] (std::string s)
+    value & operator[] (const char * s) // Captures literals as argument
+    {
+        return (*this)[std::string(s)];
+    }
+
+    value & operator[] (const std::string & s)
     {
         if(!std::holds_alternative<dictionary>(value_))
         value_ = dictionary();
@@ -191,6 +196,19 @@ struct value
         else
             return "*";
     }
+
+
+
+    operator double ()
+    { 
+        if(std::holds_alternative<std::string>(value_))
+            return std::stod(std::get<std::string>(value_));
+        else
+            return 0; // FIXME: throw?
+    }
+
+
+
 
     operator list ()
     {

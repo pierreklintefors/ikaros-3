@@ -44,7 +44,7 @@ dictionary::dictionary(XMLElement * xml_node, bool merge)
 {
     dict_["tag"] = std::string(xml_node->name);
     for(XMLAttribute * a = xml_node->attributes; a!=nullptr; a=(XMLAttribute *)(a->next))
-        dict_["attributes"][a->name] = a->value;
+        dict_["attributes"][std::string(a->name)] = a->value;
 
     for (XMLElement * xml_element = xml_node->GetContentElement(); xml_element != nullptr; xml_element = xml_element->GetNextElement())
         if(merge)
