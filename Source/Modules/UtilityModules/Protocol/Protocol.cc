@@ -31,7 +31,7 @@ class Protocol: public Module
 
     void Tick()
     {
-        std::cout << "Protocol::Tick" << std::endl;
+        //std::cout << "Protocol::Tick" << std::endl;
     }
 };
 
