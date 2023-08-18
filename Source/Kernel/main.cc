@@ -10,7 +10,7 @@ int
 main(int argc, char *argv[])
 {
 
-
+/*
     Timer   t;
 
     double x = t.WaitUntil(1);
@@ -36,7 +36,7 @@ main(int argc, char *argv[])
 
 exit(0);
 
-
+*/
 
 
 
@@ -63,20 +63,15 @@ exit(0);
     
         //o.add_option("c", "lagcutoff", "reset lag and restart timing if it exceed this value", "10s");
 
-        o.add_option("t", "tickduration", "duration of each tick");
-        o.add_option("r", "realtime", "run in real-time mode");
+        o.add_option("d", "tick_duration", "duration of each tick");
+        o.add_option("r", "real_time", "run in real-time mode");
         o.add_option("S", "start", " start-up automatically without waiting for commands (from WebUI)");
         o.add_option("s", "stop", "stop Ikaros after this tick");
-        o.add_option("w", "webuiport", "port for ikaros WebUI", "8000");
+        o.add_option("w", "webui_port", "port for ikaros WebUI", "8000");
  
         o.parse_args(argc, argv);
 
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
-
-    // TODO: GET THESE FROM OUTER GROUP WHERE THEY SHOULD HAVE BEEN ADDED **************************
-        k.start = o.is_set("start");
-        k.stop_after = o.get_long("stop");
-        k.tick_duration = o.get_double("tickduration");
 
 
     // Move the rest to ikaros kernel - load and restart
