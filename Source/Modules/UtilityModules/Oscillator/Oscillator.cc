@@ -31,7 +31,7 @@ class Oscillator: public Module
 
     void Tick()
     {
-        float time = kernel().GetTickTime();
+        float time = kernel().GetTime();
 
         output.apply(frequency, [=](float x, float f) {return func(f, kernel().GetTime());});
     }
