@@ -23,7 +23,7 @@ namespace ikaros
     const std::string rtail(std::string s, char token); // like tail but split from end
     bool contains(std::string & s, std::string n);
     bool is_integer(std::string & s);
-    bool is_true(std::string & s); // True if equal to 1 or start with T, t, Y, or y.
+    bool is_true(const std::string & s); // True if equal to 1 or start with T, t, Y, or y.
 
     std::ostream& operator<<(std::ostream& os, const std::vector<int> & v);
 

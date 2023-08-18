@@ -214,7 +214,7 @@ bool is_integer(std::string & s)
     }
 
 
-bool is_true(std::string & s)
+bool is_true(const std::string & s)
 {
     if(s.empty())
         return false;
