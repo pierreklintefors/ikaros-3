@@ -43,22 +43,25 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Named Dimensions  |<div style="color:#c60">🟡 Partial | only in matrices |
 
 
-
 # Timing
 
-Timing is set by the *real-time* flag together with the desired *tickduation*. Tickduation defaults to 1s.
+Timing is set by the *real-time* flag together with the desired *tickduation*. Tickduation defaults to 1 s.
 
 All times are set in seconds as a double.
 
 On Mac OS the timing error is below 0.2 microseconds.
 
- Function | return type |Real-time | Simulated time | Comment
-| ----|----|----|----|---|
+The following functions should be used for all timing calculations and work both in real-time and simulated time.
+
+ Function | return type |Real-time | Simulated time  |
+| ----|----|----|----|
 | GetTick() | tick_count  |tick | tick | 
 | GetTickDuration() | double  | tickduration | tickduration 
 | GetTime() | double  | GetRealtime() | tick * tickduration 
-| GetRealTime() | double  | "realtime" | tick * tickduration 
-| GetLag()  | double  | tick * tickduration - GetRealtime() | 0 
+| GetRealTime() | double  | timer.GetTime() | tick * tickduration 
+| GetLag()  | double  | tick * tickduration - timer.GetTime() | 0 
+
+GetLag() resturns the lag at the time of calling and can be used to adjust for jitter within a module. It is not necessarily the same as the *lag* value in the kernel.
 
 # Basic Start-up Parameters
 
