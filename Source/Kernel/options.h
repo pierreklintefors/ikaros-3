@@ -55,7 +55,7 @@ public:
                 std::string attr = s.substr(1, 1);
                 if(!full.count(attr))
                     throw std::runtime_error("\"-"+attr + "\" is not a valid command line option");
-                d[full[attr]] = "";  // option without parameter
+                d[full[attr]] = "true";  // option without parameter
             }
             else
             {
