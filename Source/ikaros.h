@@ -31,12 +31,8 @@ class exception : public std::exception
 {
 public:
     std::string message;
-    exception(std::string msg): message(msg)
-    {
-        message = msg;
-    };
-
-   const char * what () const throw () { return message.c_str(); }
+    exception(std::string msg): message(msg) {};
+    const char * what () const throw () { return message.c_str(); }
 };
 
   class fatal_error : public exception 
@@ -51,6 +47,10 @@ class Connection;
 class Kernel;
 
 Kernel& kernel();
+
+//
+// CIRCULAR BUFFER
+//
 
 class CircularBuffer
 {
@@ -95,6 +95,10 @@ class CircularBuffer
 };
  
 
+//
+// PARAMETERS
+//
+
 enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type };
 static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options"}; // TODO: Add list of strings?
 
@@ -109,7 +113,7 @@ public:
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
     std::vector<std::string>        options;
-public:
+
     parameter(): type(no_type)
     {}
 
@@ -316,6 +320,10 @@ public:
     }
 };
 
+//
+// COMPONENT
+//
+
 class Component
 {
 public:
@@ -516,6 +524,11 @@ class Group : public Component
 };
 
 
+//
+// MODULE
+//
+
+
 class Module : public Component
 {
 public:
@@ -557,6 +570,11 @@ class Connection
 };
 
 
+//
+// CLASS
+//
+
+
 class Class
 {
 public:
@@ -576,6 +594,10 @@ public:
     }
 };
 
+
+//
+// KERNEL
+//
 
 class Kernel
 {
@@ -959,7 +981,7 @@ public:
                     // Set basic parameters from loaded file
 
                       dictionary d = components.begin()->second->info_["attributes"];
-                      
+
             start = is_true(d["start"]);
                 stop_after = d["stop"];
                 tick_duration = d["tick_duration"];
@@ -1030,7 +1052,9 @@ public:
 
 
 
-// Initialization class
+//
+// INITIALIZATION CLASS
+//
 
 class InitClass
 {
