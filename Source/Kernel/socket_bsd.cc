@@ -511,7 +511,7 @@ ServerSocket::SendHTTPHeader(Dictionary * d, const char * response) // Content l
     else
 		Send("HTTP/1.1 %s\r\n", response);
 
-    d->Set("Server", "Ikaros/2.0");
+    d->Set("Server", "Ikaros/3.0");
     d->Set("Connection", "Close");
 	
     time_t rawtime;
@@ -653,7 +653,7 @@ ServerSocket::SendFile(const char * filename, const char * path, Dictionary * hd
     h->Set("Connection",  "Close"); // TODO: check if socket uses persistent connections
     char length[256];
     h->Set("Content-Length", int_to_string(length, (int)len, 256));
-    h->Set("Server", "Ikaros/2.0");
+    h->Set("Server", "Ikaros/3.0");
 	
     if(strend(filename, ".html"))
 		h->Set("Content-Type", "text/html");

@@ -20,8 +20,21 @@
 #include "Kernel/matrix.h"
 #include "Kernel/socket.h"
 #include "Kernel/timing.h"
+#include "Kernel/socket.h"
+
+
+#include "Kernel/deprecated.h"
 
 namespace ikaros {
+
+const int ui_state_stop = 0;
+const int ui_state_pause = 1;
+const int ui_state_step = 2;
+const int ui_state_play = 3;
+const int ui_state_realtime = 4;
+
+
+
 
 using tick_count = long long int;
 
@@ -389,6 +402,7 @@ public:
     virtual void Tick() {}
     virtual void Init() {}
 
+    std::string JSONString();
 
     std::string GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component
     {        
@@ -602,6 +616,9 @@ public:
 class Kernel
 {
 public:
+
+    std::string                             webui_dir;
+
     std::map<std::string, Class>            classes;
     std::map<std::string, Component *>      components;
     std::vector<Connection>                 connections;
@@ -611,16 +628,27 @@ public:
     std::map<std::string, CircularBuffer>   buffers;        // Circular buffers for delayed outputs
     std::map<std::string, parameter>        parameters;
 
+    bool                first_request;
+    long                master_id;
+    bool                is_running;
+    std::atomic<bool>   tick_is_running;
+    std::atomic<bool>   sending_ui_data;
+    std::atomic<bool>   handling_request;
+    int                 ui_state;
+
     dictionary                          current_component_info; // From class or group
     dictionary                          current_module_info;
 
     float                               idle_time;              // TODO: change to duration<float>             
     float                               time_usage;             // TODO: change to duration<float>
 
+    int                                 cpu_cores;
+    double                              cpu_usage;
+    double                              last_cpu;
+    float                               last_cpu_time;
+
     Timer                               timer;                  // Main timer
     
-    bool                                is_running;
-    std::atomic<bool>                   tick_is_running;
     bool                                start;          // Start automatically                   
 
     // Timing parameters and functions
@@ -636,6 +664,8 @@ public:
     double              lag_max;     // Largest positive lag
     double              lag_sum;     // Sum |lag|
 
+    ServerSocket *      socket;
+    long                session_id;
 
     tick_count GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
@@ -654,7 +684,7 @@ public:
     {
         int i=0;
         for(auto& p: std::filesystem::recursive_directory_iterator(path))
-            if(p.path().extension()==".ikc")
+            if(std::string(p.path().extension())==".ikc")
             {
                 std::string name = p.path().stem();
                 classes[name] = Class(name, p.path());
@@ -836,8 +866,10 @@ public:
         time_usage(0),
         idle_time(0),
         stop_after(0),
-        tick_duration(0.01) // 10 ms
+        tick_duration(0.01), // 10 ms
+        webui_dir("Source/WebUI/") // FIXME: get from somewhere else
     {
+
             ScanClasses("Source/Modules");
     }
 
@@ -982,10 +1014,11 @@ public:
 
                       dictionary d = components.begin()->second->info_["attributes"];
 
-            start = is_true(d["start"]);
-                stop_after = d["stop"];
-                tick_duration = d["tick_duration"];
-                real_time = is_true(d["real_time"]);
+                    start = is_true(d["start"]);
+                    stop_after = d["stop"];
+                    tick_duration = d["tick_duration"];
+                    real_time = is_true(d["real_time"]);
+                    session_id = std::time(nullptr);
 
                 }
                 catch(const std::exception& e)
@@ -1046,6 +1079,46 @@ public:
         }
     }
 
+
+    std::string JSONString();
+
+    void InitSocket(int port)
+{
+    try
+    {
+        
+        socket =  new ServerSocket(port);
+    }
+    catch (const SocketException& e)
+    {
+        throw fatal_error("Ikaros is unable to start a webserver on port "+std::to_string(port)+". Make sure no other ikaros process is running and try again.");
+    }
+}
+
+    void Pause();
+
+    void DoStop(std::string uri, std::string args);
+    void DoPause(std::string uri, std::string args);
+    void DoStep(std::string uri, std::string args);
+    void DoPlay(std::string uri, std::string args);
+    void DoRealtime(std::string uri, std::string args);
+    void DoCommand(std::string uri, std::string args);
+    void DoControl(std::string uri, std::string args);
+    void DoSendNetwork(std::string uri, std::string args);
+    void DoSendData(std::string uri, std::string args);
+    void DoUpdate(std::string uri, std::string args);
+    void DoGetLog(std::string uri, std::string args);
+    void DoSendClasses(std::string uri, std::string args);
+    void DoSendFile(std::string file);
+    void DoSendError();
+ 
+
+    void HandleHTTPRequest();
+    void HandleHTTPThread();
+    
+    std::thread *   httpThread;
+    static void *   StartHTTPThread(Kernel * k);
+    
     void Tick();
     void Run();
 };

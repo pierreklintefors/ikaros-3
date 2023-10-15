@@ -33,22 +33,9 @@ main(int argc, char *argv[])
         Sleep(1);
     }
 
-
 exit(0);
 
 */
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -71,30 +58,27 @@ exit(0);
  
         o.parse_args(argc, argv);
 
+        long port = o.get_long("webui_port");
+
+
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
 
 
     // Move the rest to ikaros kernel - load and restart
     
         //k.ListClasses();
-        k.LoadFiles(o.filenames, o);
-        k.ResolveParameters();
-        k.CalculateDelays();
-        k.CalculateSizes();
-        k.InitBuffers();
+        k.InitSocket(port); // FIXME: Port cannot be set in IKG file; should it?
 
-        k.InitComponents();
-        k.ListComponents();
-        k.ListConnections();
-        k.ListInputs();
-        k.ListOutputs();
-        k.ListParameters();
-        k.PrintLog();
+        k.LoadFiles(o.filenames, o);
         k.Run();
         //k.ListInputs();
         //k.ListOutputs();
 
         std::cout << "\nIkaros 3.0 Ended" << std::endl;
+    }
+    catch(fatal_error & e)
+    {
+        std::cerr << "IKAROS::FATAL ERROR: " << e.what() << std::endl;
     }
     catch(exception & e)
     {
@@ -118,6 +102,5 @@ exit(0);
     main-loop
     handle-command / command line parameters
     
-
-
 */
+

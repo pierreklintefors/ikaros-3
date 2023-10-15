@@ -367,6 +367,7 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
 }
 
 
+
 void
 Kernel::Tick()
 {
@@ -384,14 +385,35 @@ Kernel::Tick()
 void
 Kernel::Run()
 {
+    // Set-up - // TODO: Move to separate function?
+
+    ResolveParameters();
+    CalculateDelays();
+    CalculateSizes();
+    InitBuffers();
+
+    InitComponents();
+    ListComponents();
+    ListConnections();
+    ListInputs();
+    ListOutputs();
+    ListParameters();
+    PrintLog();
+
+    // Run loop
+
     // chdir(ikc_dir);
 
     timer.Restart();
     tick = 0;
     is_running = start;
 
+     httpThread = new std::thread(Kernel::StartHTTPThread, this);
+
     while (!Terminate())
     {
+        std::cout << GetTick() << std::endl;
+
         if (!is_running)
         {
             std::cout << "Idle" << std::endl;
@@ -442,3 +464,542 @@ Kernel::Run()
         }
 }
 }
+
+
+//
+//  Serialization
+//
+
+
+
+    std::string 
+    Component::JSONString()
+    {
+        return "{}";
+    }
+
+
+    std::string 
+    Kernel::JSONString()
+    {
+        if(components.empty())
+            return "{}";
+
+        std::string s;
+
+            s += "{";
+
+        s += "\"is_group\": true,\n";
+
+        s += "\"attributes\": {\"name\": \"TOP\"},\n";
+        s += "\"parameters\": [],\n";
+        s += "\"inputs\": [],\n";
+        s += "\"outputs\": [],\n";
+        s += "\"views\": [],\n";
+        s += "\"groups\": []\n";
+
+        s += "}";
+
+        return s;
+    }
+
+
+//
+// WebUI
+//
+
+void
+Kernel::Pause()
+{
+    is_running = false;
+    while(tick_is_running)
+        {}
+}
+
+
+
+long
+get_client_id(std::string & args)
+{
+    std::string id_string =  head(args, "&");
+    std::string id_number = cut(id_string, "id=");
+
+    try
+    {
+        return stol(id_number);
+    }
+    catch(const std::invalid_argument)
+    {
+        return 0;
+    }
+}
+
+
+
+void
+Kernel::DoSendData(std::string uri, std::string args)
+{    
+    sending_ui_data = true; // must be set while main thread is still running
+    while(tick_is_running)
+        {}
+
+std::string data = cut(args, "data=");
+std::string root = head(data, '#');
+
+    Dictionary header;
+    header.Set("Session-Id", std::to_string(session_id).c_str()); // FIXME: GetValue("session_id")
+    header.Set("Package-Type", "data");
+    header.Set("Content-Type", "application/json");
+    header.Set("Cache-Control", "no-cache");
+    header.Set("Cache-Control", "no-store");
+    header.Set("Pragma", "no-cache");
+    header.Set("Expires", "0");
+    
+    socket->SendHTTPHeader(&header);
+    
+
+    socket->Send("{\n");
+    socket->Send("\t\"state\": %d,\n", ui_state);
+    
+    if(stop_after > 0)
+    {
+        socket->Send("\t\"iteration\": \"%d / %d\",\n", GetTick(), stop_after);
+        socket->Send("\t\"progress\": %f,\n", float(tick)/float(stop_after));
+    }
+    else
+    {
+        socket->Send("\t\"iteration\": %lld,\n", GetTick());
+        socket->Send("\t\"progress\": 0,\n");
+    }
+
+    // Timing information
+    
+    float total_time = 0; // timer->GetTime()/1000.0; // in seconds // FIXME: ---------
+
+    socket->Send("\t\"timestamp\": %ld,\n", 0); // Timer::GetRealTime() // FIXME: -----------
+    socket->Send("\t\"total_time\": %.2f,\n", total_time);
+    socket->Send("\t\"ticks_per_s\": %.2f,\n", float(tick)/total_time);
+    socket->Send("\t\"timebase\": %d,\n", tick_duration);
+    socket->Send("\t\"timebase_actual\": %.0f,\n", tick > 0 ? 1000*float(total_time)/float(tick) : 0);
+    socket->Send("\t\"lag\": %.0f,\n", lag);
+    socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
+    socket->Send("\t\"time_usage\": %.3f,\n", time_usage);  // TODO: move to kernel from WebUI
+    socket->Send("\t\"cpu_usage\": %.3f", cpu_usage);
+
+    socket->Send(",\n\t\"data\":\n\t{\n");
+    std::string sep = "";
+
+/*
+    while(!data.empty())
+    {
+        std::string source = head(data, "#");
+        std::string  format = rcut(source, ":");
+
+        auto root_group = main_group->GetGroup(root);
+        
+        std::string src = source;
+        if(!root.empty())    // FIXME: Empty or Not empty?
+            src = root+"."+src;
+        
+        if(root_group && !source.empty())
+        {
+            // Use data from module function if available
+            auto module_source = rsplit(source, ".", 1);
+            if(GroupElement * g = root_group->GetGroup(module_source.at(0)))
+            {
+                std::string json_data;
+                if(g->module)
+                    json_data = g->module->GetJSONData(module_source.at(1)); //  : ""
+
+                if(!json_data.empty())
+                {
+                    socket->Send(sep);
+                    std::string s = "\t\t\"" + source + "\": "+json_data;
+                    socket->Send(s);
+                    sep = ",\n";
+                }
+            }
+
+            if(format == "") // as default, send a matrix
+            {
+                Module_IO * io = root_group->GetSource(source); // FIXME: Also look for inputs here
+                if(io)
+                {
+                    socket->Send(sep);
+                    SendJSONMatrixData(socket, source, *io->matrix[0], io->sizex, io->sizey);
+                    sep = ",\n";
+                }
+                else if(bindings.count(src))
+                {
+                    socket->Send(sep);
+                    auto bs = bindings.at(src);
+                    Binding * b = bs.at(0);   // Use first binding
+                    switch(b->type)
+                    {
+                        case data_source_int:
+                        case data_source_list:
+                            socket->Send("\t\t\"%s\": [[%d]]", source.c_str(), *(int *)(b->value));
+                            break;
+
+                        case data_source_bool:
+                            socket->Send("\t\t\"%s\": [[%d]]", source.c_str(), int(*(bool *)(b->value)));
+                            break;
+
+                        case data_source_float:
+                            socket->Send("\t\t\"%s\": [[%f]]", source.c_str(), *(float *)(b->value));
+                            break;
+
+                        case data_source_string:
+                            socket->Send("\t\t\"%s\": \"%s\"", source.c_str(), ((std::string *)(b->value))->c_str());
+                            break;
+         
+                        case data_source_matrix:
+                            SendJSONMatrixData(socket, source, *(float **)(b->value), b->size_x, b->size_y);
+                            break;
+                            
+                        case data_source_array:
+                            SendJSONArrayData(socket, source, (float *)(b->value), b->size_x);
+                            break;
+                            
+                        default:
+                            socket->Send("\"ERRROR_type_is\": %d", b->type);
+                    }
+                    sep = ",\n";
+                }
+            }
+            else if(format == "gray" && source[0])
+            {
+                if(Module_IO * io = root_group->GetSource(source))
+                {
+                    socket->Send(sep);
+                    socket->Send("\t\t\"%s:gray\": ", source.c_str()); // FIXME: Check return
+                    SendColorJPEGbase64(socket, *io->matrix[0], *io->matrix[0], *io->matrix[0], io->sizex, io->sizey);
+                    sep = ",\n";
+                }
+            }
+            else if(format == "rgb" && !source.empty())
+            {
+                auto a = rsplit(source, ".", 1); // separate out outputs
+                auto o = split(a[1], "+"); // split channel names
+                
+                if(o.size() == 3)
+                {
+                    auto c1 = a[0]+"."+o[0];
+                    auto c2 = a[0]+"."+o[1];
+                    auto c3 = a[0]+"."+o[2];
+
+                    Module_IO * io1 = root_group->GetSource(c1);
+                    Module_IO * io2 = root_group->GetSource(c2);
+                    Module_IO * io3 = root_group->GetSource(c3);
+                    
+                    // TODO: check that all outputs have the same size
+
+                    if(io2 && io2 && io3)
+                    {
+                        socket->Send(sep);
+                        socket->Send("\t\t\"%s:rgb\": ", source.c_str()); // FIXME: Check return
+                        SendColorJPEGbase64(socket, *io1->matrix[0], *io2->matrix[0], *io3->matrix[0], io1->sizex, io1->sizey);
+                        sep = ",\n";
+                    }
+                }
+            }
+            else if(source[0] && (format == "fire" || format == "spectrum" || format == "red" || format == "green" || format == "blue"))
+            {
+                if(Module_IO * io = root_group->GetSource(source))
+                {
+                    socket->Send(sep);
+                    socket->Send("\t\t\"%s:%s\": ", source.c_str(), format.c_str()); // FIXME: Check return
+                    SendPseudoColorJPEGbase64(socket, *io->matrix[0], io->sizex, io->sizey, format.c_str());
+                    sep = ",\n";
+                }
+            }
+        }
+    }
+*/
+
+    socket->Send("\n\t}");
+
+    if(tick_is_running) // new tick has started during sending
+    {
+        socket->Send(",\n\t\"has_data\": 0\n"); // there may be data but it cannot be trusted
+    }
+    else
+    {
+        socket->Send(",\n\t\"has_data\": 1\n");
+    }
+    socket->Send("}\n");
+
+    sending_ui_data = false;
+}
+
+
+
+void
+Kernel::DoStop(std::string uri, std::string args)
+{
+        // Pause();
+        // ui_state = ui_state_stop;
+
+        // Notify(msg_terminate, "Sent by WebUI.\n");
+        DoSendData(uri, args);
+}
+
+
+void
+Kernel::DoSendFile(std::string file)
+{
+        if(file[0] == '/')
+            file = file.erase(0,1); // Remove initial slash
+
+        // if(socket->SendFile(file, ikc_dir))  // Check IKC-directory first to allow files to be overriden
+        //    return;
+
+
+
+        if(socket->SendFile(file, webui_dir))   // Now look in WebUI directory
+            return;
+
+        /*
+
+        if(socket->SendFile(file, std::string(webui_dir)+"Images/"))   // Now look in WebUI/Images directory
+            return;
+      
+        file = "error." + rcut(file, ".");
+        if(socket->SendFile("error." + rcut(file, "."), webui_dir)) // Try to send error file
+            return;
+
+        DoSendError();
+
+        */
+}
+
+
+
+void
+Kernel::DoSendNetwork(std::string uri, std::string args)
+{
+        std::string s = JSONString(); 
+        Dictionary rtheader;
+        rtheader.Set("Session-Id", std::to_string(session_id).c_str());
+        rtheader.Set("Package-Type", "network");
+        rtheader.Set("Content-Type", "application/json");
+        rtheader.Set("Content-Length", int(s.size()));
+        socket->SendHTTPHeader(&rtheader);
+        socket->SendData(s.c_str(), int(s.size()));
+}
+
+
+
+void
+Kernel::DoPause(std::string uri, std::string args)
+{
+    Pause();
+    ui_state = ui_state_pause;
+    master_id = get_client_id(args);
+    DoSendData(uri, args);
+}
+
+
+
+void
+Kernel::DoStep(std::string uri, std::string args)
+{
+    Pause();
+    ui_state = ui_state_pause;
+    master_id = get_client_id(args);
+    Tick();
+    DoSendData(uri, args);
+}
+
+
+
+
+void
+Kernel::DoPlay(std::string uri, std::string args)
+{
+    Pause();
+    ui_state = ui_state_play;
+    master_id = get_client_id(args);
+    Tick();
+    DoSendData(uri, args);
+}
+
+
+
+
+void
+Kernel::DoRealtime(std::string uri, std::string args)
+{
+    ui_state = ui_state_realtime;
+    master_id = get_client_id(args);
+    is_running = true;
+    DoSendData(uri, args);
+}
+
+
+
+void
+Kernel::DoCommand(std::string uri, std::string args)
+{
+    /*
+    float x, y;
+    char command[255];
+    char value[1024]; // FIXME: no range chacks
+    int c = sscanf(uri.c_str(), "/command/%[^/]/%f/%f/%[^/]", command, &x, &y, value);
+    if(c == 4)
+        SendCommand(command, x, y, value);
+
+        */
+
+    DoSendData(uri, args);
+}
+
+
+
+void
+Kernel::DoControl(std::string uri, std::string args)
+{
+    //printf(">>> %s %s\n", uri.c_str(), args.c_str());
+    char module_name[255];
+    char parameter[255];
+    int x, y;
+    float value;
+    int c = sscanf(uri.c_str(), "/control/%[^/]/%d/%d/%f", parameter, &x, &y, &value);
+    if(c == 4)
+        // SetParameter(parameter, x, y, value); // TODO: check if groups are handled correctly *********************
+    DoSendData(uri, args);
+}
+
+
+
+void
+Kernel::DoUpdate(std::string uri, std::string args)
+{
+    if(args.empty() || first_request) // not a data request - send view data
+    {
+        first_request = false;
+        DoSendNetwork(uri, args);
+    }
+    else if(ui_state == ui_state_play && master_id == get_client_id(args))
+    {
+        Pause();
+        Tick();
+        DoSendData(uri, args);
+    }
+    else 
+        DoSendData(uri, args);
+}
+
+
+
+void
+Kernel::DoGetLog(std::string uri, std::string args)
+{
+    /*
+    if (logfile)
+        socket->SendFile("logfile", webui_dir);
+    else
+        socket->Send("ERROR - No logfile found\n");
+    */
+}
+
+
+
+
+void
+Kernel::DoSendClasses(std::string uri, std::string args)
+{
+    Dictionary header;
+    header.Set("Content-Type", "text/json");
+    header.Set("Cache-Control", "no-cache");
+    header.Set("Cache-Control", "no-store");
+    header.Set("Pragma", "no-cache");
+    socket->SendHTTPHeader(&header);
+    socket->Send("{\"classes\":[\n\t\"");
+    std::string s = "";
+    for(auto & c: classes)
+    {
+        socket->Send(s.c_str());
+        socket->Send(c.first.c_str());
+        s = "\",\n\t\"";
+    }
+    socket->Send("\"\n]\n}\n");
+}
+
+
+
+void
+Kernel::DoSendError()
+{
+    Dictionary header;
+    header.Set("Content-Type", "text/plain");
+    socket->SendHTTPHeader(&header);
+    socket->Send("ERROR\n");
+}
+
+
+
+ void
+ Kernel::HandleHTTPRequest()
+ {
+    std::string uri = socket->header.Get("URI");
+
+    printf(">>>%s\n", uri.c_str()); // FIXME: use flag again
+    if(uri.empty())
+    {
+        // Notify(msg_warning, "No URI");
+        return;
+    }
+
+    std::string args = cut(uri, "?");
+
+
+    // SELECT METHOD
+
+    if(uri=="/stop")
+        DoStop(uri,  ""); // FIXME: Check empty string
+
+    if(uri=="/update")
+        DoUpdate(uri,  "");
+
+    else
+        DoSendFile(uri);
+
+    //if(uri == "/update")
+    //    DoUpdate(uri, args);
+    // else
+    //    DoSendFile(uri);
+ }
+
+
+
+void
+Kernel::HandleHTTPThread()
+{
+    while(!Terminate())
+    {
+        if (socket != nullptr && socket->GetRequest(true))
+        {
+            if (equal_strings(socket->header.Get("Method"), "GET"))
+            {
+                while(tick_is_running)
+                    {}
+                handling_request = true;
+                HandleHTTPRequest();
+                handling_request = false;
+            }
+            socket->Close();
+        }
+    }
+}
+
+
+
+void *
+Kernel::StartHTTPThread(Kernel * k)
+{
+    k->HandleHTTPThread();
+    return nullptr;
+}
+
+

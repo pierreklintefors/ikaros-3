@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+
 // Basic string functions
 
 char *	create_string(const char * c); // copy string c
