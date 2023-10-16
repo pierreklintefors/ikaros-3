@@ -1,7 +1,7 @@
 # CMake script for the ikaros project. www.ikaros-project.org
 
 # Set cmake version
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5.0)
 
 # To use elseif
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
@@ -99,7 +99,7 @@ include_directories(Source/Modules/)
 
 # Add sub directory
 add_subdirectory(Source)
-add_subdirectory(Projects)
+#add_subdirectory(Projects)
 
 # Crete a binary with source files
 add_executable(ikaros ${SOURCE})
