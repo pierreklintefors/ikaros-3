@@ -341,10 +341,8 @@ class Component
 {
 public:
     Component *     parent_;
-    dictionary      info_;
+    dictionary      info_;      // FIXME: Make shared
     std::string     name_;
-
-
 
     Component();
 
@@ -534,7 +532,6 @@ typedef std::function<Module *()> ModuleCreator;
 
 class Group : public Component
 {
-    
 };
 
 
@@ -908,15 +905,19 @@ public:
         if(components.count(name)> 0)
             throw exception("Module or group with this name already exists.");
 
+
         current_component_info = info;
         current_component_info["name"] = name;
+        current_component_info["is_group"] = "true";
         components[name] = new Group(); // Implicit argument passing as for components
     }
+
 
     void AddModule(std::string name, dictionary info=dictionary())
     {
         if(components.count(name)> 0)
             throw exception("Module or group with this name already exists.");
+                info["is_group"] = "false"; // FIXME: Allow boolean Value
         std::string classname = info["attributes"]["class"];
         current_component_info = dictionary(classes[classname].path, true);
         current_component_info["name"] = name;
@@ -947,7 +948,7 @@ public:
         std::string name = validate_identifier((*xml)["name"]);
         if(!path.empty())
             name = path+"."+name;
-        AddGroup(name, dictionary(xml, true));
+        AddGroup(name, dictionary(xml, true)); // FIME: Should only build dictionary once for whole ikg-file
 
         for (XMLElement * xml_node = xml->GetContentElement(); xml_node != nullptr; xml_node = xml_node->GetNextElement())
         {
@@ -1012,7 +1013,8 @@ public:
 
                     // Set basic parameters from loaded file
 
-                      dictionary d = components.begin()->second->info_["attributes"];
+                      dictionary d = components.begin()->second->info_["attributes"]; // Get top group
+
 
                     start = is_true(d["start"]);
                     stop_after = d["stop"];
