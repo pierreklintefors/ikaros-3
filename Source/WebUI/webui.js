@@ -273,6 +273,7 @@ nav = {
         if(group.views)
         {
             s +=  "<ul>"
+            
             for(i in group.views)
             {
                 if(!group.views[i].name)
@@ -281,12 +282,25 @@ nav = {
             }
             s += "</ul>";
         }
+
+        if(group.modules)
+        {
+            s +=  "<ul>"
+            for(i in group.modules)
+            {
+                if(!group.modules[i].name)
+                    group.modules[i].name = "Module #"+i;
+                s += "<li data-name='"+name+"/"+group.attributes.name+"#"+group.modules[i].attributes.name+"'>-&nbsp" + "<span  onclick='return nav.navClick(event)'>"+ group.modules[i].attributes.name + "</span></li>";
+            }
+
+            s += "</ul>";
+        }        
         if(group.groups)
         {
             s +=  "<ul>"
             for(i in group.groups)
                 s += nav.buildList(group.groups[i], name+"/"+group.attributes.name);
-            s += "</ul>";
+     
         }
         s += "</li>";
         return s;
@@ -505,12 +519,12 @@ module_inspector = {
                 {
                     let row = module_inspector.table.insertRow(-1);
                     let value = m.parameters.attributes[p];
-                    module_inspector.addRow(p.name, m.parameters.attributes[p.name] ? m.parameters.attributes[p.name].toString() : p["default"]);
+                    module_inspector.addRow(p.name, m.parameters.attributes[p.name] ? m.parameters.attributes[p.name].toString() : p["default"]+" default");
                 }
 
             module_inspector.addHeader("SUBGROUPS");
             module_inspector.addRow("modules", m.parameters.groups.length);
-            module_inspector.addRow("connections", m.parameters.connections.length);
+            module_inspector.addRow("connections", m.parameters.connections ? m.parameters.connections.length : "0");
 
             module_inspector.addHeader("APPEARANCE");
             module_inspector.addRow("x", m.parameters.attributes._x);
@@ -526,8 +540,9 @@ module_inspector = {
             module_inspector.addRow("name", m.parameters.attributes.name);
             module_inspector.addRow("class", m.parameters.attributes.class);
 
+            if(m.parameters.parameters)
             for(let p of m.parameters.parameters)
-                module_inspector.addRow(p.name, m.parameters.attributes[p.name] ? m.parameters.attributes[p.name].toString() : p["default"]);
+                module_inspector.addRow(p.attributes.name, p.attributes["default"]+" (default)"); // FIXME: Show actual parameter values later
 
             module_inspector.addRow("description", m.parameters.attributes.description);
 
@@ -1075,30 +1090,30 @@ interaction = {
                 context.fillStyle = "#999";
                 context.lineWidth = 3;
                 context.beginPath();
-                let p1 = interaction.io_pos[c.source];
+                let p1 = interaction.io_pos[c.attributes.source];
                 if(!p1)
                 {
-                    let pp = interaction.module_pos[c.source.split('.')[0]];
+                    let pp = interaction.module_pos[c.attributes.source.split('.')[0]];
                     p1 = {'x':pp.x, 'y':pp.y};
                     p1.x += 110;
                     p1.y += 26+13/2;
                 }
                 
-                let p2 = interaction.io_pos[c.target];
+                let p2 = interaction.io_pos[c.attributes.target];
                 
                 if(p1.x < p2.x)
                     draw_chord(context, p1.x, p1.y, p2.x, p2.y);
                 else
                 {
-                    let mp0 = interaction.module_pos[c.source.split('.')[0]];
-                    let mp1 = interaction.module_pos[c.target.split('.')[0]];
+                    let mp0 = interaction.module_pos[c.attributes.source.split('.')[0]];
+                    let mp1 = interaction.module_pos[c.attributes.target.split('.')[0]];
                     let top = Math.min(mp0.y, mp1.y);
                     draw_back_connection(context, p1.x, p1.y, p2.x, p2.y, top-20); // heuristics: over/under/inbetween
                 }
             }
             catch(err)
             {
-                console.log("draw connection "+c.sourcemodule+"->"+c.targetmodule+" failed.");
+                console.log("draw connection "+c.attributes.sourcemodule+"->"+c.attributes.targetmodule+" failed.");
             }
         }
     },
@@ -1230,16 +1245,18 @@ interaction = {
         let yinc = 17;
         let outinc = 116;
         
+        if(module.inputs)
         for(let a of module.inputs)
         {
-            interaction.io_pos[module.attributes.name+"."+a.name] = {'x': x, 'y': y};
+            interaction.io_pos[module.attributes.name+"."+a.attributes.name] = {'x': x, 'y': y};
             y += yinc;
         }
 
         x += outinc;
+        if(module.outputs)
         for(let a of module.outputs)
         {
-            interaction.io_pos[module.attributes.name+"."+a.name] = {'x': x, 'y': y};
+            interaction.io_pos[module.attributes.name+"."+a.attributes.name] = {'x': x, 'y': y};
             y += yinc;
         }
     },
@@ -1259,7 +1276,11 @@ interaction = {
         interaction.main_increment_y = 50;
 
         interaction.module_pos = {}
-        let v = interaction.currentView.groups;
+        let v = interaction.currentView.groups || [];
+        let m = interaction.currentView.modules || [];
+
+        v = [...v,...m]
+
         if(v)
         {
             let scale = 2*Math.PI/v.length;
@@ -1276,19 +1297,19 @@ interaction = {
 
                 // Add inputs & outputs
                 
-                for(let a of v[i].inputs)
+                for(let a of v[i].inputs || [])
                 {
                     let io = document.createElement("div");
                     io.setAttribute("class","input");
-                    io.innerHTML = "<div class='iconnector'></div>"+a.name;
+                    io.innerHTML = "<div class='iconnector'></div>"+a.attributes.name;
                     newObject.appendChild(io);
                 }
                 
-                for(let a of v[i].outputs)
+                for(let a of v[i].outputs || [])
                 {
                     let io = document.createElement("div");
                     io.setAttribute("class","output");
-                    io.innerHTML = "<div class='oconnector'></div>"+a.name;
+                    io.innerHTML = "<div class='oconnector'></div>"+a.attributes.name;
                     newObject.appendChild(io);
                 }
                 
@@ -1355,7 +1376,7 @@ interaction = {
         else
         {
             let vw = controller.views[viewName];
-            if(vw && vw.views[0])
+            if(vw && vw.views && vw.views[0])
             {
                 viewPath += "#"+vw.views[0].name;
                 h+= "<div class='bread' onclick='controller.selectView(\""+viewPath+"\")'>"+vw.views[0].name+"</div>";

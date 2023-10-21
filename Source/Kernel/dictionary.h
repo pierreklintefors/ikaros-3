@@ -35,6 +35,11 @@ struct null
         os << "null";
         return os;
     }
+
+    std::string json()
+    {
+        return "null";
+    }
 };
 
 struct dictionary
@@ -52,11 +57,12 @@ struct dictionary
     }
 
     operator std::string ();
+    std::string json();
 
     std::map<std::string, value>::iterator begin()  { return dict_.begin(); };
     std::map<std::string, value>::iterator end()   { return dict_.end(); };
 
-        void print();
+    void print();
 
 
     friend std::ostream& operator<<(std::ostream& os, dictionary v)
@@ -81,6 +87,7 @@ struct list
     list & push_back(const value & v) { list_.push_back(v); return *this; };
 
     operator std::string ();
+    std::string json();
 
     value & operator[] (int i)
     {
@@ -197,6 +204,21 @@ struct value
             return "*";
     }
 
+
+
+    std::string json()
+    {
+        if(std::holds_alternative<std::string>(value_))
+            return "\""+std::get<std::string>(value_)+"\"";
+        else if(std::holds_alternative<list>(value_))
+            return std::get<list>(value_).json();
+        else if(std::holds_alternative<dictionary>(value_))
+            return std::get<dictionary>(value_).json();
+        else if(std::holds_alternative<null>(value_))
+            return "null";
+        else
+            return "*";
+    }
 
 
     operator double ()

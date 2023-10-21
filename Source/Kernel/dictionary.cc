@@ -31,6 +31,36 @@ dictionary::operator std::string ()
     return s;
 }
 
+std::string 
+list::json()
+{
+    std::string s = "[";
+    std::string sep = "";
+    for(auto & v : list_)
+    {
+        s += sep + v.json();
+        sep = ", ";
+    }
+    s += "]";
+    return s;
+}
+
+std::string  
+dictionary::json()
+{
+    std::string s = "{";
+    std::string sep = "";
+    for(auto & v : dict_)
+    {
+        s += sep + "\"" + v.first + "\": " + v.second.json();
+        sep = ", ";
+    }
+    s += "}";
+    return s;
+}
+
+
+
 void dictionary::print()
 {
     for(auto & v : dict_)

@@ -465,17 +465,64 @@ Kernel::Run()
 }
 }
 
-
 //
 //  Serialization
 //
 
-
-
     std::string 
     Component::JSONString()
     {
-        return "{}";
+        // return info_.json(); // FIXME: Will be used when shared dictionaries are implemented
+
+        // Collect group strings
+
+        std::string gsep;
+        std::string gs;
+        if(info_["groups"].size() > 0)
+            for(auto & g :  info_["groups"])
+            {
+                std::string cn =  std::string(info_["name"])+"."+std::string(g["attributes"]["name"]);
+                Kernel &k = kernel();
+                gs += gsep + k.components.at(cn)->JSONString();
+                gsep =", ";
+            }
+
+        // Collect module strings
+
+        std::string msep;
+        std::string ms;
+        if(info_["modules"].size() > 0)
+            for(auto & m :  info_["modules"])
+            {
+                std::string mn =  std::string(info_["name"])+"."+std::string(m["attributes"]["name"]);
+                Kernel &k = kernel();
+                ms += msep + k.components.at(mn)->JSONString();
+                msep =", ";
+            }
+
+
+        std::string s;
+        s += "{";
+
+        s += "\"name\":\""+name_+"\"";
+
+        if(std::string(info_["is_group"])=="true")
+                s += ", \"is_group\": true";
+        else
+                s += ", \"is_group\": false";
+
+        s+= " ,\"attributes\": " + info_["attributes"].json();
+        s+= " , \"parameters\": " + info_["parameters"].json();
+        s+= " , \"inputs\": " + info_["inputs"].json();
+        s+= " , \"outputs\": " + info_["outputs"].json();
+        s+= " , \"connections\": " + info_["connections"].json();
+        s+= " , \"views\": " + info_["views"].json();
+        s+= " , \"groups\": ["+gs+"]";
+        s+= " , \"modules\": ["+ms+"]";
+
+        s+= "}";
+
+        return s;
     }
 
 
@@ -484,23 +531,8 @@ Kernel::Run()
     {
         if(components.empty())
             return "{}";
-
-        std::string s;
-
-            s += "{";
-
-        s += "\"is_group\": true,\n";
-
-        s += "\"attributes\": {\"name\": \"TOP\"},\n";
-        s += "\"parameters\": [],\n";
-        s += "\"inputs\": [],\n";
-        s += "\"outputs\": [],\n";
-        s += "\"views\": [],\n";
-        s += "\"groups\": []\n";
-
-        s += "}";
-
-        return s;
+        else
+            return components.begin()->second->JSONString();
     }
 
 
