@@ -18,9 +18,13 @@ namespace ikaros
     bool starts_with(const std::string & s, const std::string & start); // waiting for C++20
     bool ends_with(const std::string & s, const std::string & end); // waiting for C++20
     const std::string head(std::string s, char token); // without token
+
     const std::string tail(std::string s, char token, bool include_token=false);
     const std::string rhead(std::string s, char token); // like head but split from end
     const std::string rtail(std::string s, char token); // like tail but split from end
+
+    std::string cut_head(std::string & s, const std::string & delimiter); // return string before delimiter and remove it from s
+
     bool contains(std::string & s, std::string n);
     bool is_integer(std::string & s);
     bool is_true(const std::string & s); // True if equal to 1 or start with T, t, Y, or y.

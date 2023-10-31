@@ -427,6 +427,30 @@ namespace ikaros
         }
 
 
+
+        std::string json() // Generate JSON-representation of matrix // FIXME: Add resolution for floats
+        {
+            if(rank() == 0)
+            {
+                if(info_->size_ == 0)
+                    return "[]";  
+                else // if(info_->size_ == 1)
+                    return std::to_string(data_->at(info_->offset_));
+            }
+
+            std::string sep;
+            std::string  s = "[";
+            for(auto x : *this)
+            {
+                s += sep + x.json();
+                sep = ", ";
+            }
+            s += "]";
+            return s;
+        }
+
+
+
         void 
         print(std::string n="") // print matrix; n overrides name if set (useful during debugging)
         {

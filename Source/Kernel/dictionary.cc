@@ -72,6 +72,9 @@ void dictionary::print()
 
 dictionary::dictionary(XMLElement * xml_node, bool merge)
 {
+    if(std::string(xml_node->name) == "view")
+        merge = false;
+
     dict_["tag"] = std::string(xml_node->name);
     for(XMLAttribute * a = xml_node->attributes; a!=nullptr; a=(XMLAttribute *)(a->next))
         dict_["attributes"][std::string(a->name)] = a->value;

@@ -838,6 +838,7 @@ interaction = {
     main: undefined,
     currentView: undefined,
     currentViewName: undefined,
+    currentViewRoot: undefined,
     currentInspector: undefined,
 
     io_pos: {},
@@ -1404,12 +1405,13 @@ interaction = {
         
         // Build widget view
         
-        let v = interaction.currentView.objects; // FIXME: objects should be called widgets
+        //let v = interaction.currentView.objects; // FIXME: objects should be called widgets
+        let v = interaction.currentView.elements; // FIXME: elements should be called widgets
         if(v)
         {
             interaction.view_mode = true;
             for(let i=0; i<v.length; i++)
-                interaction.addWidget(v[i]);
+                interaction.addWidget(v[i].attributes);
             if(interaction.edit_mode)
                 displayAside('view_inspector');
             else
@@ -1625,6 +1627,7 @@ controller = {
     
     reconnect: function ()
     {
+
         controller.get("update", controller.update);
         let s = document.querySelector("#state");
         if(s.innerText == "waiting")
@@ -1644,7 +1647,7 @@ controller = {
         controller.send_stamp = Date.now();
         var last_request = url;
         xhr = new XMLHttpRequest();
-        //console.log("controller.get: "+url);
+        console.log("controller.get: "+url);
         xhr.open("GET", url, true);
 
         xhr.onload = function(evt)
@@ -1896,7 +1899,7 @@ controller = {
             catch(err)
             {}
 
-        let group_path = interaction.currentViewName.split('#')[0].split('/').slice(2).join('.');
+        let group_path = interaction.currentViewName.split('#')[0].split('/').toSpliced(0,1).join('.');
         let data_string = group_path+"#"; // should be added to names to support multiple clients
         let sep = "";
         for(s of data_set)

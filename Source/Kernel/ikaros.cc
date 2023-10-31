@@ -516,9 +516,11 @@ Kernel::Run()
         s+= " , \"inputs\": " + info_["inputs"].json();
         s+= " , \"outputs\": " + info_["outputs"].json();
         s+= " , \"connections\": " + info_["connections"].json();
-        s+= " , \"views\": " + info_["views"].json();
+
         s+= " , \"groups\": ["+gs+"]";
         s+= " , \"modules\": ["+ms+"]";
+
+           s+= " , \"views\": " + info_["views"].json();
 
         s+= "}";
 
@@ -575,8 +577,8 @@ Kernel::DoSendData(std::string uri, std::string args)
     while(tick_is_running)
         {}
 
-std::string data = cut(args, "data=");
-std::string root = head(data, '#');
+std::string root = cut(args, "data=");
+std::string data = cut(root, "#");
 
     Dictionary header;
     header.Set("Session-Id", std::to_string(session_id).c_str()); // FIXME: GetValue("session_id")
@@ -610,7 +612,7 @@ std::string root = head(data, '#');
 
     socket->Send("\t\"timestamp\": %ld,\n", 0); // Timer::GetRealTime() // FIXME: -----------
     socket->Send("\t\"total_time\": %.2f,\n", total_time);
-    socket->Send("\t\"ticks_per_s\": %.2f,\n", float(tick)/total_time);
+    socket->Send("\t\"ticks_per_s\": %.2f,\n", 1); // FIXME: float(tick)/total_time
     socket->Send("\t\"timebase\": %d,\n", tick_duration);
     socket->Send("\t\"timebase_actual\": %.0f,\n", tick > 0 ? 1000*float(total_time)/float(tick) : 0);
     socket->Send("\t\"lag\": %.0f,\n", lag);
@@ -621,39 +623,50 @@ std::string root = head(data, '#');
     socket->Send(",\n\t\"data\":\n\t{\n");
     std::string sep = "";
 
-/*
     while(!data.empty())
     {
-        std::string source = head(data, "#");
+        std::string source = cut_head(data, "#");
         std::string  format = rcut(source, ":");
 
-        auto root_group = main_group->GetGroup(root);
+        //auto root_group = main_group->GetGroup(root);
         
         std::string src = source;
-        if(!root.empty())    // FIXME: Empty or Not empty?
-            src = root+"."+src;
+        //if(!root.empty())    // FIXME: Empty or Not empty?
+        //    src = root+"."+src;
         
-        if(root_group && !source.empty())
+        if(!source.empty())
         {
             // Use data from module function if available
+           /*
             auto module_source = rsplit(source, ".", 1);
             if(GroupElement * g = root_group->GetGroup(module_source.at(0)))
             {
                 std::string json_data;
                 if(g->module)
                     json_data = g->module->GetJSONData(module_source.at(1)); //  : ""
+            */
 
-                if(!json_data.empty())
-                {
-                    socket->Send(sep);
-                    std::string s = "\t\t\"" + source + "\": "+json_data;
-                    socket->Send(s);
-                    sep = ",\n";
-                }
-            }
-
+    
+          
             if(format == "") // as default, send a matrix
             {
+                if(outputs.count(root+"."+source))
+                {
+                    std::string json_data = outputs[root+"."+source].json();
+                    if(!json_data.empty())
+                    {
+                        socket->Send(sep);
+                        std::string s = "\t\t\"" + source + "\": "+json_data;
+                        socket->Send(s);
+                        sep = ",\n";
+                    }
+                }
+                else
+                {
+                    // FIXME: output not found error
+                }
+            }
+                  /*
                 Module_IO * io = root_group->GetSource(source); // FIXME: Also look for inputs here
                 if(io)
                 {
@@ -661,6 +674,8 @@ std::string root = head(data, '#');
                     SendJSONMatrixData(socket, source, *io->matrix[0], io->sizex, io->sizey);
                     sep = ",\n";
                 }
+            */
+            /*
                 else if(bindings.count(src))
                 {
                     socket->Send(sep);
@@ -745,9 +760,12 @@ std::string root = head(data, '#');
                     sep = ",\n";
                 }
             }
+
+            */
         }
+
     }
-*/
+
 
     socket->Send("\n\t}");
 
@@ -992,7 +1010,7 @@ Kernel::DoSendError()
         DoStop(uri,  ""); // FIXME: Check empty string
 
     if(uri=="/update")
-        DoUpdate(uri,  "");
+        DoUpdate(uri,  args);
 
     else
         DoSendFile(uri);

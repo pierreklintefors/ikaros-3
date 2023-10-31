@@ -166,6 +166,27 @@ const std::string head(std::string s, char token) // without token
         return s.substr(0, p);
 }
 
+
+std::string
+cut_head(std::string & s, const std::string & delimiter)
+{
+    int end = s.find(delimiter);
+    if(end == -1)
+    {
+        std::string h = s;
+        s = "";
+        return h;
+    }
+    else
+    {
+        std::string h = s.substr(0, end);
+        s.erase(0, end+delimiter.length());
+        return h;
+    }
+}
+
+
+
 const std::string tail(std::string s, char token, bool include_token) // including token
 {
     int p = s.find(token);
