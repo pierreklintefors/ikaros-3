@@ -30,7 +30,7 @@ const std::vector<std::string> split_string(const std::string &c, const char &d)
 
 std::string                     join(const std::string & separator, const std::vector<std::string> & v, bool reverse =false);    // Pyhon-like join
 
-bool starts_with(const std::string &s, const std::string & start);
+//bool starts_with(const std::string &s, const std::string & start);
 bool ends_with(const std::string &s, const std::string &end);
 
 std::string head(std::string & s, const std::string & delimiter); // return string before delimiter and remove it from s

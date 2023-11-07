@@ -27,11 +27,11 @@
 
 namespace ikaros {
 
-const int ui_state_stop = 0;
-const int ui_state_pause = 1;
-const int ui_state_step = 2;
-const int ui_state_play = 3;
-const int ui_state_realtime = 4;
+const int run_mode_stop = 0;
+const int run_mode_pause = 1;
+const int run_mode_step = 2;    // Not used
+const int run_mode_play = 3;
+const int run_mode_realtime = 4;
 
 
 
@@ -622,7 +622,7 @@ public:
     std::map<std::string, matrix>           inputs;         // Use IO-structure later: or only matrix?
     std::map<std::string, matrix>           outputs;        // Use IO-structure later: Output
     std::map<std::string, int>              max_delays;     // Maximum delay needed for each output
-    std::map<std::string, CircularBuffer>   buffers;        // Circular buffers for delayed outputs
+    std::map<std::string, CircularBuffer>   circular_buffers;        // Circular circular_buffers for delayed outputs
     std::map<std::string, parameter>        parameters;
 
     bool                first_request;
@@ -631,7 +631,7 @@ public:
     std::atomic<bool>   tick_is_running;
     std::atomic<bool>   sending_ui_data;
     std::atomic<bool>   handling_request;
-    int                 ui_state;
+    int                 run_mode;
 
     dictionary                          current_component_info; // From class or group
     dictionary                          current_module_info;
@@ -650,7 +650,7 @@ public:
 
     // Timing parameters and functions
 
-    bool                real_time;
+    //bool              real_time;
     double              tick_duration;  // Desired actual or simulated duration for each tick
 
     tick_count          tick;
@@ -666,9 +666,9 @@ public:
 
     tick_count GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
-    double GetTime() { return real_time ? GetRealTime() : static_cast<double>(tick)*tick_duration; }   // Time since start (in real time or simulated (tick) time dending on mode)
-    double GetRealTime() { return real_time ? timer.GetTime() : static_cast<double>(tick)*tick_duration; } 
-    double GetLag() { return real_time ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
+    double GetTime() { return (run_mode == run_mode_realtime) ? GetRealTime() : static_cast<double>(tick)*tick_duration; }   // Time since start (in real time or simulated (tick) time dending on mode)
+    double GetRealTime() { return (run_mode == run_mode_realtime) ? timer.GetTime() : static_cast<double>(tick)*tick_duration; } 
+    double GetLag() { return (run_mode == run_mode_realtime) ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
 
     std::vector<std::string>            log;
 
@@ -772,7 +772,7 @@ public:
                 max_delays[c.source] = 0;
             if(c.delay_range_.extent()[0] > max_delays[c.source])
             {
-                int xxx = c.delay_range_.extent()[0];
+                //int xxx = c.delay_range_.extent()[0];
                 max_delays[c.source] = c.delay_range_.extent()[0];
             }
         }
@@ -791,19 +791,19 @@ public:
             if(it.second <= 1)
                 continue;
             //std::cout << "\t" << it.first << std::endl;
-            buffers.emplace(it.first, CircularBuffer(outputs[it.first], it.second)); // FIXME: Change to initialization list in C++20
+            circular_buffers.emplace(it.first, CircularBuffer(outputs[it.first], it.second)); // FIXME: Change to initialization list in C++20
         }
 
         std::cout << "\nBuffers:" << std::endl;
-        for(auto it : buffers)
+        for(auto it : circular_buffers)
             std::cout << "\t" << it.first << "  " << it.second.buffer_.size() <<  std::endl;
     }
 
 
     void RotateBuffers()
     {
-        //std::cout << "Rotate Buffers"   << std::endl;
-        for(auto & it : buffers)
+        //std::cout << "Rotate circular_buffers"   << std::endl;
+        for(auto & it : circular_buffers)
             it.second.rotate(outputs[it.first]);
     }
 
@@ -1019,7 +1019,8 @@ public:
                     start = is_true(d["start"]);
                     stop_after = d["stop"];
                     tick_duration = d["tick_duration"];
-                    real_time = is_true(d["real_time"]);
+                    if(is_true(d["real_time"]))
+                        run_mode = run_mode_realtime;
                     session_id = std::time(nullptr);
 
                 }
@@ -1055,7 +1056,7 @@ public:
                 int target_offset = c.target_range.a_[0];
                 for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
                 {   
-                    matrix s = buffers[c.source].get(i);
+                    matrix s = circular_buffers[c.source].get(i);
 
                     for(auto ix=c.source_range; ix.more(); ix++)
                     {
@@ -1069,7 +1070,7 @@ public:
             {
                 for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
                 {   
-                    matrix s = buffers[c.source].get(i);
+                    matrix s = circular_buffers[c.source].get(i);
                     int target_ix = i - c.delay_range_.a_[0]; // trim!
                     range tr = c.target_range.tail();
                     matrix t = inputs[c.target][target_ix];

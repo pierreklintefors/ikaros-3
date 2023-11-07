@@ -41,6 +41,7 @@ std::string  validate_identifier(std::string s)
                 m = k.inputs[name];
             else if(k.outputs.count(name))
                 m = k.outputs[name];
+
             else if(k.parameters.count(name))
                 m = (matrix &)(k.parameters[name]);
             else if(k.parameters.count(name))
@@ -230,7 +231,7 @@ void Component::SetSourceRanges(const std::string & name, std::vector<Connection
     {
         if(c->source_range.empty())
             c->source_range = kernel().outputs[c->source].get_range();
-        else if(c->source_range.rank() != kernel().outputs[c->source].rank())
+         else if(c->source_range.rank() != kernel().outputs[c->source].rank())
             throw exception("Explicitly set source range dimensionality does not match source.");
     }
 
@@ -294,7 +295,7 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
                     }
             }
 
-            if(!c->delay_range_.empty())
+            if(c->delay_range_.size() > 1) // Add extra dimension to input if connection is a delay range with more than one delay
                  c->target_range.push_front(0, c->delay_range_.trim().b_[0]);
         }
 
@@ -306,7 +307,7 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
     //if(max_delay > 1)
     //    r.push_front(0, max_delay);
 
-    kernel().inputs[name].realloc(r.extent());  // STEP 2: Set input size
+     kernel().inputs[name].realloc(r.extent());  // STEP 2: Set input size
 }
 
 
@@ -315,7 +316,7 @@ void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Conn
         Kernel& k = kernel();
         std::string input_name = name_ + "." + std::string(d["attributes"]["name"]);
 
-// FIXME: Use input type heuristics here ************
+        // FIXME: Use input type heuristics here ************
 
         std::string add_labels = d["attributes"]["add_labels"];
 
@@ -412,20 +413,19 @@ Kernel::Run()
 
     while (!Terminate())
     {
-        std::cout << GetTick() << std::endl;
+        //std::cout << GetTick() << std::endl;
 
         if (!is_running)
         {
-            std::cout << "Idle" << std::endl;
+            std::cout << "Idle: " << run_mode << std::endl;
             Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
         }
-    /*
+  
         while(sending_ui_data)
             {}
         while(handling_request)
             {}
 
-    */
         if (is_running)
         {
             tick_is_running = true; // Flag that state changes are not allowed
@@ -434,13 +434,13 @@ Kernel::Run()
             
             // Calculate idle_time
             
-            if(real_time)
+            if(run_mode == run_mode_realtime)
             {
                 idle_time = (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
                 time_usage = 1 - idle_time;
             }
 
-            if (real_time)
+            if (run_mode == run_mode_realtime)
             {
                 lag = timer.WaitUntil(static_cast<double>(tick)*tick_duration);
 
@@ -453,7 +453,7 @@ Kernel::Run()
                 //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
             }
 /*            
-            else if (ui_state == ui_state_realtime)
+            else if (run_mode == run_mode_realtime)
             {
                 while(sending_ui_data)
                     {}
@@ -513,7 +513,7 @@ Kernel::Run()
 
         s+= " ,\"attributes\": " + info_["attributes"].json();
         s+= " , \"parameters\": " + info_["parameters"].json();
-        s+= " , \"inputs\": " + info_["inputs"].json();
+        s+= " , \"inputs\": " + info_["inputs"].json();             // FIXME: buffersm find inputs and outputs but get data from buffers ***********
         s+= " , \"outputs\": " + info_["outputs"].json();
         s+= " , \"connections\": " + info_["connections"].json();
 
@@ -593,7 +593,7 @@ std::string data = cut(root, "#");
     
 
     socket->Send("{\n");
-    socket->Send("\t\"state\": %d,\n", ui_state);
+    socket->Send("\t\"state\": %d,\n", run_mode);
     
     if(stop_after > 0)
     {
@@ -787,11 +787,11 @@ std::string data = cut(root, "#");
 void
 Kernel::DoStop(std::string uri, std::string args)
 {
-        // Pause();
-        // ui_state = ui_state_stop;
+    Pause();
+    run_mode = run_mode_stop;
 
-        // Notify(msg_terminate, "Sent by WebUI.\n");
-        DoSendData(uri, args);
+    // Notify(msg_terminate, "Sent by WebUI.\n");
+    DoSendData(uri, args);
 }
 
 
@@ -843,8 +843,9 @@ Kernel::DoSendNetwork(std::string uri, std::string args)
 void
 Kernel::DoPause(std::string uri, std::string args)
 {
+    std::cout << "DoPause" << std::endl;
     Pause();
-    ui_state = ui_state_pause;
+    run_mode = run_mode_pause;
     master_id = get_client_id(args);
     DoSendData(uri, args);
 }
@@ -854,8 +855,9 @@ Kernel::DoPause(std::string uri, std::string args)
 void
 Kernel::DoStep(std::string uri, std::string args)
 {
+    std::cout << "DoPStep" << std::endl;
     Pause();
-    ui_state = ui_state_pause;
+    run_mode = run_mode_pause;
     master_id = get_client_id(args);
     Tick();
     DoSendData(uri, args);
@@ -867,25 +869,24 @@ Kernel::DoStep(std::string uri, std::string args)
 void
 Kernel::DoPlay(std::string uri, std::string args)
 {
+    std::cout << "DoPlay" << std::endl;
     Pause();
-    ui_state = ui_state_play;
+    run_mode = run_mode_play;
     master_id = get_client_id(args);
     Tick();
     DoSendData(uri, args);
 }
 
 
-
-
 void
 Kernel::DoRealtime(std::string uri, std::string args)
 {
-    ui_state = ui_state_realtime;
+    std::cout << "DoRealtime" << std::endl;
+    run_mode = run_mode_realtime;
     master_id = get_client_id(args);
     is_running = true;
     DoSendData(uri, args);
 }
-
 
 
 void
@@ -905,7 +906,6 @@ Kernel::DoCommand(std::string uri, std::string args)
 }
 
 
-
 void
 Kernel::DoControl(std::string uri, std::string args)
 {
@@ -921,7 +921,6 @@ Kernel::DoControl(std::string uri, std::string args)
 }
 
 
-
 void
 Kernel::DoUpdate(std::string uri, std::string args)
 {
@@ -930,7 +929,7 @@ Kernel::DoUpdate(std::string uri, std::string args)
         first_request = false;
         DoSendNetwork(uri, args);
     }
-    else if(ui_state == ui_state_play && master_id == get_client_id(args))
+    else if(run_mode == run_mode_play && master_id == get_client_id(args))
     {
         Pause();
         Tick();
@@ -939,7 +938,6 @@ Kernel::DoUpdate(std::string uri, std::string args)
     else 
         DoSendData(uri, args);
 }
-
 
 
 void
@@ -952,8 +950,6 @@ Kernel::DoGetLog(std::string uri, std::string args)
         socket->Send("ERROR - No logfile found\n");
     */
 }
-
-
 
 
 void
@@ -977,7 +973,6 @@ Kernel::DoSendClasses(std::string uri, std::string args)
 }
 
 
-
 void
 Kernel::DoSendError()
 {
@@ -988,13 +983,10 @@ Kernel::DoSendError()
 }
 
 
-
  void
  Kernel::HandleHTTPRequest()
  {
     std::string uri = socket->header.Get("URI");
-
-    printf(">>>%s\n", uri.c_str()); // FIXME: use flag again
     if(uri.empty())
     {
         // Notify(msg_warning, "No URI");
@@ -1006,19 +998,42 @@ Kernel::DoSendError()
 
     // SELECT METHOD
 
-    if(uri=="/stop")
-        DoStop(uri,  ""); // FIXME: Check empty string
+        if(uri == "/update")
+        DoUpdate(uri, args);
 
-    if(uri=="/update")
-        DoUpdate(uri,  args);
+        else if(uri == "/pause")
+            DoPause(uri, args);
 
-    else
-        DoSendFile(uri);
+        else if(uri == "/step")
+            DoStep(uri, args);
 
-    //if(uri == "/update")
-    //    DoUpdate(uri, args);
-    // else
-    //    DoSendFile(uri);
+
+        else if(uri == "/play")
+            DoPlay(uri, args);
+
+        else if(uri == "/realtime")
+            DoRealtime(uri, args);
+
+        else if(uri == "/stop")
+            DoStop(uri, args);
+
+        else if(uri == "/getlog")
+            DoGetLog(uri, args);
+        
+        else if(uri == "/classes") 
+            DoSendClasses(uri, args);
+
+        else if(uri == "/")
+            DoSendFile("index.html");
+
+        else if(starts_with(uri, "/command/"))
+            DoCommand(uri, args);
+            
+        else if(starts_with(uri, "/control/"))
+            DoControl(uri, args);
+
+        else 
+            DoSendFile(uri);
  }
 
 

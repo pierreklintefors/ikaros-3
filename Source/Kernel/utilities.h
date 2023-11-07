@@ -17,6 +17,7 @@ namespace ikaros
     std::string join(const std::string & separator, const std::vector<std::string> & v, bool reverse);
     bool starts_with(const std::string & s, const std::string & start); // waiting for C++20
     bool ends_with(const std::string & s, const std::string & end); // waiting for C++20
+    
     const std::string head(std::string s, char token); // without token
 
     const std::string tail(std::string s, char token, bool include_token=false);

@@ -282,12 +282,14 @@ join(const std::string & separator, const std::vector<std::string> & v, bool rev
 }
 
 
-
+/*
 bool
 starts_with(const std::string & s, const std::string & start) // waiting for C++20
 {
     return start.length() <= s.length() && equal(start.begin(), start.end(), s.begin()); // more efficient than find
 }
+*/
+
 
 bool ends_with(const std::string & s, const std::string & end) // waiting for C++20
 {

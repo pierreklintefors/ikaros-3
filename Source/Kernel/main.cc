@@ -2,52 +2,92 @@
 
 #include <string>
 
+
 #include "ikaros.h"
 
 using namespace ikaros;
 
+static bool terminate = false;
+static ServerSocket * socket = nullptr;
+
+
+
+void HTTPReply(std::string msg)
+{
+    Dictionary header;
+    header.Set("Content-Type", "text/text");
+    header.Set("Cache-Control", "no-cache");
+    header.Set("Cache-Control", "no-store");
+    header.Set("Pragma", "no-cache");
+    socket->SendHTTPHeader(&header);
+    socket->Send(msg);
+    socket->Send("\n\n");
+    socket->Close();
+}
+
+
+
+void
+HTTPThread()
+{
+    while(!terminate)
+    {
+        if (socket != nullptr && socket->GetRequest(true))
+        {
+            if (equal_strings(socket->header.Get("Method"), "GET"))
+            {
+              //  while(true) // tick_is_running
+              //      {}
+                //handling_request = true;
+
+                std::string uri = socket->header.Get("URI");
+                std::cout << uri << std::endl;
+
+                if(starts_with(uri, "/ikaros/"))
+                {
+                                    std::cout << "TOP LEVEL COMMAND: " << uri << std::endl;
+                                    HTTPReply("OK");
+                }
+                else
+                {
+                    // Send to kernel if any is running
+                }
+            }
+
+            //handling_request = false;
+        }
+        socket->Close();
+    }
+}
+
+
 int
 main(int argc, char *argv[])
 {
-
-/*
-    Timer   t;
-
-    double x = t.WaitUntil(1);
-    double a = t.GetTime();
-
-    Sleep(2.5);
-    double b = t.GetTime();
-
-    std::cout << "lag: " << x << std::endl;
-
-    std::cout << a << "\n" << b << std::endl;
-    std::cout << TimeString(a) << std::endl;
-    std::cout << TimeString(b) << std::endl;
-    std::cout << GetClockTimeString() << std::endl;
-    std::cout << GetTimeStamp() << std::endl;
-
-    for(int i=0; i<5; i++)
+    int port = 8000;
+    try
     {
-        std::cout << GetClockTimeString() << std::endl;
-        Sleep(1);
+        socket =  new ServerSocket(port);
+    }
+    catch (const SocketException& e)
+    {
+        throw fatal_error("Ikaros is unable to start a webserver on port "+std::to_string(port)+". Make sure no other ikaros process is running and try again.");
     }
 
-exit(0);
+    std::thread * httpThread = new std::thread(HTTPThread);
 
-*/
-
-
-
+    while(true)
+        {
+                    // std::cout << "*** loop" << std::endl;
+        }
     try
     { 
         Kernel & k = kernel();
 
         options o;
- 
+
         //o.add_option("l", "loglevel", "what to print to the log");
         //o.add_option("q", "quiet", "do not print log to terminal; equal to loglevel=0");
-    
         //o.add_option("c", "lagcutoff", "reset lag and restart timing if it exceed this value", "10s");
 
         o.add_option("d", "tick_duration", "duration of each tick");
@@ -60,9 +100,7 @@ exit(0);
 
         long port = o.get_long("webui_port");
 
-
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
-
 
     // Move the rest to ikaros kernel - load and restart
     
@@ -70,6 +108,8 @@ exit(0);
         k.InitSocket(port); // FIXME: Port cannot be set in IKG file; should it?
 
         k.LoadFiles(o.filenames, o);
+        k.ListInputs();
+
         k.Run();
         //k.ListInputs();
         //k.ListOutputs();
@@ -95,12 +135,4 @@ exit(0);
     }
     return 0;
 }
-
-
-/*
-
-    main-loop
-    handle-command / command line parameters
-    
-*/
 

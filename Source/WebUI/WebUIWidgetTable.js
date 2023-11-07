@@ -135,8 +135,27 @@ class WebUIWidgetTable extends WebUIWidget {
         else {
             if (this.data = this.getSource('source')) {
 
+                if(!Array.isArray(this.data))
+                {
+                    this.tData[0][0].innerHTML = "Not a 2D matrix";
+                    return;
+                }
+
+                if(!Array.isArray(this.data[0]))
+                {
+                    this.tData[0][0].innerHTML = "Not a 2D matrix";
+                    return;
+                }
+
+                if(typeof this.data[0][0] != 'number')
+                {
+                    this.tData[0][0].innerHTML = "Not a 2D matrix";
+                    return;
+                }
+
                 let size_y = this.data.length;
                 let size_x = this.data[0].length;
+
 
                 for (let j = 0; j < size_y; j++)
                     for (let i = 0; i < size_x; i++)

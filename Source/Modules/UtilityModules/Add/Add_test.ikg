@@ -3,13 +3,13 @@
 	<module class = "Constant" name = "Constant2" data="8, 9; 10, 11" />
 	<module class = "Add" name = "Add" />
 
-	<module class = "Print" name = "Print" />
+	<_module class = "Print" name = "Print" />
 	<module class = "Logger" name = "Logger" />	
 
 	<connection  source = "Constant1.OUTPUT"  	target = "Add.INPUT1"  />
 	<connection  source = "Constant2.OUTPUT"  	target = "Add.INPUT2" />		<!-- NO recurrent connection-->
 
-	<connection  source = "Add.OUTPUT"  target = "Print.INPUT" _delay="5:10" />
+	<_connection  source = "Add.OUTPUT"  target = "Print.INPUT" />
 
 	<view name="View">
 
