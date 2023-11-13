@@ -18,6 +18,10 @@ class Add: public Module
 
     void Tick()
     {
+
+        input1.print();
+        input2.print();
+
         output.add(input1, input2);
     }
 };

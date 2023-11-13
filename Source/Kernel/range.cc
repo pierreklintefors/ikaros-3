@@ -136,6 +136,8 @@ namespace ikaros
 
     bool range::more(int d)
     {
+        if(inc_.empty())
+            return false;
         return (inc_[d] > 0 && index_[d] < b_[d]) || (inc_[d] < 0 && index_[d] >= a_[d]);
     };
 

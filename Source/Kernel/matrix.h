@@ -395,6 +395,12 @@ namespace ikaros
         }
 
 
+        const bool is_scalar() const
+        {
+            return rank() == 0 && (info_->size_  == 1);
+        }
+
+
         bool
         print_(int depth=0)
         {
@@ -476,10 +482,12 @@ namespace ikaros
 
 
 
-    matrix &
+        matrix &
         apply(std::function< float(float) > f) // Apply a lambda to elements of a matrix
         {
             if(empty())
+                return *this;
+            if(is_scalar())
                 (*data_)[info_->offset_] = f((*data_)[info_->offset_]);
             else
                 for(int i=0; i<info_->shape_.front(); i++)
@@ -564,6 +572,9 @@ namespace ikaros
         matrix &
         copy(matrix & m, range & target, range & source)
         {
+            source.reset();
+            target.reset();
+
             for(;source.more() & target.more(); source++, target++)
             {
                 //source.print_index();

@@ -11,6 +11,7 @@ static bool terminate = false;
 static ServerSocket * socket = nullptr;
 
 
+/*
 
 void HTTPReply(std::string msg)
 {
@@ -60,10 +61,15 @@ HTTPThread()
     }
 }
 
+*/
+
+
 
 int
 main(int argc, char *argv[])
 {
+
+/*
     int port = 8000;
     try
     {
@@ -80,6 +86,9 @@ main(int argc, char *argv[])
         {
                     // std::cout << "*** loop" << std::endl;
         }
+*/
+
+
     try
     { 
         Kernel & k = kernel();
@@ -108,7 +117,8 @@ main(int argc, char *argv[])
         k.InitSocket(port); // FIXME: Port cannot be set in IKG file; should it?
 
         k.LoadFiles(o.filenames, o);
-        k.ListInputs();
+        //k.ListBuffers();
+        //k.ListCircularBuffers();
 
         k.Run();
         //k.ListInputs();

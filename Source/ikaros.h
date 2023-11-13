@@ -619,10 +619,11 @@ public:
     std::map<std::string, Class>            classes;
     std::map<std::string, Component *>      components;
     std::vector<Connection>                 connections;
-    std::map<std::string, matrix>           inputs;         // Use IO-structure later: or only matrix?
-    std::map<std::string, matrix>           outputs;        // Use IO-structure later: Output
+    //std::map<std::string, matrix>           buffers;         // Use IO-structure later: or only matrix?
+    //std::map<std::string, matrix>           buffers;        // Use IO-structure later: Output
+    std::map<std::string, matrix>           buffers;        // IO-structure    
     std::map<std::string, int>              max_delays;     // Maximum delay needed for each output
-    std::map<std::string, CircularBuffer>   circular_buffers;        // Circular circular_buffers for delayed outputs
+    std::map<std::string, CircularBuffer>   circular_buffers;        // Circular circular_buffers for delayed buffers
     std::map<std::string, parameter>        parameters;
 
     bool                first_request;
@@ -738,7 +739,7 @@ public:
     for(auto & c : connections)
         ingoing_connections[c.target].push_back(&c);
 
-        // Propagate output size to inputs as long as at least one module sets one of it output sizes
+        // Propagate output size to buffers as long as at least one module sets one of it output sizes
 
         int iteration_counter = 0;
         bool progress = true;
@@ -778,25 +779,27 @@ public:
         }
 
         std::cout << "\nDelays:" << std::endl;
-        for(auto & o : outputs)
+        for(auto & o : buffers)
             std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
     }
 
 
-    void InitBuffers()
+    void InitCircularBuffers()
     {
-        //std::cout << "\nInitBuffers:" << std::endl;
+        std::cout << "\nInitCircularBuffers:" << std::endl;
         for(auto it : max_delays)
         {
             if(it.second <= 1)
                 continue;
-            //std::cout << "\t" << it.first << std::endl;
-            circular_buffers.emplace(it.first, CircularBuffer(outputs[it.first], it.second)); // FIXME: Change to initialization list in C++20
+            std::cout << "\t" << it.first << std::endl;
+            circular_buffers.emplace(it.first, CircularBuffer(buffers[it.first], it.second)); // FIXME: Change to initialization list in C++20
         }
 
+        /*
         std::cout << "\nBuffers:" << std::endl;
         for(auto it : circular_buffers)
             std::cout << "\t" << it.first << "  " << it.second.buffer_.size() <<  std::endl;
+        */
     }
 
 
@@ -804,7 +807,7 @@ public:
     {
         //std::cout << "Rotate circular_buffers"   << std::endl;
         for(auto & it : circular_buffers)
-            it.second.rotate(outputs[it.first]);
+            it.second.rotate(buffers[it.first]);
     }
 
 
@@ -827,7 +830,7 @@ public:
     void ListInputs()
     {
         std::cout << "\nInputs:" << std::endl;
-        for(auto & i : inputs)
+        for(auto & i : buffers)
             std::cout << "\t" << i.first <<  i.second.shape() << std::endl;
     }
 
@@ -835,8 +838,24 @@ public:
    void ListOutputs()
     {
         std::cout << "\nOutputs:" << std::endl;
-        for(auto & o : outputs)
+        for(auto & o : buffers)
             std::cout  << "\t" << o.first << o.second.shape() << std::endl;
+    }
+
+
+    void ListBuffers()
+    {
+        std::cout << "\nBuffers:" << std::endl;
+        for(auto & i : buffers)
+            std::cout << "\t" << i.first <<  i.second.shape() << std::endl;
+    }
+
+
+ void ListCircularBuffers()
+    {
+        std::cout << "\nCircularBuffers:" << std::endl;
+        for(auto & i : circular_buffers)
+            std::cout << "\t" << i.first <<  " " << i.second.buffer_.size() << std::endl;
     }
 
 
@@ -874,12 +893,12 @@ public:
 
     void AddInput(std::string name, dictionary parameters=dictionary())
     {
-        inputs[name] = matrix();
+        buffers[name] = matrix();
     }
 
     void AddOutput(std::string name, dictionary parameters=dictionary())
     {
-        outputs[name] = matrix();
+        buffers[name] = matrix();
       }
 
     void AddParameter(std::string name, dictionary params=dictionary())
@@ -970,7 +989,7 @@ public:
 
     void AllocateInputs()
     {
-        // Allocate memory for all inputs and delay lines 
+        // Allocate memory for all buffers and delay lines 
     }
 
 
@@ -1048,11 +1067,11 @@ public:
             }
 
             else if(c.delay_range_.empty() || c.delay_range_.is_delay_1())
-                inputs[c.target].copy(outputs[c.source], c.target_range, c.source_range);
+                buffers[c.target].copy(buffers[c.source], c.target_range, c.source_range);
 
             else if(c.flatten_) // Copy flattened delayed values
             {
-                matrix target = inputs[c.target];
+                matrix target = buffers[c.target];
                 int target_offset = c.target_range.a_[0];
                 for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
                 {   
@@ -1066,14 +1085,20 @@ public:
                 }
             }
 
-            else // Copy indexed delayed values
+            else if(c.delay_range_.a_[0]+1 == c.delay_range_.b_[0]) // Copy indexed delayd value with single delay
+            {
+                matrix s = circular_buffers[c.source].get(c.delay_range_.a_[0]);
+                buffers[c.target].copy(s, c.target_range, c.source_range);
+            }
+
+            else // Copy indexed delayed values with ore than one element
             {
                 for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
                 {   
                     matrix s = circular_buffers[c.source].get(i);
                     int target_ix = i - c.delay_range_.a_[0]; // trim!
                     range tr = c.target_range.tail();
-                    matrix t = inputs[c.target][target_ix];
+                    matrix t = buffers[c.target][target_ix];
                     t.copy(s, tr, c.source_range);
 
                     //std::cout << std::endl;

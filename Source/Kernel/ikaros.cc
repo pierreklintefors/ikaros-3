@@ -37,11 +37,10 @@ std::string  validate_identifier(std::string s)
         try
         {
             Kernel & k = kernel();
-            if(k.inputs.count(name))
-                m = k.inputs[name];
-            else if(k.outputs.count(name))
-                m = k.outputs[name];
-
+            if(k.buffers.count(name))
+                m = k.buffers[name];
+            else if(k.buffers.count(name))
+                m = k.buffers[name];
             else if(k.parameters.count(name))
                 m = (matrix &)(k.parameters[name]);
             else if(k.parameters.count(name))
@@ -213,13 +212,13 @@ std::string Component::Lookup(const std::string & name) const
 
 
 bool
-Component::InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: Handle optional inputs
+Component::InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: Handle optional buffers
 {
     Kernel& k = kernel();
 
     std::string n = d["attributes"]["name"];
     for(auto & c : ingoing_connections[name_+'.'+n])
-        if(k.outputs.at(c->source).rank()==0)
+        if(k.buffers.at(c->source).rank()==0)
             return false;
     return true;
 }
@@ -230,8 +229,8 @@ void Component::SetSourceRanges(const std::string & name, std::vector<Connection
     for(auto & c : ingoing_connections) // Copy source size to source_range if not set
     {
         if(c->source_range.empty())
-            c->source_range = kernel().outputs[c->source].get_range();
-         else if(c->source_range.rank() != kernel().outputs[c->source].rank())
+            c->source_range = kernel().buffers[c->source].get_range();
+        else if(c->source_range.rank() != kernel().buffers[c->source].rank())
             throw exception("Explicitly set source range dimensionality does not match source.");
     }
 
@@ -253,7 +252,7 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
         begin_index += s;
         flattened_input_size += s;
     }
-    kernel().inputs[name].realloc(flattened_input_size);
+    kernel().buffers[name].realloc(flattened_input_size);
 
     if(!add_labels)
         return;
@@ -263,9 +262,9 @@ void Component::SetInputSize_Flat(const std::string & name, std::vector<Connecti
     {
         int s = c->source_range.size() * c->delay_range_.trim().b_[0];
         if(c->alias_.empty())
-            kernel().inputs[name].push_label(0, c->source, s);
+            kernel().buffers[name].push_label(0, c->source, s);
         else
-            kernel().inputs[name].push_label(0, c->alias_, s);
+            kernel().buffers[name].push_label(0, c->alias_, s);
     }
 }
 
@@ -307,7 +306,7 @@ void Component::SetInputSize_Index(const std::string & name, std::vector<Connect
     //if(max_delay > 1)
     //    r.push_front(0, max_delay);
 
-     kernel().inputs[name].realloc(r.extent());  // STEP 2: Set input size
+    kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size
 }
 
 
@@ -338,7 +337,7 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
     // Set input sizes (if possible)
 
     for(auto & d : info_["inputs"])
-        if(k.inputs[name_+"."+std::string(d["attributes"]["name"])].empty())
+        if(k.buffers[name_+"."+std::string(d["attributes"]["name"])].empty())
         {   
              if(InputsReady(dictionary(d), ingoing_connections))
                 SetInputSize(dictionary(d), ingoing_connections);
@@ -355,14 +354,14 @@ Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_co
         matrix o;
         Bind(o, n); // FIXME: Get directly?
         if(o.rank() != 0)
-            outputs_with_size++; // Count number of inputs that are set
+            outputs_with_size++; // Count number of buffers that are set
         
         o.realloc(shape);
         outputs_with_size++;
     }
 
     if(outputs_with_size == info_["class"]["outputs"].size())
-        return 0; // all outputs have been set
+        return 0; // all buffers have been set
     else
         return 0; // needs to be called again - FIXME: Report progress later on
 }
@@ -391,13 +390,18 @@ Kernel::Run()
     ResolveParameters();
     CalculateDelays();
     CalculateSizes();
-    InitBuffers();
+    InitCircularBuffers();
 
     InitComponents();
     ListComponents();
     ListConnections();
-    ListInputs();
-    ListOutputs();
+
+    //ListInputs();
+    //ListOutputs();
+
+    ListBuffers();
+    ListCircularBuffers();
+
     ListParameters();
     PrintLog();
 
@@ -513,8 +517,8 @@ Kernel::Run()
 
         s+= " ,\"attributes\": " + info_["attributes"].json();
         s+= " , \"parameters\": " + info_["parameters"].json();
-        s+= " , \"inputs\": " + info_["inputs"].json();             // FIXME: buffersm find inputs and outputs but get data from buffers ***********
-        s+= " , \"outputs\": " + info_["outputs"].json();
+        s+= " , \"buffers\": " + info_["buffers"].json();
+        //s+= " , \"buffers\": " + info_["buffers"].json();
         s+= " , \"connections\": " + info_["connections"].json();
 
         s+= " , \"groups\": ["+gs+"]";
@@ -650,9 +654,9 @@ std::string data = cut(root, "#");
           
             if(format == "") // as default, send a matrix
             {
-                if(outputs.count(root+"."+source))
+                if(buffers.count(root+"."+source))
                 {
-                    std::string json_data = outputs[root+"."+source].json();
+                    std::string json_data = buffers[root+"."+source].json();
                     if(!json_data.empty())
                     {
                         socket->Send(sep);
@@ -667,7 +671,7 @@ std::string data = cut(root, "#");
                 }
             }
                   /*
-                Module_IO * io = root_group->GetSource(source); // FIXME: Also look for inputs here
+                Module_IO * io = root_group->GetSource(source); // FIXME: Also look for buffers here
                 if(io)
                 {
                     socket->Send(sep);
@@ -726,7 +730,7 @@ std::string data = cut(root, "#");
             }
             else if(format == "rgb" && !source.empty())
             {
-                auto a = rsplit(source, ".", 1); // separate out outputs
+                auto a = rsplit(source, ".", 1); // separate out buffers
                 auto o = split(a[1], "+"); // split channel names
                 
                 if(o.size() == 3)
@@ -739,7 +743,7 @@ std::string data = cut(root, "#");
                     Module_IO * io2 = root_group->GetSource(c2);
                     Module_IO * io3 = root_group->GetSource(c3);
                     
-                    // TODO: check that all outputs have the same size
+                    // TODO: check that all buffers have the same size
 
                     if(io2 && io2 && io3)
                     {
