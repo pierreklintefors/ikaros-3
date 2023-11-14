@@ -877,7 +877,7 @@ namespace ikaros
         int
         compute_index(std::vector<int> & v)
         {
-            int index = 0;
+            int index = info_->offset_; // WAS 0!
             int stride = 1;
             for (int i = info_->stride_.size() - 1; i >= 0; --i)
             {

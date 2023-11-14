@@ -1063,7 +1063,7 @@ public:
         {
             if(c.delay_range_.empty() || c.delay_range_.is_delay_0())
             {
-                // Do not handle here yet
+                // Do not handle here yet // FIXME: !!!!
             }
 
             else if(c.delay_range_.empty() || c.delay_range_.is_delay_1())
@@ -1085,13 +1085,13 @@ public:
                 }
             }
 
-            else if(c.delay_range_.a_[0]+1 == c.delay_range_.b_[0]) // Copy indexed delayd value with single delay
+            else if(c.delay_range_.a_[0]+1 == c.delay_range_.b_[0]) // Copy indexed delayed value with single delay
             {
                 matrix s = circular_buffers[c.source].get(c.delay_range_.a_[0]);
                 buffers[c.target].copy(s, c.target_range, c.source_range);
             }
 
-            else // Copy indexed delayed values with ore than one element
+            else // Copy indexed delayed values with more than one element
             {
                 for(int i=c.delay_range_.a_[0]; i<c.delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
                 {   
@@ -1101,7 +1101,7 @@ public:
                     matrix t = buffers[c.target][target_ix];
                     t.copy(s, tr, c.source_range);
 
-                    //std::cout << std::endl;
+                    std::cout << std::endl;
                 }
             }
         }
