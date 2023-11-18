@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - August, 2023
+## Ikaros 3 Status - November, 2023
 
 | Component | State | Comments |
 | ----|----|----| 
@@ -30,16 +30,16 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Scheduler         |<div style="color:#c60">Minimal | no zero-delays, single thread |
 | SetSizes    |     <div style="color:green">🟢 OK | 
 | Input resizing    |<div style="color:green">🟢 OK     |  |
-| Delays            |<div style="color:#c60">🟡 Partial | copy not completed |
+| Delays            |<div style="color:#green">🟢 OK | copy not completed |
 | Task Sorting      |<div style="color:#e00">🔴 Pending |  |
 | Real Time         |<div style="color:green">🟢 OK |  |
-| WebUI             |<div style="color:#e00">🔴 Pending |  |
+| WebUI             |<div style="color:#c60">🟡 Partial |  |
 | BrainStudio       |<div style="color:#e00">🔴 Pending | templates & editing |
-| Message queue     |<div style="color:#e00">🔴 Pending |  |
+| Message queue     |<div style="color:#c60">🟡 Partial |  |
 | Log               |<div style="color:#c60">🟡 Partial |  |
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
 | Editing           |<div style="color:#e00">🔴 Pending |  |
-| Sockets           |<div style="color:#c60">🟡 Partial | std::string not supported |
+| Sockets           |<div style="color:green">🟢 OK | std::string not supported |
 | UtilityModules    |<div style="color:#c60">🟡 Partial | 4 modules |
 | Named Dimensions  |<div style="color:#c60">🟡 Partial | only in matrices |
 
