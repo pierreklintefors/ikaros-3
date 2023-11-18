@@ -68,6 +68,17 @@ HTTPThread()
 int
 main(int argc, char *argv[])
 {
+    matrix m = "1, 2, 3; 4, 5, 6";
+
+    m.set_name("MATRIX");
+    m.set_labels(0, "Row1", "Row2");
+    m.set_labels(1, "Col1", "Col2, Col3");
+    m.print();
+    m.info();
+
+    std::cout << m << std::endl;
+    std::cout << m.json() << std::endl;
+
 
 /*
     int port = 8000;
@@ -91,7 +102,7 @@ main(int argc, char *argv[])
 
     try
     { 
-        Kernel & k = kernel();
+        Kernel & k =kernel();
 
         options o;
 

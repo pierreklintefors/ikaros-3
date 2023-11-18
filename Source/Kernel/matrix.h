@@ -150,8 +150,13 @@ namespace ikaros
         
         }
 
-
-        void operator=(std::string data_string) // set from data string after resizing
+/*
+        void operator=(char * data_string) // set from data string after resizing
+        {
+            int x = 1;
+        }
+*/
+        void operator=(std::string & data_string) // set from data string after resizing
         {
             auto & rows = split(data_string, ";");
             auto & row = split(rows.at(0), ",");
@@ -184,7 +189,8 @@ namespace ikaros
         }
 
 
-        matrix(std::string & data_string)
+
+        matrix(const std::string & data_string)
         {
             try 
             {
@@ -222,6 +228,10 @@ namespace ikaros
         }
 
 
+        matrix(const char * data_string) : matrix(std::string(data_string))
+        {
+        }
+
         matrix
         operator[](int i) // submatrix operator; returns a submatrix with rank()-1
         {
@@ -257,7 +267,7 @@ namespace ikaros
 
 
         void
-        info(std::string n="") const // print matrix info; n overrides name if set (useful during debugging) // FIXME: Mmove partially to matrix_info + print_data
+        info(std::string n="") const // print matrix info; n overrides name if set (useful during debugging) // FIXME: Move partially to matrix_info + print_data
         {
             info_->print(n);
             print_attribute_value("data size", data_->size());

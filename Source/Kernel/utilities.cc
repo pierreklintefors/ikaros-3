@@ -325,6 +325,7 @@ std::ostream& operator<<(std::ostream& os, const std::vector<int> & v)
             else
                 for(auto s : d)
                     std::cout << s << " ";
+           std::cout << std::endl; 
         }
         std::cout << std::endl;
     }
