@@ -740,8 +740,8 @@ namespace ikaros
         }
         int rows() { return size(0); } // FIXME: count from the back
         int cols() { return size(1); }
-        int size_x(int dim) { return cols(); }
-        int size_y(int dim) { return rows(); }
+        int size_x() { return cols(); }
+        int size_y() { return rows(); }
 
         template <typename... Args>
         matrix & 
