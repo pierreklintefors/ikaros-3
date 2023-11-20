@@ -1182,13 +1182,13 @@ interaction = {
             console.log("Internal Error: No constructor found for "+"webui-widget-"+w['class']);
             newObject.widget = new webui_widgets.constructors['webui-widget-text'];
             newObject.widget.element = newObject; // FIXME: why not also below??
-            newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(2).join('.');   // get group name - temporary ugly solution
+            newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
             newObject.widget.parameters['text'] = "\""+"webui-widget-"+w['class']+"\" not found. Is it included in index.html?";
         }
         else
         {
             newObject.widget = new webui_widgets.constructors["webui-widget-"+w['class']];
-            newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(2).join('.');   // get group name - temporary ugly solution
+            newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
             // Add default parameters from CSS - possibly...
             for(let k in newObject.widget.parameters)
             if(w[k] === undefined)
