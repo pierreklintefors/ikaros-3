@@ -106,21 +106,25 @@ class CircularBuffer
     }
 
 };
- 
+
 
 //
 // PARAMETERS
 //
 
-enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type };
-static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options"}; // TODO: Add list of strings?
+// TODO: add bracket notation to set any type p(x,y) etc
 
-class parameter // FIXME: check all types everywhere
+
+enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type, rate_type };
+static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options", "rate"}; // TODO: Add list of strings?
+
+class parameter // FIXME: check all types everywhere; send base rate to WebUI not current value
 {
 private:
 public:
-    parameter_type  type;
-    std::string    default_value;
+    parameter_type                  type;
+    float                           timebase;
+    std::string                     default_value;
     std::shared_ptr<int>            int_value;
     std::shared_ptr<float>          float_value;
     std::shared_ptr<matrix>         matrix_value;
@@ -130,7 +134,7 @@ public:
     parameter(): type(no_type)
     {}
 
-    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type)
+    parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), timebase(1)
     {
         default_value = default_val;
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
@@ -145,6 +149,7 @@ public:
             case float_type: float_value = std::make_shared<float>(0); break;
             case string_type: string_value = std::make_shared<std::string>(""); break;
             case matrix_type: matrix_value = std::make_shared<matrix>(); break;
+       case rate_type: float_value = std::make_shared<float>(0); break;
 
             case options_type:
                 int_value = std::make_shared<int>(0);
@@ -175,6 +180,7 @@ public:
         {
             case int_type: if(int_value) *int_value = v; break;
             case float_type: if(float_value) *float_value = float(v); break;
+            case rate_type: if(float_value) *float_value = float(v); break;
             case string_type: if(string_value) *string_value = std::to_string(v); break;
             // TODO: options and bool
             default: break;
@@ -189,6 +195,7 @@ public:
         {
             case int_type: if(int_value) *int_value = int(v); break;
             case float_type: if(float_value) *float_value = v; break;
+            case rate_type: if(float_value) *float_value = v; break;
             case string_type: if(string_value) *string_value = std::to_string(v); break;
             case bool_type: if(int_value) *int_value = int(v); break;
             case options_type: if(int_value) *int_value = int(v); break; // FIXME: check range
@@ -233,7 +240,8 @@ public:
             }
             break;
 
-            case float_type: 
+            case float_type:
+            case rate_type:
                 if(float_value) 
                     *float_value = std::stof(v);
                 else
@@ -277,6 +285,7 @@ public:
             case int_type: if(int_value) return std::to_string(*int_value);            
             // FIXME: get options string and bool
             case float_type: if(float_value) return std::to_string(*float_value);
+            case rate_type: if(float_value) return std::to_string(*float_value);
             case bool_type: if(int_value) return std::to_string(*int_value==1);
             case string_type: if(string_value) return *string_value;
 
@@ -294,6 +303,7 @@ public:
             case int_type: if(int_value) return *int_value;
             case options_type: if(int_value) return *int_value;
             case float_type: if(float_value) return *float_value;
+            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base
             case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
             case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
             default: ;
@@ -309,11 +319,27 @@ public:
             case int_type: if(int_value) return *int_value;
             case options_type: if(int_value) return *int_value;
             case float_type: if(float_value) return *float_value;
+            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base
             case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
             //case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
             default: ;
         }
        throw exception("Type conversion error for  parameter.");
+    }
+
+    std::string json()
+    {
+        switch(type)
+        {
+            case int_type:      if(int_value) return "0"; // os << *int_value; break;
+            case options_type:  if(int_value) return "0"; // os << *int_value; break;
+            case float_type:    if(float_value) return "0"; // os <<  *float_value; break;
+            case rate_type:    if(float_value) return "0"; // os <<  *float_value; break;  // FIXME: print timebase as well???
+            case bool_type:     if(int_value) return "0"; // os <<  (*int_value==1? "true" : "false"); break;
+            case string_type:   if(string_value) return ""; // os <<  *string_value; break;
+            case matrix_type:   if(matrix_value) return matrix_value->json();
+            default:            return "";
+        }
     }
 
     friend std::ostream& operator<<(std::ostream& os, parameter p)
@@ -323,6 +349,7 @@ public:
             case int_type:      if(p.int_value) os << *p.int_value; break;
             case options_type:  if(p.int_value) os << *p.int_value; break;
             case float_type:    if(p.float_value) os <<  *p.float_value; break;
+            case rate_type:    if(p.float_value) os <<  *p.float_value; break;  // FIXME: print timebase as well???
             case bool_type:     if(p.int_value) os <<  (*p.int_value==1? "true" : "false"); break;
             case string_type:   if(p.string_value) os <<  *p.string_value; break;
             case matrix_type:   if(p.matrix_value) os <<  *p.matrix_value; break;

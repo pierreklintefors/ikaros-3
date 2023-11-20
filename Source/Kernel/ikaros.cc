@@ -517,8 +517,12 @@ Kernel::Run()
 
         s+= " ,\"attributes\": " + info_["attributes"].json();
         s+= " , \"parameters\": " + info_["parameters"].json();
+
+        // Use decit to select only inputs and outptus
+
         s+= " , \"buffers\": " + info_["buffers"].json();
-        //s+= " , \"buffers\": " + info_["buffers"].json();
+        s+= " , \"inputs\": " + info_["inputs"].json();
+        s+= " , \"outputs\": " + info_["outputs"].json();
         s+= " , \"connections\": " + info_["connections"].json();
 
         s+= " , \"groups\": ["+gs+"]";
@@ -657,6 +661,17 @@ std::string data = cut(root, "#");
                 if(buffers.count(root+"."+source))
                 {
                     std::string json_data = buffers[root+"."+source].json();
+                    if(!json_data.empty())
+                    {
+                        socket->Send(sep);
+                        std::string s = "\t\t\"" + source + "\": "+json_data;
+                        socket->Send(s);
+                        sep = ",\n";
+                    }
+                }
+                else if(parameters.count(root+"."+source))
+                {
+                    std::string json_data = parameters[root+"."+source].json();
                     if(!json_data.empty())
                     {
                         socket->Send(sep);
@@ -913,15 +928,33 @@ Kernel::DoCommand(std::string uri, std::string args)
 void
 Kernel::DoControl(std::string uri, std::string args)
 {
-    //printf(">>> %s %s\n", uri.c_str(), args.c_str());
-    char module_name[255];
-    char parameter[255];
-    int x, y;
-    float value;
-    int c = sscanf(uri.c_str(), "/control/%[^/]/%d/%d/%f", parameter, &x, &y, &value);
-    if(c == 4)
-        // SetParameter(parameter, x, y, value); // TODO: check if groups are handled correctly *********************
-    DoSendData(uri, args);
+    try
+    {
+        auto cmd = split(uri, "/");
+        if(cmd.size() == 6)
+        {
+            auto param_name = cmd[2];
+            int x = std::stoi(cmd[3]);
+            int y = std::stoi(cmd[4]);
+            float value = std::stof(cmd[5]);
+
+            parameter & p = parameters.at(param_name);
+            if(p.type == matrix_type)
+            {
+                (*p.matrix_value)(x,y)= value;
+            }
+            else // if(p.type == float_type) // FIXME: scalar type
+            {
+                p = value;
+            }
+        }
+        DoSendData(uri, args);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        DoSendData(uri, args);
+    }
 }
 
 
@@ -1003,7 +1036,7 @@ Kernel::DoSendError()
     // SELECT METHOD
 
         if(uri == "/update")
-        DoUpdate(uri, args);
+            DoUpdate(uri, args);
 
         else if(uri == "/pause")
             DoPause(uri, args);
