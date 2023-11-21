@@ -510,6 +510,8 @@ namespace ikaros
         apply(matrix A, std::function<float(float, float)> f) // e = f(A[], x)
         {
             if(empty())
+                return *this;
+            else if(is_scalar())
                 (*data_)[info_->offset_] = f((*data_)[info_->offset_], (*A.data_)[info_->offset_]);
             else
                 for(int i=0; i<info_->shape_.front(); i++)
@@ -525,10 +527,9 @@ namespace ikaros
         apply(matrix A, matrix B, std::function<float(float, float)> f) // e[] = f(A[], B[])
         {
             if(empty())
-            {
-                if(info_->size_ == 1)
+                return *this;
+            else if(is_scalar())
                 (*data_)[info_->offset_] = f((*A.data_)[info_->offset_], (*B.data_)[info_->offset_]);
-            }
             else
                 for(int i=0; i<info_->shape_.front(); i++)
                 {
