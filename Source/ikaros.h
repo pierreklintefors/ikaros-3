@@ -319,25 +319,25 @@ public:
             case int_type: if(int_value) return *int_value;
             case options_type: if(int_value) return *int_value;
             case float_type: if(float_value) return *float_value;
-            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base
+            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base here *******************
             case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
             //case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
             default: ;
         }
-       throw exception("Type conversion error for  parameter.");
+    throw exception("Type conversion error for  parameter.");
     }
 
     std::string json()
     {
         switch(type)
         {
-            case int_type:      if(int_value) return "0"; // os << *int_value; break;
-            case options_type:  if(int_value) return "0"; // os << *int_value; break;
-            case float_type:    if(float_value) return "0"; // os <<  *float_value; break;
-            case rate_type:    if(float_value) return "0"; // os <<  *float_value; break;  // FIXME: print timebase as well???
-            case bool_type:     if(int_value) return "0"; // os <<  (*int_value==1? "true" : "false"); break;
-            case string_type:   if(string_value) return ""; // os <<  *string_value; break;
-            case matrix_type:   if(matrix_value) return matrix_value->json();
+            case int_type:      if(int_value)       return "[["+std::to_string(*int_value)+"]]";
+            case options_type:  if(int_value)       return "[["+std::to_string(*int_value)+"]]";
+            case float_type:    if(float_value)     return "[["+std::to_string(*float_value)+"]]";
+            case rate_type:     if(float_value)     return "[["+std::to_string(*float_value)+"]]";  // FIXME: print timebase as well??? Probably not here.
+            case bool_type:     if(int_value)       return (int_value ? "true" : "false");
+            case string_type:   if(string_value)    return "\""+*string_value+"\"";
+            case matrix_type:   if(matrix_value)    return matrix_value->json();
             default:            return "";
         }
     }
