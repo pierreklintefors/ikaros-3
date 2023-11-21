@@ -401,7 +401,7 @@ namespace ikaros
 
         const bool empty() const
         {
-            return rank() == 0;
+            return rank() == 0 && (info_->size_  == 0);
         }
 
 
