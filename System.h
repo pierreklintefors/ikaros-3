@@ -81,26 +81,9 @@
 #endif
 
 
-//
-// Unix includes (some distributions lack PATH_MAX)
-//
-
-#ifdef LINUX
-#include <limits.h>
-#endif
-
-#ifdef MAC_OS_X
-#include <limits.h>
-#endif
-
 // Fix for missing MSG_NOSIGNAL in OS X to pass compilation
 
 #ifdef MAC_OS_X
 #define MSG_NOSIGNAL 0
 #endif
 
-
-// EXTRA FUNCTION SWITCHES
-
-// #define NANCHECK
-// #define XML_PRINT
