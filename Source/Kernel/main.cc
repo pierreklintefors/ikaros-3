@@ -7,88 +7,9 @@
 
 using namespace ikaros;
 
-static bool terminate = false;
-static ServerSocket * socket = nullptr;
-
-
-/*
-
-void HTTPReply(std::string msg)
-{
-    Dictionary header;
-    header.Set("Content-Type", "text/text");
-    header.Set("Cache-Control", "no-cache");
-    header.Set("Cache-Control", "no-store");
-    header.Set("Pragma", "no-cache");
-    socket->SendHTTPHeader(&header);
-    socket->Send(msg);
-    socket->Send("\n\n");
-    socket->Close();
-}
-
-
-
-void
-HTTPThread()
-{
-    while(!terminate)
-    {
-        if (socket != nullptr && socket->GetRequest(true))
-        {
-            if (equal_strings(socket->header.Get("Method"), "GET"))
-            {
-              //  while(true) // tick_is_running
-              //      {}
-                //handling_request = true;
-
-                std::string uri = socket->header.Get("URI");
-                std::cout << uri << std::endl;
-
-                if(starts_with(uri, "/ikaros/"))
-                {
-                                    std::cout << "TOP LEVEL COMMAND: " << uri << std::endl;
-                                    HTTPReply("OK");
-                }
-                else
-                {
-                    // Send to kernel if any is running
-                }
-            }
-
-            //handling_request = false;
-        }
-        socket->Close();
-    }
-}
-
-*/
-
-
-
 int
 main(int argc, char *argv[])
 {
-
-/*
-    int port = 8000;
-    try
-    {
-        socket =  new ServerSocket(port);
-    }
-    catch (const SocketException& e)
-    {
-        throw fatal_error("Ikaros is unable to start a webserver on port "+std::to_string(port)+". Make sure no other ikaros process is running and try again.");
-    }
-
-    std::thread * httpThread = new std::thread(HTTPThread);
-
-    while(true)
-        {
-                    // std::cout << "*** loop" << std::endl;
-        }
-*/
-
-
     try
     { 
         Kernel & k =kernel();
@@ -107,22 +28,9 @@ main(int argc, char *argv[])
  
         o.parse_args(argc, argv);
 
-        long port = o.get_long("webui_port");
-
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
-
-    // Move the rest to ikaros kernel - load and restart
-    
-        //k.ListClasses();
-        k.InitSocket(port); // FIXME: Port cannot be set in IKG file; should it?
-
-        k.LoadFiles(o.filenames, o);
-        //k.ListBuffers();
-        //k.ListCircularBuffers();
-
+        k.Start(o.filenames, o);
         k.Run();
-        //k.ListInputs();
-        //k.ListOutputs();
 
         std::cout << "\nIkaros 3.0 Ended" << std::endl;
     }
