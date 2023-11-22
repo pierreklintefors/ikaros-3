@@ -660,6 +660,7 @@ public:
     std::atomic<bool>   sending_ui_data;
     std::atomic<bool>   handling_request;
     int                 run_mode;
+    long                port;    
 
     dictionary                          current_component_info; // From class or group
     dictionary                          current_module_info;
@@ -1040,12 +1041,9 @@ public:
 
     // Start up the kernel for the first time
 
-    void Start(std::vector<std::string> files, options & opts) 
-    {
-        LoadFiles(files, opts);
-        long port = opts.get_long("webui_port");  // FIXME: Port cannot be set in IKG file; should it?
-        InitSocket(port);
-    }
+    void SetUp();
+
+
         //k.ListClasses();
         //k.ListBuffers();
         //k.ListCircularBuffers();
@@ -1054,6 +1052,27 @@ public:
 
     void LoadFiles(std::vector<std::string> files, options & opts)
     {
+            if(files.empty())
+            {
+                dictionary d;
+                for(auto & x : opts.d)
+                    d[x.first] = x.second;
+                AddGroup("Untitled", d);
+
+                    // FIXME: ONLY ONCE!!!!
+                    port = d["webui_port"];
+                    start = is_true(d["start"]);
+                    stop_after = d["stop"];
+                    tick_duration = d["tick_duration"];
+                    if(is_true(d["real_time"]))
+                        run_mode = run_mode_realtime;
+                    session_id = std::time(nullptr);
+
+                return;
+            }
+
+            // Load files
+
             for(auto & filename: files)
                 try
                 {
@@ -1064,30 +1083,30 @@ public:
                     if(xmlDoc->xml->name != std::string("group"))
                          throw exception("Group element not found in \""+filename+"\"."); // FIXME: request exit
 
-                    // Add command line options to top element of XML before parsing // FIXME: Clean up
+                    
 
-                    for(auto & x : opts.d)
+                    for(auto & x : opts.d) // Add command line options to top element of XML before parsing // FIXME: Clean up
                         if(!xmlDoc->xml->GetAttribute(x.first.c_str())) 
                             ((XMLElement *)(xmlDoc->xml))->attributes = new XMLAttribute(create_string(x.first.c_str()), create_string(x.second.c_str()),0,((XMLElement *)(xmlDoc->xml))->attributes);          
+                    
                     ParseGroupFromXML(xmlDoc->xml);
 
                     // Set basic parameters from loaded file
 
                       dictionary d = components.begin()->second->info_["attributes"]; // Get top group
-
-
+                    port = d["webui_port"];
                     start = is_true(d["start"]);
                     stop_after = d["stop"];
                     tick_duration = d["tick_duration"];
                     if(is_true(d["real_time"]))
                         run_mode = run_mode_realtime;
                     session_id = std::time(nullptr);
-
                 }
                 catch(const std::exception& e)
                 {
                     log.push_back(e.what());
                 }
+        SetUp();
     }
 
 
@@ -1151,18 +1170,17 @@ public:
 
     std::string JSONString();
 
-    void InitSocket(int port)
-{
-    try
+    void InitSocket()
     {
-        
-        socket =  new ServerSocket(port);
+        try
+        {
+            socket =  new ServerSocket(port);
+        }
+        catch (const SocketException& e)
+        {
+            throw fatal_error("Ikaros is unable to start a webserver on port "+std::to_string(port)+". Make sure no other ikaros process is running and try again.");
+        }
     }
-    catch (const SocketException& e)
-    {
-        throw fatal_error("Ikaros is unable to start a webserver on port "+std::to_string(port)+". Make sure no other ikaros process is running and try again.");
-    }
-}
 
     void Pause();
 
@@ -1189,7 +1207,7 @@ public:
     static void *   StartHTTPThread(Kernel * k);
     
     void Tick();
-    void Run();
+    void Run(std::vector<std::string> files, options & opts);
 };
 
 

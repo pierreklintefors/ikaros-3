@@ -383,15 +383,14 @@ Kernel::Tick()
 
 
 void
-Kernel::Run()
+Kernel::SetUp()
 {
-    // Set-up - // TODO: Move to separate function?
-
     ResolveParameters();
     CalculateDelays();
     CalculateSizes();
     InitCircularBuffers();
-
+    InitComponents();
+/*
     InitComponents();
     ListComponents();
     ListConnections();
@@ -404,9 +403,18 @@ Kernel::Run()
 
     ListParameters();
     PrintLog();
+    */
+}
 
+
+
+void
+Kernel::Run(std::vector<std::string> files, options & opts)
+{
+    LoadFiles(files, opts); // INIT
+    InitSocket();
+    SetUp();
     // Run loop
-
     // chdir(ikc_dir);
 
     timer.Restart();
