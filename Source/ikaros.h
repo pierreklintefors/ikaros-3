@@ -1038,6 +1038,20 @@ public:
             }
     }
 
+    // Start up the kernel for the first time
+
+    void Start(std::vector<std::string> files, options & opts) 
+    {
+        LoadFiles(files, opts);
+        long port = opts.get_long("webui_port");  // FIXME: Port cannot be set in IKG file; should it?
+        InitSocket(port);
+    }
+        //k.ListClasses();
+        //k.ListBuffers();
+        //k.ListCircularBuffers();
+        //k.ListInputs();
+        //k.ListOutputs();
+
     void LoadFiles(std::vector<std::string> files, options & opts)
     {
             for(auto & filename: files)
