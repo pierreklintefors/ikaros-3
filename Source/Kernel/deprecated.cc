@@ -1,5 +1,5 @@
 //
-//	compatibility.cc		Various compatibility utilities for the IKAROS project - will be removed in the future
+//	deprecated.cc		Various compatibility utilities for the IKAROS project - will be removed in the future
 //
 //    Copyright (C) 2001-2022  Christian Balkenius
 //
