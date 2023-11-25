@@ -31,9 +31,6 @@ const int run_mode_step = 2;    // Not used
 const int run_mode_play = 3;
 const int run_mode_realtime = 4;
 
-
-
-
 using tick_count = long long int;
 
 std::string  validate_identifier(std::string s);
@@ -49,7 +46,7 @@ public:
   class fatal_error : public exception 
   {
   public:
-        fatal_error(std::string msg) : exception(msg) {}
+    fatal_error(std::string msg) : exception(msg) {}
   };
 
 class Component;
@@ -65,7 +62,7 @@ Kernel& kernel();
 
 class CircularBuffer
 {
-    public:
+public:
     std::vector<matrix> buffer_;
     int                 index_;
 
@@ -76,11 +73,8 @@ class CircularBuffer
 };
 
 //
-// PARAMETERS
+// PARAMETERS // TODO: add bracket notation to set any type p(x,y) etc
 //
-
-// TODO: add bracket notation to set any type p(x,y) etc
-
 
 enum parameter_type { no_type=0, int_type, bool_type, float_type, string_type, matrix_type, options_type, rate_type };
 static std::vector<std::string> parameter_strings = {"none", "int", "bool", "float", "string", "matrix", "options", "rate"}; // TODO: Add list of strings?
@@ -105,7 +99,6 @@ public:
     float operator=(float v);
     float operator=(double v);
     std::string operator=(std::string v); // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 *** 
-
     operator matrix & ();
     operator std::string();
     operator int();
@@ -152,17 +145,16 @@ public:
     int EvaluateIntExpression(std::string & s);
     std::vector<int> EvaluateSizeList(std::string & s);
     std::vector<int> EvaluateSize(std::string & s);
-bool InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+    bool InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
-void SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections);
-void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections, bool add_labels);
-void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections);
-void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+    void SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections);
+    void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections, bool add_labels);
+    void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections);
+    void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
     virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 };
 
 typedef std::function<Module *()> ModuleCreator;
-
 
 class Group : public Component
 {
@@ -185,7 +177,7 @@ public:
 
 class Connection
 {
-    public:
+public:
     std::string source;             // FIXME: Add undescore to names ****
     range       source_range;
     std::string target;
@@ -223,9 +215,7 @@ public:
 class Kernel
 {
 public:
-
     std::string                             webui_dir;
-
     std::map<std::string, Class>            classes;
     std::map<std::string, Component *>      components;
     std::vector<Connection>                 connections;
@@ -260,8 +250,6 @@ public:
     bool                                    start;          // Start automatically                   
 
     // Timing parameters and functions
-
-    //bool                                  real_time;
     double                                  tick_duration;  // Desired actual or simulated duration for each tick
     tick_count                              tick;
     tick_count                              stop_after;
@@ -303,9 +291,8 @@ public:
     void ListOutputs();
     void ListBuffers();
     void ListCircularBuffers();
-     void ListParameters();
+        void ListParameters();
     void PrintLog();
-
 
     // Functions for creating the network
 

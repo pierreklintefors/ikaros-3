@@ -6,18 +6,18 @@ using namespace ikaros;
 
 namespace ikaros
 {
-std::string  validate_identifier(std::string s)
-{
-    static std::string legal = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_1234567890";
-    if(s.empty())
-        throw exception("Identifier cannot be empty string");
-    if('0' <= s[0] && s[0] <= '9')
-        throw exception("Identifier cannot start with a number: "+s);
-    for(auto c : s)
-        if(legal.find(c) == std::string::npos)
-            throw exception("Illegal character in identifier: "+s);
-    return s;
-}
+    std::string  validate_identifier(std::string s)
+    {
+        static std::string legal = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_1234567890";
+        if(s.empty())
+            throw exception("Identifier cannot be empty string");
+        if('0' <= s[0] && s[0] <= '9')
+            throw exception("Identifier cannot start with a number: "+s);
+        for(auto c : s)
+            if(legal.find(c) == std::string::npos)
+                throw exception("Illegal character in identifier: "+s);
+        return s;
+    }
 
 // CircularBuffer
 
@@ -44,17 +44,15 @@ std::string  validate_identifier(std::string s)
         */
     }
 
-
     matrix & 
     CircularBuffer::get(int i) // Get output with delay i
     {
         return buffer_[(buffer_.size()+index_-i) % buffer_.size()];
     }
 
-
 // Parameter
 
-   parameter::parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), timebase(1)
+    parameter::parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), timebase(1)
     {
         default_value = default_val;
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
@@ -69,19 +67,15 @@ std::string  validate_identifier(std::string s)
             case float_type: float_value = std::make_shared<float>(0); break;
             case string_type: string_value = std::make_shared<std::string>(""); break;
             case matrix_type: matrix_value = std::make_shared<matrix>(); break;
-       case rate_type: float_value = std::make_shared<float>(0); break;
-
+            case rate_type: float_value = std::make_shared<float>(0); break;
             case options_type:
                 int_value = std::make_shared<int>(0);
                 options = split(options_string,",");
                 break;
-
             // TODO: bool
             default: break;
         } 
     }
-
-
 
     void 
     parameter::operator=(parameter & p) // this shares data with p
@@ -360,7 +354,7 @@ std::string  validate_identifier(std::string s)
 
 
     std::string 
-   Component::SubstituteVariables(const std::string & s)
+    Component::SubstituteVariables(const std::string & s)
     {
         std::string var; 
         std::string sep;
@@ -376,7 +370,6 @@ std::string  validate_identifier(std::string s)
     }
 
 
-///
 
     void Component::Bind(parameter & p, std::string name)
     {
@@ -469,39 +462,37 @@ std::string  validate_identifier(std::string s)
             return false;
     }
 
-
-/*
-std::string Component::Lookup(const std::string & name) const // FIXME: Should this funciton throw????
-{
-    std::string component_name = name_;
-    while (true)
+    /*
+    std::string Component::Lookup(const std::string & name) const // FIXME: Should this funciton throw????
     {
-        auto it = kernel().parameters.find(component_name + "." + name);
+        std::string component_name = name_;
+        while (true)
+        {
+            auto it = kernel().parameters.find(component_name + "." + name);
+            if (it != kernel().parameters.end() && it->second.is_set)
+                return it->second;
+            int p = component_name.rfind('.');
+            if(p == std::string::npos)
+                return std::string();
+            component_name = component_name.substr(0, p);
+        }
+    }
+
+
+    // Recursive
+
+    std::string Component::Lookup(const std::string & name) const
+    {
+        auto it = kernel().parameters.find(name_ + "." + name);
         if (it != kernel().parameters.end() && it->second.is_set)
             return it->second;
-        int p = component_name.rfind('.');
-        if(p == std::string::npos)
-            return std::string();
-        component_name = component_name.substr(0, p);
+        else if(parent)
+            return parent->Lookup(name)
+        else 
+            return "";
+        }
     }
-}
-
-
-// Recursive
-
-std::string Component::Lookup(const std::string & name) const
-{
-    auto it = kernel().parameters.find(name_ + "." + name);
-    if (it != kernel().parameters.end() && it->second.is_set)
-        return it->second;
-    else if(parent)
-        return parent->Lookup(name)
-    else 
-        return "";
-    }
-}
-*/
-
+    */
 
     Component * Component::GetComponent(const std::string & s) // Get component; sensitive to variables and indirection
     {
@@ -640,212 +631,210 @@ std::string Component::Lookup(const std::string & name) const
         static Kernel * kernelInstance = new Kernel();
         return *kernelInstance;
     }
-}; // namespace ikaros
 
 
-bool
-Component::InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: Handle optional buffers
-{
-    Kernel& k = kernel();
-
-    std::string n = d["attributes"]["name"];
-    for(auto & c : ingoing_connections[name_+'.'+n])
-        if(k.buffers.at(c->source).rank()==0)
-            return false;
-    return true;
-}
-
-
-void Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
-{
-    for(auto & c : ingoing_connections) // Copy source size to source_range if not set
+    bool
+    Component::InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: Handle optional buffers
     {
-        if(c->source_range.empty())
-            c->source_range = kernel().buffers[c->source].get_range();
-        else if(c->source_range.rank() != kernel().buffers[c->source].rank())
-            throw exception("Explicitly set source range dimensionality does not match source.");
+        Kernel& k = kernel();
+
+        std::string n = d["attributes"]["name"];
+        for(auto & c : ingoing_connections[name_+'.'+n])
+            if(k.buffers.at(c->source).rank()==0)
+                return false;
+        return true;
     }
 
-}
 
-
-void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool add_labels)
-{
-    SetSourceRanges(name, ingoing_connections);
-    int begin_index = 0;
-    int end_index = 0;
-    int flattened_input_size = 0;
-    for(auto & c : ingoing_connections)
+    void Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
     {
-        c->flatten_ = true;
-        int s = c->source_range.size() * c->delay_range_.trim().b_[0];
-        end_index = begin_index + s;
-        c->target_range = range(begin_index, end_index);
-        begin_index += s;
-        flattened_input_size += s;
-    }
-    kernel().buffers[name].realloc(flattened_input_size);
-
-    if(!add_labels)
-        return;
-
-    begin_index = 0;
-    for(auto & c : ingoing_connections)
-    {
-        int s = c->source_range.size() * c->delay_range_.trim().b_[0];
-        if(c->alias_.empty())
-            kernel().buffers[name].push_label(0, c->source, s);
-        else
-            kernel().buffers[name].push_label(0, c->alias_, s);
-    }
-}
-
-
-void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
-{
-        SetSourceRanges(name, ingoing_connections);
-        int max_delay = 0;
-        for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
+        for(auto & c : ingoing_connections) // Copy source size to source_range if not set
         {
-            if(!c->delay_range_.empty() && c->delay_range_.trim().b_[0] > max_delay)
-                max_delay = c->delay_range_.trim().b_[0];
+            if(c->source_range.empty())
+                c->source_range = kernel().buffers[c->source].get_range();
+            else if(c->source_range.rank() != kernel().buffers[c->source].rank())
+                throw exception("Explicitly set source range dimensionality does not match source.");
+        }
 
-            if(c->target_range.empty())
-                c->target_range = c->source_range;
+    }
+
+
+    void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool add_labels)
+    {
+        SetSourceRanges(name, ingoing_connections);
+        int begin_index = 0;
+        int end_index = 0;
+        int flattened_input_size = 0;
+        for(auto & c : ingoing_connections)
+        {
+            c->flatten_ = true;
+            int s = c->source_range.size() * c->delay_range_.trim().b_[0];
+            end_index = begin_index + s;
+            c->target_range = range(begin_index, end_index);
+            begin_index += s;
+            flattened_input_size += s;
+        }
+        kernel().buffers[name].realloc(flattened_input_size);
+
+        if(!add_labels)
+            return;
+
+        begin_index = 0;
+        for(auto & c : ingoing_connections)
+        {
+            int s = c->source_range.size() * c->delay_range_.trim().b_[0];
+            if(c->alias_.empty())
+                kernel().buffers[name].push_label(0, c->source, s);
             else
+                kernel().buffers[name].push_label(0, c->alias_, s);
+        }
+    }
+
+
+    void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
+    {
+            SetSourceRanges(name, ingoing_connections);
+            int max_delay = 0;
+            for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
             {
-                int si = c->source_range.rank()-1;
-            
-                for(int ti = c->target_range.rank()-1; ti>=0; ti--, si--)
-                    if(c->target_range.b_[ti] == 0)
-                    {
-                        c->target_range.inc_[ti] = c->source_range.inc_[si]; // FIXME: Is this correct? Or should it shrink?
-                        c->target_range.a_[ti] = c->source_range.a_[si];
-                        c->target_range.b_[ti] = c->source_range.b_[si];
-                        c->target_range.index_[ti] = c->target_range.a_[si]; // FIXME: Check if this is necesary
-                    }
+                if(!c->delay_range_.empty() && c->delay_range_.trim().b_[0] > max_delay)
+                    max_delay = c->delay_range_.trim().b_[0];
+
+                if(c->target_range.empty())
+                    c->target_range = c->source_range;
+                else
+                {
+                    int si = c->source_range.rank()-1;
+                
+                    for(int ti = c->target_range.rank()-1; ti>=0; ti--, si--)
+                        if(c->target_range.b_[ti] == 0)
+                        {
+                            c->target_range.inc_[ti] = c->source_range.inc_[si]; // FIXME: Is this correct? Or should it shrink?
+                            c->target_range.a_[ti] = c->source_range.a_[si];
+                            c->target_range.b_[ti] = c->source_range.b_[si];
+                            c->target_range.index_[ti] = c->target_range.a_[si]; // FIXME: Check if this is necesary
+                        }
+                }
+
+                if(c->delay_range_.size() > 1) // Add extra dimension to input if connection is a delay range with more than one delay
+                    c->target_range.push_front(0, c->delay_range_.trim().b_[0]);
             }
 
-            if(c->delay_range_.size() > 1) // Add extra dimension to input if connection is a delay range with more than one delay
-                 c->target_range.push_front(0, c->delay_range_.trim().b_[0]);
-        }
+        range r;
 
-    range r;
+        for(auto & c : ingoing_connections)  // STEP 1: Calculate range extent
+            r |= c->target_range;
 
-    for(auto & c : ingoing_connections)  // STEP 1: Calculate range extent
-        r |= c->target_range;
+        //if(max_delay > 1)
+        //    r.push_front(0, max_delay);
 
-    //if(max_delay > 1)
-    //    r.push_front(0, max_delay);
-
-    kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size
-}
+        kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size
+    }
 
 
-void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
-{
+    void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
+    {
+            Kernel& k = kernel();
+            std::string input_name = name_ + "." + std::string(d["attributes"]["name"]);
+
+            // FIXME: Use input type heuristics here ************
+
+            std::string add_labels = d["attributes"]["add_labels"];
+
+            std::string flatten = d["attributes"]["flatten"];
+            if(is_true(flatten))
+                SetInputSize_Flat(input_name, ingoing_connections[input_name],is_true(add_labels));
+            else
+                SetInputSize_Index(input_name, ingoing_connections[input_name]);
+    }
+
+
+    // Attempt to set sizes for a single component
+
+    int
+    Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: add more exception handling
+    {
         Kernel& k = kernel();
-        std::string input_name = name_ + "." + std::string(d["attributes"]["name"]);
 
-        // FIXME: Use input type heuristics here ************
+        // Set input sizes (if possible)
 
-        std::string add_labels = d["attributes"]["add_labels"];
+        for(auto & d : info_["inputs"])
+            if(k.buffers[name_+"."+std::string(d["attributes"]["name"])].empty())
+            {   
+                if(InputsReady(dictionary(d), ingoing_connections))
+                    SetInputSize(dictionary(d), ingoing_connections);
+            }
 
-        std::string flatten = d["attributes"]["flatten"];
-        if(is_true(flatten))
-            SetInputSize_Flat(input_name, ingoing_connections[input_name],is_true(add_labels));
-        else
-            SetInputSize_Index(input_name, ingoing_connections[input_name]);
-}
+        // Set output sizes // FIXME: Move to separate function
 
-
-// Attempt to set sizes for a single component
-
-int
-Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: add more exception handling
-{
-    Kernel& k = kernel();
-
-    // Set input sizes (if possible)
-
-    for(auto & d : info_["inputs"])
-        if(k.buffers[name_+"."+std::string(d["attributes"]["name"])].empty())
-        {   
-             if(InputsReady(dictionary(d), ingoing_connections))
-                SetInputSize(dictionary(d), ingoing_connections);
+        int outputs_with_size = 0;
+        for(auto & d : info_["outputs"])
+        {
+            std::string n = d["attributes"]["name"];
+            std::string s = d["attributes"]["size"];
+            std::vector<int> shape = EvaluateSize(s);
+            matrix o;
+            Bind(o, n); // FIXME: Get directly?
+            if(o.rank() != 0)
+                outputs_with_size++; // Count number of buffers that are set
+            
+            o.realloc(shape);
+            outputs_with_size++;
         }
 
-    // Set output sizes // FIXME: Move to separate function
-
-    int outputs_with_size = 0;
-    for(auto & d : info_["outputs"])
-    {
-        std::string n = d["attributes"]["name"];
-        std::string s = d["attributes"]["size"];
-        std::vector<int> shape = EvaluateSize(s);
-        matrix o;
-        Bind(o, n); // FIXME: Get directly?
-        if(o.rank() != 0)
-            outputs_with_size++; // Count number of buffers that are set
-        
-        o.realloc(shape);
-        outputs_with_size++;
+        if(outputs_with_size == info_["class"]["outputs"].size())
+            return 0; // all buffers have been set
+        else
+            return 0; // needs to be called again - FIXME: Report progress later on
     }
 
-    if(outputs_with_size == info_["class"]["outputs"].size())
-        return 0; // all buffers have been set
-    else
-        return 0; // needs to be called again - FIXME: Report progress later on
-}
+
+    // Connection
+
+        Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
+        {
+            source = head(s, '[');
+            source_range = range(tail(s, '[', true)); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
+            target = head(t, '[');
+            target_range = range(tail(t, '[', true));
+            delay_range_ = delay_range;
+            flatten_ = false;
+            alias_ = alias;
+        }
 
 
-// Connection
+        void
+        Connection::Print()
+        {
+            std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range);
+            if(!alias_.empty())
+                std::cout << " \"" << alias_ << "\"";
+            std::cout << '\n'; 
+        }
 
-    Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
-    {
-        source = head(s, '[');
-        source_range = range(tail(s, '[', true)); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
-        target = head(t, '[');
-        target_range = range(tail(t, '[', true));
-        delay_range_ = delay_range;
-        flatten_ = false;
-        alias_ = alias;
-    }
 
+    // Class
+
+        void 
+        Class::print()
+        {
+            std::cout << name << ": " << path  << '\n';
+        }
+
+    // Kernel
 
     void
-    Connection::Print()
+    Kernel::Tick()
     {
-        std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range);
-        if(!alias_.empty())
-            std::cout << " \"" << alias_ << "\"";
-        std::cout << '\n'; 
+        for(auto & m : components)
+            m.second->Tick();
+
+        RotateBuffers();
+        Propagate();
+
+        tick++;
     }
 
-
-// Class
-
-    void 
-    Class::print()
-    {
-        std::cout << name << ": " << path  << '\n';
-    }
-
-// Kernel
-
-void
-Kernel::Tick()
-{
-     for(auto & m : components)
-        m.second->Tick();
-
-    RotateBuffers();
-    Propagate();
-
-    tick++;
-}
-
-// *************************************************************
 
     bool Kernel::Terminate()
     {
@@ -1025,7 +1014,7 @@ Kernel::Tick()
     }
 
 
- void Kernel::ListCircularBuffers()
+    void Kernel::ListCircularBuffers()
     {
         std::cout << "\nCircularBuffers:" << std::endl;
         for(auto & i : circular_buffers)
@@ -1315,7 +1304,6 @@ Kernel::Tick()
     }
 
 
-
     void Kernel::InitSocket()
     {
         try
@@ -1328,17 +1316,16 @@ Kernel::Tick()
         }
     }
 
-// *************************************************************
 
-void
-Kernel::SetUp()
-{
+    void
+    Kernel::SetUp()
+    {
     ResolveParameters();
     CalculateDelays();
     CalculateSizes();
     InitCircularBuffers();
     InitComponents();
-/*
+    /*
     InitComponents();
     ListComponents();
     ListConnections();
@@ -1352,13 +1339,12 @@ Kernel::SetUp()
     ListParameters();
     PrintLog();
     */
-}
+    }
 
 
-
-void
-Kernel::Run(std::vector<std::string> files, options & opts)
-{
+    void
+    Kernel::Run(std::vector<std::string> files, options & opts)
+    {
     LoadFiles(files, opts); // INIT
     InitSocket();
     SetUp();
@@ -1369,7 +1355,7 @@ Kernel::Run(std::vector<std::string> files, options & opts)
     tick = 0;
     is_running = start;
 
-     httpThread = new std::thread(Kernel::StartHTTPThread, this);
+        httpThread = new std::thread(Kernel::StartHTTPThread, this);
 
     while (!Terminate())
     {
@@ -1380,7 +1366,7 @@ Kernel::Run(std::vector<std::string> files, options & opts)
             std::cout << "Idle: " << run_mode << std::endl;
             Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
         }
-  
+
         while(sending_ui_data)
             {}
         while(handling_request)
@@ -1412,7 +1398,7 @@ Kernel::Run(std::vector<std::string> files, options & opts)
 
                 //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
             }
-/*            
+    /*            
             else if (run_mode == run_mode_realtime)
             {
                 while(sending_ui_data)
@@ -1420,14 +1406,14 @@ Kernel::Run(std::vector<std::string> files, options & opts)
                 while(handling_request)
                     {}
             }
-*/
+    */
         }
-}
-}
+    }
+    }
 
-//
-//  Serialization
-//
+    //
+    //  Serialization
+    //
 
     std::string 
     Component::JSONString()
@@ -1484,7 +1470,7 @@ Kernel::Run(std::vector<std::string> files, options & opts)
         s+= " , \"groups\": ["+gs+"]";
         s+= " , \"modules\": ["+ms+"]";
 
-           s+= " , \"views\": " + info_["views"].json();
+            s+= " , \"views\": " + info_["views"].json();
 
         s+= "}";
 
@@ -1502,24 +1488,24 @@ Kernel::Run(std::vector<std::string> files, options & opts)
     }
 
 
-//
-// WebUI
-//
+    //
+    // WebUI
+    //
 
-void
-Kernel::Pause()
-{
+    void
+    Kernel::Pause()
+    {
     is_running = false;
     while(tick_is_running)
         {}
-}
+    }
 
 
 
-long
-get_client_id(std::string & args)
-{
-    std::string id_string =  head(args, "&");
+    long
+    get_client_id(std::string & args)
+    {
+    std::string id_string =  ::head(args, "&");     // FIXME: sort out string functions
     std::string id_number = cut(id_string, "id=");
 
     try
@@ -1530,19 +1516,18 @@ get_client_id(std::string & args)
     {
         return 0;
     }
-}
+    }
 
 
-
-void
-Kernel::DoSendData(std::string uri, std::string args)
-{    
+    void
+    Kernel::DoSendData(std::string uri, std::string args)
+    {    
     sending_ui_data = true; // must be set while main thread is still running
     while(tick_is_running)
         {}
 
-std::string root = cut(args, "data=");
-std::string data = cut(root, "#");
+    std::string root = cut(args, "data=");
+    std::string data = cut(root, "#");
 
     Dictionary header;
     header.Set("Session-Id", std::to_string(session_id).c_str()); // FIXME: GetValue("session_id")
@@ -1552,13 +1537,12 @@ std::string data = cut(root, "#");
     header.Set("Cache-Control", "no-store");
     header.Set("Pragma", "no-cache");
     header.Set("Expires", "0");
-    
+
     socket->SendHTTPHeader(&header);
-    
 
     socket->Send("{\n");
     socket->Send("\t\"state\": %d,\n", run_mode);
-    
+
     if(stop_after > 0)
     {
         socket->Send("\t\"iteration\": \"%d / %d\",\n", GetTick(), stop_after);
@@ -1571,7 +1555,7 @@ std::string data = cut(root, "#");
     }
 
     // Timing information
-    
+
     float total_time = 0; // timer->GetTime()/1000.0; // in seconds // FIXME: ---------
 
     socket->Send("\t\"timestamp\": %ld,\n", 0); // Timer::GetRealTime() // FIXME: -----------
@@ -1601,7 +1585,7 @@ std::string data = cut(root, "#");
         if(!source.empty())
         {
             // Use data from module function if available
-           /*
+            /*
             auto module_source = rsplit(source, ".", 1);
             if(GroupElement * g = root_group->GetGroup(module_source.at(0)))
             {
@@ -1610,8 +1594,8 @@ std::string data = cut(root, "#");
                     json_data = g->module->GetJSONData(module_source.at(1)); //  : ""
             */
 
-    
-          
+
+            
             if(format == "") // as default, send a matrix
             {
                 if(buffers.count(root+"."+source))
@@ -1641,7 +1625,7 @@ std::string data = cut(root, "#");
                     // FIXME: output not found error
                 }
             }
-                  /*
+                    /*
                 Module_IO * io = root_group->GetSource(source); // FIXME: Also look for buffers here
                 if(io)
                 {
@@ -1674,7 +1658,7 @@ std::string data = cut(root, "#");
                         case data_source_string:
                             socket->Send("\t\t\"%s\": \"%s\"", source.c_str(), ((std::string *)(b->value))->c_str());
                             break;
-         
+            
                         case data_source_matrix:
                             SendJSONMatrixData(socket, source, *(float **)(b->value), b->size_x, b->size_y);
                             break;
@@ -1735,10 +1719,8 @@ std::string data = cut(root, "#");
                     sep = ",\n";
                 }
             }
-
             */
         }
-
     }
 
 
@@ -1755,31 +1737,27 @@ std::string data = cut(root, "#");
     socket->Send("}\n");
 
     sending_ui_data = false;
-}
+    }
 
 
-
-void
-Kernel::DoStop(std::string uri, std::string args)
-{
+    void
+    Kernel::DoStop(std::string uri, std::string args)
+    {
     Pause();
     run_mode = run_mode_stop;
-
     // Notify(msg_terminate, "Sent by WebUI.\n");
     DoSendData(uri, args);
-}
+    }
 
 
-void
-Kernel::DoSendFile(std::string file)
-{
+    void
+    Kernel::DoSendFile(std::string file)
+    {
         if(file[0] == '/')
             file = file.erase(0,1); // Remove initial slash
 
         // if(socket->SendFile(file, ikc_dir))  // Check IKC-directory first to allow files to be overriden
         //    return;
-
-
 
         if(socket->SendFile(file, webui_dir))   // Now look in WebUI directory
             return;
@@ -1788,21 +1766,19 @@ Kernel::DoSendFile(std::string file)
 
         if(socket->SendFile(file, std::string(webui_dir)+"Images/"))   // Now look in WebUI/Images directory
             return;
-      
+        
         file = "error." + rcut(file, ".");
         if(socket->SendFile("error." + rcut(file, "."), webui_dir)) // Try to send error file
             return;
 
         DoSendError();
-
         */
-}
+    }
 
 
-
-void
-Kernel::DoSendNetwork(std::string uri, std::string args)
-{
+    void
+    Kernel::DoSendNetwork(std::string uri, std::string args)
+    {
         std::string s = JSONString(); 
         Dictionary rtheader;
         rtheader.Set("Session-Id", std::to_string(session_id).c_str());
@@ -1811,62 +1787,58 @@ Kernel::DoSendNetwork(std::string uri, std::string args)
         rtheader.Set("Content-Length", int(s.size()));
         socket->SendHTTPHeader(&rtheader);
         socket->SendData(s.c_str(), int(s.size()));
-}
+    }
 
 
-
-void
-Kernel::DoPause(std::string uri, std::string args)
-{
+    void
+    Kernel::DoPause(std::string uri, std::string args)
+    {
     std::cout << "DoPause" << std::endl;
     Pause();
     run_mode = run_mode_pause;
     master_id = get_client_id(args);
     DoSendData(uri, args);
-}
+    }
 
 
-
-void
-Kernel::DoStep(std::string uri, std::string args)
-{
+    void
+    Kernel::DoStep(std::string uri, std::string args)
+    {
     std::cout << "DoPStep" << std::endl;
     Pause();
     run_mode = run_mode_pause;
     master_id = get_client_id(args);
     Tick();
     DoSendData(uri, args);
-}
+    }
 
 
-
-
-void
-Kernel::DoPlay(std::string uri, std::string args)
-{
+    void
+    Kernel::DoPlay(std::string uri, std::string args)
+    {
     std::cout << "DoPlay" << std::endl;
     Pause();
     run_mode = run_mode_play;
     master_id = get_client_id(args);
     Tick();
     DoSendData(uri, args);
-}
+    }
 
 
-void
-Kernel::DoRealtime(std::string uri, std::string args)
-{
+    void
+    Kernel::DoRealtime(std::string uri, std::string args)
+    {
     std::cout << "DoRealtime" << std::endl;
     run_mode = run_mode_realtime;
     master_id = get_client_id(args);
     is_running = true;
     DoSendData(uri, args);
-}
+    }
 
 
-void
-Kernel::DoCommand(std::string uri, std::string args)
-{
+    void
+    Kernel::DoCommand(std::string uri, std::string args)
+    {
     /*
     float x, y;
     char command[255];
@@ -1876,14 +1848,13 @@ Kernel::DoCommand(std::string uri, std::string args)
         SendCommand(command, x, y, value);
 
         */
-
     DoSendData(uri, args);
-}
+    }
 
 
-void
-Kernel::DoControl(std::string uri, std::string args)
-{
+    void
+    Kernel::DoControl(std::string uri, std::string args)
+    {
     try
     {
         auto cmd = split(uri, "/");
@@ -1911,12 +1882,12 @@ Kernel::DoControl(std::string uri, std::string args)
         std::cerr << e.what() << '\n';
         DoSendData(uri, args);
     }
-}
+    }
 
 
-void
-Kernel::DoUpdate(std::string uri, std::string args)
-{
+    void
+    Kernel::DoUpdate(std::string uri, std::string args)
+    {
     if(args.empty() || first_request) // not a data request - send view data
     {
         first_request = false;
@@ -1930,24 +1901,24 @@ Kernel::DoUpdate(std::string uri, std::string args)
     }
     else 
         DoSendData(uri, args);
-}
+    }
 
 
-void
-Kernel::DoGetLog(std::string uri, std::string args)
-{
+    void
+    Kernel::DoGetLog(std::string uri, std::string args)
+    {
     /*
     if (logfile)
         socket->SendFile("logfile", webui_dir);
     else
         socket->Send("ERROR - No logfile found\n");
     */
-}
+    }
 
 
-void
-Kernel::DoSendClasses(std::string uri, std::string args)
-{
+    void
+    Kernel::DoSendClasses(std::string uri, std::string args)
+    {
     Dictionary header;
     header.Set("Content-Type", "text/json");
     header.Set("Cache-Control", "no-cache");
@@ -1963,22 +1934,22 @@ Kernel::DoSendClasses(std::string uri, std::string args)
         s = "\",\n\t\"";
     }
     socket->Send("\"\n]\n}\n");
-}
+    }
 
 
-void
-Kernel::DoSendError()
-{
+    void
+    Kernel::DoSendError()
+    {
     Dictionary header;
     header.Set("Content-Type", "text/plain");
     socket->SendHTTPHeader(&header);
     socket->Send("ERROR\n");
-}
+    }
 
 
- void
- Kernel::HandleHTTPRequest()
- {
+    void
+    Kernel::HandleHTTPRequest()
+    {
     std::string uri = socket->header.Get("URI");
     if(uri.empty())
     {
@@ -1988,52 +1959,50 @@ Kernel::DoSendError()
 
     std::string args = cut(uri, "?");
 
-
     // SELECT METHOD
 
-        if(uri == "/update")
-            DoUpdate(uri, args);
+    if(uri == "/update")
+        DoUpdate(uri, args);
 
-        else if(uri == "/pause")
-            DoPause(uri, args);
+    else if(uri == "/pause")
+        DoPause(uri, args);
 
-        else if(uri == "/step")
-            DoStep(uri, args);
+    else if(uri == "/step")
+        DoStep(uri, args);
 
 
-        else if(uri == "/play")
-            DoPlay(uri, args);
+    else if(uri == "/play")
+        DoPlay(uri, args);
 
-        else if(uri == "/realtime")
-            DoRealtime(uri, args);
+    else if(uri == "/realtime")
+        DoRealtime(uri, args);
 
-        else if(uri == "/stop")
-            DoStop(uri, args);
+    else if(uri == "/stop")
+        DoStop(uri, args);
 
-        else if(uri == "/getlog")
-            DoGetLog(uri, args);
+    else if(uri == "/getlog")
+        DoGetLog(uri, args);
+
+    else if(uri == "/classes") 
+        DoSendClasses(uri, args);
+
+    else if(uri == "/")
+        DoSendFile("index.html");
+
+    else if(starts_with(uri, "/command/"))
+        DoCommand(uri, args);
         
-        else if(uri == "/classes") 
-            DoSendClasses(uri, args);
+    else if(starts_with(uri, "/control/"))
+        DoControl(uri, args);
 
-        else if(uri == "/")
-            DoSendFile("index.html");
-
-        else if(starts_with(uri, "/command/"))
-            DoCommand(uri, args);
-            
-        else if(starts_with(uri, "/control/"))
-            DoControl(uri, args);
-
-        else 
-            DoSendFile(uri);
- }
+    else 
+        DoSendFile(uri);
+    }
 
 
-
-void
-Kernel::HandleHTTPThread()
-{
+    void
+    Kernel::HandleHTTPThread()
+    {
     while(!Terminate())
     {
         if (socket != nullptr && socket->GetRequest(true))
@@ -2049,15 +2018,15 @@ Kernel::HandleHTTPThread()
             socket->Close();
         }
     }
-}
+    }
 
 
-
-void *
-Kernel::StartHTTPThread(Kernel * k)
-{
+    void *
+    Kernel::StartHTTPThread(Kernel * k)
+    {
     k->HandleHTTPThread();
     return nullptr;
-}
+    }
 
+}; // namespace ikaros
 
