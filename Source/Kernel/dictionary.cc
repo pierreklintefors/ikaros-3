@@ -59,8 +59,6 @@ dictionary::json()
     return s;
 }
 
-
-
 void dictionary::print()
 {
     for(auto & v : dict_)
@@ -68,7 +66,6 @@ void dictionary::print()
         std::cout << std::string(*this) << std::endl;
     }
 }
-
 
 dictionary::dictionary(XMLElement * xml_node, bool merge)
 {
@@ -85,7 +82,6 @@ dictionary::dictionary(XMLElement * xml_node, bool merge)
         else
             dict_["elements"].push_back(dictionary(xml_element, merge));
 }
-
 
 dictionary::dictionary(std::string filename, bool merge)
 {
