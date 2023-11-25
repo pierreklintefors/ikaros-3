@@ -40,7 +40,8 @@ namespace ikaros
 
     // Matrix info class
 
-    class matrix_info {
+    class matrix_info 
+    {
     public:
         int offset_;                                    // offset to first element of the matrix
         std::vector<int> shape_;                        // size of each dimension of the matrix
@@ -80,39 +81,37 @@ namespace ikaros
     };
 
 
-    class matrix {
-    public:
-
- 
-   struct iterator
+    class matrix 
     {
     public:
-        matrix *    matrix_;
-        int         index_;
 
-        using iterator_category = std::forward_iterator_tag;
-        /*
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = matrix;
-        using pointer           = matrix*;
-        using reference         = matrix&;
-        */
+        struct iterator
+        {
+        public:
+            matrix *    matrix_;
+            int         index_;
 
-        iterator(matrix & m) : matrix_(&m), index_(0) {}
-        iterator(matrix & m, int i) : matrix_(&m), index_(i) {}
+            using iterator_category = std::forward_iterator_tag;
+            /*
+            using difference_type   = std::ptrdiff_t;
+            using value_type        = matrix;
+            using pointer           = matrix*;
+            using reference         = matrix&;
+            */
 
-        matrix operator*() { return (*matrix_)[index_]; }
-        
-        //pointer operator->() { return m_ptr; }
+            iterator(matrix & m) : matrix_(&m), index_(0) {}
+            iterator(matrix & m, int i) : matrix_(&m), index_(i) {}
 
-        iterator& operator++() { index_++; return *this; }  
-        iterator operator++(int) { iterator tmp = *this; ++(*this); return tmp; }
+            matrix operator*() { return (*matrix_)[index_]; }
+            
+            //pointer operator->() { return m_ptr; }
 
-        friend bool operator== (const iterator& a, const iterator& b) { return a.index_ == b.index_; }
-        friend bool operator!= (const iterator& a, const iterator& b){  return !(a == b); }
+            iterator& operator++() { index_++; return *this; }  
+            iterator operator++(int) { iterator tmp = *this; ++(*this); return tmp; }
 
-    };
-
+            friend bool operator== (const iterator& a, const iterator& b) { return a.index_ == b.index_; }
+            friend bool operator!= (const iterator& a, const iterator& b){  return !(a == b); }
+        };
 
         std::shared_ptr<matrix_info> info_;             // The description of the matrix, can be shared by different matrices
         std::shared_ptr<std::vector<float>> data_;      // The raw data for the matrix, shared by submatrices
@@ -129,7 +128,7 @@ namespace ikaros
             matrix(std::vector<int> shape): 
             info_(std::make_shared<matrix_info>(shape)),
             data_(std::make_shared<std::vector<float>>(info_->calculate_size()))
-        {}
+            {}
 
 
         template <typename... Args> // Main creator function from matrix sizes as arguments
@@ -137,18 +136,12 @@ namespace ikaros
             matrix(std::vector<int>({shape...}))
         {}
 
-
         matrix(int cols, float *data):
             matrix(cols)
-        {
-            
-        }
-
+        {}
 
         matrix(int rows, int cols, float **data)
-        {
-        
-        }
+        {}
 
 /*
         void operator=(char * data_string) // set from data string after resizing
@@ -187,8 +180,6 @@ namespace ikaros
                 }
             }
         }
-
-
 
         matrix(const std::string & data_string)
         {
@@ -265,7 +256,6 @@ namespace ikaros
             return r;
         }
 
-
         void
         info(std::string n="") const // print matrix info; n overrides name if set (useful during debugging) // FIXME: Move partially to matrix_info + print_data
         {
@@ -274,14 +264,12 @@ namespace ikaros
             print_attribute_value("data", *data_, 0, 40);
         }
 
-
         void
         test_fill() // test function that fillls the elements with consecutive numbers - will be removed in the future
         {
             for(int i=0; i<data_->size(); i++)
                 (*data_)[i] = float(i);
         }
-
 
         void
         init(std::vector<int> & shape, std::shared_ptr<std::vector<float>> data, std::initializer_list<InitList> list, int depth=0) // internal initialization function
@@ -321,7 +309,6 @@ namespace ikaros
                 }        
         }
 
-
         matrix(std::initializer_list<InitList>  list): // Main creator function from initializer list
 
             data_(std::make_shared<std::vector<float>>()),
@@ -337,8 +324,6 @@ namespace ikaros
             info_->labels_.resize(info_->shape_.size());
         }
 
-
-
         range get_range()
         {
             range r;
@@ -347,15 +332,12 @@ namespace ikaros
             return r;
         }
 
-
-
         matrix &
         set_name(std::string n)
         {
             info_->name_ = n;
             return *this;
         }
-
 
         template <typename... Args>
         matrix &
@@ -365,14 +347,12 @@ namespace ikaros
             return *this;
         }
 
-
         matrix &
         clear_labels(int dimension)
         {
             set_labels(dimension);
             return *this;
         }
-
 
         matrix &
         push_label(int dimension, std::string label, int no_of_columns=1)
@@ -386,30 +366,25 @@ namespace ikaros
             return *this;
         }
 
-
         const std::vector<std::string> labels(int dimension=0)
         {
             return info_->labels_.at(dimension);
         }
-
 
         const int rank() const 
         {
             return info_->shape_.size();
         }
 
-
         const bool empty() const
         {
             return rank() == 0 && (info_->size_  == 0);
         }
 
-
         const bool is_scalar() const
         {
             return rank() == 0 && (info_->size_  == 1);
         }
-
 
         bool
         print_(int depth=0)
@@ -442,8 +417,6 @@ namespace ikaros
             return false;
         }
 
-
-
         std::string json() // Generate JSON-representation of matrix // FIXME: Add resolution for floats
         {
             if(rank() == 0)
@@ -464,8 +437,6 @@ namespace ikaros
             s += "]";
             return s;
         }
-
-
 
         void 
         print(std::string n="") // print matrix; n overrides name if set (useful during debugging)
@@ -490,8 +461,6 @@ namespace ikaros
             std::cout << std::endl;
         }
 
-
-
         matrix &
         apply(std::function< float(float) > f) // Apply a lambda to elements of a matrix
         {
@@ -504,7 +473,6 @@ namespace ikaros
                     (*this)[i].apply(f);
             return *this;
         }
-
 
         matrix &
         apply(matrix A, std::function<float(float, float)> f) // e = f(A[], x)
@@ -521,7 +489,6 @@ namespace ikaros
                 }
             return *this;
         }
-
 
         matrix &
         apply(matrix A, matrix B, std::function<float(float, float)> f) // e[] = f(A[], B[])
@@ -540,7 +507,6 @@ namespace ikaros
         }
 
 
-
         float
         dot(matrix A)
         {
@@ -552,8 +518,6 @@ namespace ikaros
                     s += (*this)[i].dot(A[i]);
             return s;
         }
-
-
 
         matrix & 
         set(float v) // Set all element of the matrix to a value
@@ -579,7 +543,6 @@ namespace ikaros
             return *this;
         }
     
-
         matrix &
         copy(matrix & m, range & target, range & source)
         {
@@ -603,7 +566,6 @@ namespace ikaros
             return *this;
         }
 
-
         operator float & ()
         {
             #ifndef NO_MATRIX_CHECKS
@@ -620,7 +582,6 @@ namespace ikaros
             return &(*data_).data()[info_->offset_];
         }
 
-
         operator float ** ()  // Get pointer to data in a row
         { 
             if(rank() != 2)
@@ -633,13 +594,11 @@ namespace ikaros
             return row_pointers_.data();
         }
 
-
         float * 
         data() // Get pointer to the underlying data. Works for all sizes and for submatrices
         {
                 return &data_->data()[info_->offset_];
         }     
-
 
         matrix &
         reset() // reset the matrix 
@@ -647,7 +606,6 @@ namespace ikaros
             return set(0);
         }
     
-
         void
         check_bounds(std::vector<int> &v) const // Check bounds and throw exception if indices are out of range
         {
@@ -660,7 +618,6 @@ namespace ikaros
                     throw std::out_of_range("Index out of range.");
             #endif
         }
-
 
         template <typename... Args> // FIXME: Call function above
         void
@@ -681,14 +638,12 @@ namespace ikaros
             }
         }
 
-
         void
         check_same_size(matrix & A)
         {
             if(info_->shape_ != A.info_-> shape_)
                 throw std::invalid_argument("Matrix sizes must match.");
         }
-
 
         template <typename... Args>
         float& operator()(Args... indices)
@@ -703,7 +658,6 @@ namespace ikaros
             return (*data_)[index];
         }
 
-
         template <typename... Args>
         const float& operator()(Args... indices) const 
         {
@@ -717,15 +671,10 @@ namespace ikaros
             return (*data_)[index];
         }
 
-
         const std::vector<int>& shape() const
         { 
             return info_->shape_; 
         }
-
-
-
-
 
         int size() // Size of full data
         {
@@ -739,6 +688,7 @@ namespace ikaros
             else
                 return 0;
         }
+
         int rows() { return size(0); } // FIXME: count from the back
         int cols() { return size(1); }
         int size_x() { return cols(); }
@@ -748,7 +698,6 @@ namespace ikaros
         matrix & 
         resize(Args... new_shape)
         {
-
             #ifndef NO_MATRIX_CHECKS
             if (sizeof...(new_shape) != info_->shape_.size())
                 throw std::invalid_argument("Number of indices must match matrix rank (resize).");
@@ -764,7 +713,7 @@ namespace ikaros
         }
 
 
-        template <typename... Args> // CRITICAL FUNCTION *************************
+        template <typename... Args>
         matrix & 
         realloc(Args... shape)
         {
@@ -778,7 +727,6 @@ namespace ikaros
 
             return *this;
         }
-
 
         template <typename... Args>
         matrix & 
@@ -797,8 +745,6 @@ namespace ikaros
             info_->labels_.resize(info_->shape_.size());
             return *this;
         }
-
-
         // Push & pop
 
         matrix & 
@@ -819,7 +765,6 @@ namespace ikaros
             else
                 return *this;
         }
-
 
         matrix &
         pop(matrix & m) // pop the last element from m and copy to the current matrix; sizes must match
@@ -849,13 +794,10 @@ namespace ikaros
             throw  std::out_of_range("Label not found.");
         }
 
-
         matrix operator[](const char * n)
-            {
-                return (*this)[std::string(n)];
-            }
-
-
+        {
+            return (*this)[std::string(n)];
+        }
 
         float operator=(float v) // Set all element of the matrix to a value
         {
@@ -868,7 +810,6 @@ namespace ikaros
         }
         
         // Element-wise function
-
 
         matrix & add(float c) { return apply([c](float x)->float {return x+c;}); }
         matrix & subtract(float c) { return add(-c); }
@@ -912,7 +853,6 @@ namespace ikaros
             return index;
         }
 
-
         matrix &
         matmul(matrix & A, matrix & B) // Compute matrix multiplication A*B and put result in current matrix
         {
@@ -935,7 +875,6 @@ namespace ikaros
                         (*this)(j, i) += A(j,k) *B(k,i);
             return *this;
         }
-
 
         matrix &
         corr(matrix & I, matrix & K) // correlation of I and K
@@ -1000,20 +939,19 @@ namespace ikaros
         }
 
         friend std::ostream& operator<<(std::ostream& os, matrix & m)
+        {
+            if(m.empty())
             {
-                if(m.empty())
-                {
-                    if(m.info_->size_ == 0)
-                        os << "{}";
-                    else if(m.info_->size_ == 1)
-                        os << m.data_->at(m.info_->offset_);
-                }
-                else
-                    //os << "{...}";
-                    m.print();
-                return os;
+                if(m.info_->size_ == 0)
+                    os << "{}";
+                else if(m.info_->size_ == 1)
+                    os << m.data_->at(m.info_->offset_);
             }
-
+            else
+                //os << "{...}";
+                m.print();
+            return os;
+        }
 
         // Last Functions
 
@@ -1022,7 +960,6 @@ namespace ikaros
             if(last_!=nullptr)
                 last_->copy(*this);
         }
-
 
         matrix & last()
         {
@@ -1033,7 +970,6 @@ namespace ikaros
             }
             return *last_;
         }
-
 
         // Math Functions
 
@@ -1057,8 +993,5 @@ namespace ikaros
         // operator<=
         // operator  
     };
-
 }
-
-
 #endif
