@@ -4,6 +4,19 @@
  *  Extensions of string
  */
 
+function isEmpty(obj) 
+{
+    if(obj)
+        for (const prop in obj) {
+        if (Object.hasOwn(obj, prop)) {
+            return false;
+        }
+        }
+
+    return true;
+  }
+
+
 String.prototype.rsplit = function(sep, maxsplit) {
     var split = this.split(sep || /\s+/);
     return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;
@@ -87,8 +100,6 @@ function resetCookies()
  *
  */
 
-
-
 function copyToClipboard(text) // FIXME: uses deprecated functions
 {
     if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
@@ -171,10 +182,6 @@ function toggleSystem()
         hideAside();
     }
 }
-
-
-
-
 
 /*
  *
@@ -268,8 +275,11 @@ nav = {
         e.stopPropagation();
     },
     buildList: function(group, name) {
+        if(isEmpty(group))
+            return "";
+
         let s = "";
-            s = "<li data-name='"+name+"/"+group.attributes.name+"'  class='group-closed' onclick='return nav.toggleGroup(event)'><span onclick='return nav.navClick(event)'>" + group.attributes.name + "</span>"; // FIXME: or title
+            s = "<li data-name='"+name+"/"+group.name+"'  class='group-closed' onclick='return nav.toggleGroup(event)'><span onclick='return nav.navClick(event)'>" + group.name + "</span>"; // FIXME: or title
         if(group.views)
         {
             s +=  "<ul>"
@@ -1083,6 +1093,7 @@ interaction = {
         context.lineWidth = 50;
         context.beginPath();
 
+        if(interaction.currentView.connections)
         for(let c of interaction.currentView.connections)
         {
             try
@@ -1647,7 +1658,7 @@ controller = {
         controller.send_stamp = Date.now();
         var last_request = url;
         xhr = new XMLHttpRequest();
-        console.log("controller.get: "+url);
+        console.log("<<< controller.get: \""+url+"\"");
         xhr.open("GET", url, true);
 
         xhr.onload = function(evt)
@@ -1681,6 +1692,28 @@ controller = {
         controller.commandQueue.push(command);
     },
 
+    new: function () {
+        controller.queueCommand('new');
+    },
+
+    openCallback: function(x)
+    {
+        controller.queueCommand('open');
+    },
+
+    open: function () {
+
+        dialog.showOpenDialog("A,B,C,D,E,FFFFFFF", controller.openCallback, "Select file to open");
+    },
+
+    save: function () {
+        alert("Save not implemented yet");
+    },
+
+    saveas: function () {
+        alert("SAVE AS comming soon");
+    },
+
     stop: function () {
         controller.run_mode = 'stop';
         controller.get("stop", controller.update); // do not request data -  stop immediately
@@ -1707,7 +1740,7 @@ controller = {
     },
     
     buildViewDictionary: function(group, name) {
-        controller.views[name+"/"+group.attributes.name] = group;
+        controller.views[name+"/"+group.name] = group;
 
         if(group.views)
             for(i in group.views)
@@ -1786,7 +1819,7 @@ controller = {
         // Set system info from package
         try
         {
-            document.querySelector("#iteration").innerText = response.iteration;
+            document.querySelector("#tick").innerText = response.tick;
             document.querySelector("#state").innerText = controller.run_mode; // +response.state+" "+" "+response.has_data;
             document.querySelector("#total_time").innerText = secondsToHMS(response.total_time);
             document.querySelector("#ticks_per_s").innerText = response.ticks_per_s;
@@ -1823,26 +1856,84 @@ controller = {
             console.log("controller.setSystemInfo: incorrect package received form ikaros.")
         }
     },
-    
 
 
     update(response, session_id, package_type)
     {
+        if(isEmpty(response)){
+            console.log("ERROR: empty response");
+            return;
+        }
 
         controller.ping = Date.now() - controller.send_stamp;
+        controller.defer_reconnect(); // we are still on line
 
+        if(package_type == "network")
+        {
+            //console.log(">>> controller.update: network received");
+            controller.session_id = session_id;
+            controller.tick = response.iteration;
+            nav.init(response);
+            controller.network = response;
+            controller.views = {};
+            controller.buildViewDictionary(response, "");
+            
+            let v = getCookie('current_view');
+            if(Object.keys(controller.views).includes(v))
+                controller.selectView(v);
+            else
+                controller.selectView(Object.keys(controller.views)[0]);
+        }
+
+        else if(controller.session_id != session_id) // new session
+        {
+            console.log(">>> new session");
+            session_id = session_id;
+            controller.get("network", controller.update);
+            return;
+        }
+
+        else if(package_type == "data")
+        {
+            //console.log(">>> controller.update: data received");
+            controller.setSystemInfo(response);
+            if(response.has_data)
+                controller.updateImages(response.data);
+        }
+        else
+        {
+            //console.log(">>> controller.update: unkown package type");
+        }
+
+
+          return;
+
+
+        controller.ping = Date.now() - controller.send_stamp;
+/*
+        if(controller.session_id != session_id) // new session
+        {
+            console.log(">>> controller.update: new session.");
+            //controller.get("update", controller.update);
+            return;
+        }
+*/
         if(!response)
         {
-            console.log("controller.update: empty response.");
+            console.log(">>> controller.update: empty response.");
+        }
+        if(response == {})
+        {
+            console.log(">>> controller.update: empty dict response.");
         }
         else if(controller.session_id != session_id) // new session
         {
-            console.log("controller.update: new session. state="+['stop','pause','step','play','realtime'][response.state]);
+            console.log(">>> controller.update: new session. state="+['stop','pause','step','play','realtime'][response.state]);
             if(response.state)
                 controller.run_mode = ['stop','pause','step','play','realtime'][response.state];
             else
             {
-                console.log("console.update: no state - setting pause");
+                //console.log(">>> controller.update: no state - setting pause");
                 controller.run_mode = 'pause';
             }
             controller.session_id = session_id;
@@ -1857,7 +1948,6 @@ controller = {
                 controller.selectView(v);
             else
                 controller.selectView(Object.keys(controller.views)[0]);
-            
         }
         else if(package_type == "data") // same session - a new data package
         {

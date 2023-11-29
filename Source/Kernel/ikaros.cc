@@ -823,6 +823,30 @@ namespace ikaros
 
     // Kernel
 
+        void
+        Kernel::Clear()
+        {
+            // FIXME: retain persistent components
+            components.clear();
+            connections.clear();
+            buffers.clear();   
+            max_delays.clear();
+            circular_buffers.clear();
+            parameters.clear();
+
+        tick = 0;
+        is_running = false;
+        tick_is_running = false;
+        time_usage = 0;
+        idle_time = 0;
+
+            AddGroup("Untitled");
+
+            first_request = true;
+            session_id = std::time(nullptr);
+        }
+
+
     void
     Kernel::Tick()
     {
@@ -840,6 +864,7 @@ namespace ikaros
     {
         return stop_after!= 0 &&  tick >= stop_after;
     }
+
 
     void Kernel::ScanClasses(std::string path)
     {
@@ -908,7 +933,6 @@ namespace ikaros
         bool progress = true;
         while(progress)
         {
-     
             //progress = false; // FIXME: turn on again when progress reporting is implemented
 
             // Try to set input and output sizes and remove from list if complete
@@ -1503,7 +1527,7 @@ namespace ikaros
 
 
     long
-    get_client_id(std::string & args)
+    get_session_id(std::string & args)
     {
     std::string id_string =  ::head(args, "&");     // FIXME: sort out string functions
     std::string id_number = cut(id_string, "id=");
@@ -1545,12 +1569,12 @@ namespace ikaros
 
     if(stop_after > 0)
     {
-        socket->Send("\t\"iteration\": \"%d / %d\",\n", GetTick(), stop_after);
+        socket->Send("\t\"tick\": \"%d / %d\",\n", GetTick(), stop_after);
         socket->Send("\t\"progress\": %f,\n", float(tick)/float(stop_after));
     }
     else
     {
-        socket->Send("\t\"iteration\": %lld,\n", GetTick());
+        socket->Send("\t\"tick\": %lld,\n", GetTick());
         socket->Send("\t\"progress\": 0,\n");
     }
 
@@ -1741,12 +1765,39 @@ namespace ikaros
 
 
     void
+    Kernel::DoNew(std::string uri, std::string args)
+    {
+        Pause();
+        run_mode = run_mode_stop;
+        Clear();    // Remove all things
+        DoUpdate(uri, args);
+    }
+
+
+    void
+    Kernel::DoOpen(std::string uri, std::string args)
+    {
+        std::cout << "Open: " << args << std::endl;
+    }
+
+    void
+    Kernel::DoSave(std::string uri, std::string args)
+    {
+    }
+
+
+    void
+    Kernel::DoSaveAs(std::string uri, std::string args)
+    {
+    }
+
+
+    void
     Kernel::DoStop(std::string uri, std::string args)
     {
-    Pause();
-    run_mode = run_mode_stop;
-    // Notify(msg_terminate, "Sent by WebUI.\n");
-    DoSendData(uri, args);
+        Pause();
+        run_mode = run_mode_stop;
+        DoUpdate(uri, args);
     }
 
 
@@ -1796,7 +1847,7 @@ namespace ikaros
     std::cout << "DoPause" << std::endl;
     Pause();
     run_mode = run_mode_pause;
-    master_id = get_client_id(args);
+    master_id = get_session_id(args);
     DoSendData(uri, args);
     }
 
@@ -1807,7 +1858,7 @@ namespace ikaros
     std::cout << "DoPStep" << std::endl;
     Pause();
     run_mode = run_mode_pause;
-    master_id = get_client_id(args);
+    master_id = get_session_id(args);
     Tick();
     DoSendData(uri, args);
     }
@@ -1819,7 +1870,7 @@ namespace ikaros
     std::cout << "DoPlay" << std::endl;
     Pause();
     run_mode = run_mode_play;
-    master_id = get_client_id(args);
+    master_id = get_session_id(args);
     Tick();
     DoSendData(uri, args);
     }
@@ -1830,7 +1881,7 @@ namespace ikaros
     {
     std::cout << "DoRealtime" << std::endl;
     run_mode = run_mode_realtime;
-    master_id = get_client_id(args);
+    master_id = get_session_id(args);
     is_running = true;
     DoSendData(uri, args);
     }
@@ -1855,33 +1906,33 @@ namespace ikaros
     void
     Kernel::DoControl(std::string uri, std::string args)
     {
-    try
-    {
-        auto cmd = split(uri, "/");
-        if(cmd.size() == 6)
+        try
         {
-            auto param_name = cmd[2];
-            int x = std::stoi(cmd[3]);
-            int y = std::stoi(cmd[4]);
-            float value = std::stof(cmd[5]);
+            auto cmd = split(uri, "/");
+            if(cmd.size() == 6)
+            {
+                auto param_name = cmd[2];
+                int x = std::stoi(cmd[3]);
+                int y = std::stoi(cmd[4]);
+                float value = std::stof(cmd[5]);
 
-            parameter & p = parameters.at(param_name);
-            if(p.type == matrix_type)
-            {
-                (*p.matrix_value)(x,y)= value;
+                parameter & p = parameters.at(param_name);
+                if(p.type == matrix_type)
+                {
+                    (*p.matrix_value)(x,y)= value;
+                }
+                else // if(p.type == float_type) // FIXME: scalar type
+                {
+                    p = value;
+                }
             }
-            else // if(p.type == float_type) // FIXME: scalar type
-            {
-                p = value;
-            }
+            DoSendData(uri, args);
         }
-        DoSendData(uri, args);
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-        DoSendData(uri, args);
-    }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+            DoSendData(uri, args);
+        }
     }
 
 
@@ -1893,7 +1944,7 @@ namespace ikaros
         first_request = false;
         DoSendNetwork(uri, args);
     }
-    else if(run_mode == run_mode_play && master_id == get_client_id(args))
+    else if(run_mode == run_mode_play && master_id == get_session_id(args))
     {
         Pause();
         Tick();
@@ -1902,6 +1953,16 @@ namespace ikaros
     else 
         DoSendData(uri, args);
     }
+
+
+
+void
+    Kernel::DoNetwork(std::string uri, std::string args)
+    {
+        first_request = false;
+        DoSendNetwork(uri, args);
+    }
+
 
 
     void
@@ -1959,10 +2020,15 @@ namespace ikaros
 
     std::string args = cut(uri, "?");
 
+    std::cout << uri << args << std::endl;
+    
     // SELECT METHOD
 
     if(uri == "/update")
         DoUpdate(uri, args);
+
+    else if(uri == "/network")
+        DoNetwork(uri, args);
 
     else if(uri == "/pause")
         DoPause(uri, args);
@@ -1976,6 +2042,20 @@ namespace ikaros
 
     else if(uri == "/realtime")
         DoRealtime(uri, args);
+
+    else if(uri == "/new")
+        DoNew(uri, args);
+
+    else if(uri == "/open")
+        DoOpen(uri, args);
+
+    else if(uri == "/save")
+        DoSave(uri, args);
+
+
+   else if(uri == "/saveas")
+        DoSaveAs(uri, args);
+
 
     else if(uri == "/stop")
         DoStop(uri, args);

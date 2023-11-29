@@ -265,14 +265,14 @@ public:
 
     Kernel();
 
+    void Clear();        // Remove all non-persistent data and reset kernel variables - // FIXME: Init???
+
     static void *   StartHTTPThread(Kernel * k);
     tick_count GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
     double GetTime() { return (run_mode == run_mode_realtime) ? GetRealTime() : static_cast<double>(tick)*tick_duration; }   // Time since start (in real time or simulated (tick) time dending on mode)
     double GetRealTime() { return (run_mode == run_mode_realtime) ? timer.GetTime() : static_cast<double>(tick)*tick_duration; } 
     double GetLag() { return (run_mode == run_mode_realtime) ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
-
-
 
     bool Terminate();
     void ScanClasses(std::string path);
@@ -291,7 +291,7 @@ public:
     void ListOutputs();
     void ListBuffers();
     void ListCircularBuffers();
-        void ListParameters();
+    void ListParameters();
     void PrintLog();
 
     // Functions for creating the network
@@ -313,6 +313,12 @@ public:
     std::string JSONString();
     void InitSocket();
     void Pause();
+
+        void DoNew(std::string uri, std::string args);
+        void DoOpen(std::string uri, std::string args);
+        void DoSave(std::string uri, std::string args);
+        void DoSaveAs(std::string uri, std::string args);
+
     void DoStop(std::string uri, std::string args);
     void DoPause(std::string uri, std::string args);
     void DoStep(std::string uri, std::string args);
@@ -323,6 +329,7 @@ public:
     void DoSendNetwork(std::string uri, std::string args);
     void DoSendData(std::string uri, std::string args);
     void DoUpdate(std::string uri, std::string args);
+    void DoNetwork(std::string uri, std::string args);
     void DoGetLog(std::string uri, std::string args);
     void DoSendClasses(std::string uri, std::string args);
     void DoSendFile(std::string file);

@@ -34,7 +34,6 @@ namespace ikaros
     };
 
 
-
     class matrix;
 
 
