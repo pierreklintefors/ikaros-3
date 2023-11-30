@@ -855,6 +855,7 @@ interaction = {
 
     init: function () {
         interaction.getClasses();
+        interaction.getFileList();
         interaction.main = document.querySelector('main');
         interaction.widget_inspector = document.querySelector('#widget_inspector');
         interaction.system_inspector = document.querySelector('#system_inspector');
@@ -878,6 +879,21 @@ interaction = {
         })
         .catch(function () {
             console.log("Could not get class list from server.");
+        })
+    },
+    getFileList() {
+        fetch('/filelist')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("HTTP error " + response.status);
+            }
+            return response.json();
+        })
+        .then(json => {
+            interaction.filelist = json.filelist;
+        })
+        .catch(function () {
+            console.log("Could not get file list from server.");
         })
     },
     toggleSystemMode: function() {
@@ -1638,7 +1654,6 @@ controller = {
     
     reconnect: function ()
     {
-
         controller.get("update", controller.update);
         let s = document.querySelector("#state");
         if(s.innerText == "waiting")
@@ -1698,12 +1713,13 @@ controller = {
 
     openCallback: function(x)
     {
-        controller.queueCommand('open');
+        //controller.queueCommand('open');
+        controller.get("open?file="+x, controller.update);
     },
 
     open: function () {
 
-        dialog.showOpenDialog("A,B,C,D,E,FFFFFFF", controller.openCallback, "Select file to open");
+        dialog.showOpenDialog(interaction.filelist, controller.openCallback, "Select file to open");
     },
 
     save: function () {

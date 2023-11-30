@@ -878,6 +878,20 @@ namespace ikaros
     }
 
 
+
+    void Kernel::ScanFiles(std::string path)
+    {
+        int i=0;
+        for(auto& p: std::filesystem::recursive_directory_iterator(path))
+            if(std::string(p.path().extension())==".ikg")
+            {
+                std::string name = p.path().stem();
+                //std::cout << name << ":   " << p.path() << std::endl;
+                files[name] = p.path();
+            }
+    }
+
+
     void Kernel::ListClasses()
     {
         std::cout << "\nClasses:" << std::endl;
@@ -1074,6 +1088,7 @@ namespace ikaros
     {
 
             ScanClasses("Source/Modules");
+            ScanFiles("Source/Modules");
     }
 
     // Functions for creating the network
@@ -1387,7 +1402,7 @@ namespace ikaros
 
         if (!is_running)
         {
-            std::cout << "Idle: " << run_mode << std::endl;
+            // std::cout << "Idle: " << run_mode << std::endl;
             Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
         }
 
@@ -1777,7 +1792,16 @@ namespace ikaros
     void
     Kernel::DoOpen(std::string uri, std::string args)
     {
-        std::cout << "Open: " << args << std::endl;
+        std::string file = tail(args,'=');
+        std::cout << "Open: " << file << std::endl;
+        Pause();
+        run_mode = run_mode_stop;
+        Clear();    // Remove all things
+        options o; // FIXME: Use global options in kernel
+        std::vector<std::string> files_;
+        files_.push_back(files.at(file));
+        LoadFiles(files_, o);
+        DoUpdate(uri, args);
     }
 
     void
@@ -1998,6 +2022,29 @@ void
     }
 
 
+
+
+    void
+    Kernel::DoSendFileList(std::string uri, std::string args)
+    {
+        Dictionary header;
+        header.Set("Content-Type", "text/json");
+        header.Set("Cache-Control", "no-cache");
+        header.Set("Cache-Control", "no-store");
+        header.Set("Pragma", "no-cache");
+        socket->SendHTTPHeader(&header);
+        std::string sep;
+        socket->Send("{\"filelist\":\"");
+        for(auto & f: files)
+        {
+            socket->Send(sep);
+            socket->Send(f.first);
+            sep = ",";
+        }
+        socket->Send("\"}");
+    }
+
+
     void
     Kernel::DoSendError()
     {
@@ -2021,60 +2068,43 @@ void
     std::string args = cut(uri, "?");
 
     std::cout << uri << args << std::endl;
-    
+
     // SELECT METHOD
 
     if(uri == "/update")
         DoUpdate(uri, args);
-
     else if(uri == "/network")
         DoNetwork(uri, args);
-
     else if(uri == "/pause")
         DoPause(uri, args);
-
     else if(uri == "/step")
         DoStep(uri, args);
-
-
     else if(uri == "/play")
         DoPlay(uri, args);
-
     else if(uri == "/realtime")
         DoRealtime(uri, args);
-
     else if(uri == "/new")
         DoNew(uri, args);
-
     else if(uri == "/open")
         DoOpen(uri, args);
-
     else if(uri == "/save")
         DoSave(uri, args);
-
-
-   else if(uri == "/saveas")
+    else if(uri == "/saveas")
         DoSaveAs(uri, args);
-
-
     else if(uri == "/stop")
         DoStop(uri, args);
-
     else if(uri == "/getlog")
         DoGetLog(uri, args);
-
     else if(uri == "/classes") 
         DoSendClasses(uri, args);
-
+    else if(uri == "/filelist") 
+        DoSendFileList(uri, args);
     else if(uri == "/")
         DoSendFile("index.html");
-
     else if(starts_with(uri, "/command/"))
         DoCommand(uri, args);
-        
     else if(starts_with(uri, "/control/"))
         DoControl(uri, args);
-
     else 
         DoSendFile(uri);
     }

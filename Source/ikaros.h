@@ -217,13 +217,12 @@ class Kernel
 public:
     std::string                             webui_dir;
     std::map<std::string, Class>            classes;
+    std::map<std::string, std::string>      files;                  // ikg-files
     std::map<std::string, Component *>      components;
     std::vector<Connection>                 connections;
-    //std::map<std::string, matrix>         buffers;         // Use IO-structure later: or only matrix?
-    //std::map<std::string, matrix>         buffers;        // Use IO-structure later: Output
-    std::map<std::string, matrix>           buffers;        // IO-structure    
-    std::map<std::string, int>              max_delays;     // Maximum delay needed for each output
-    std::map<std::string, CircularBuffer>   circular_buffers;        // Circular circular_buffers for delayed buffers
+    std::map<std::string, matrix>           buffers;                // IO-structure    
+    std::map<std::string, int>              max_delays;             // Maximum delay needed for each output
+    std::map<std::string, CircularBuffer>   circular_buffers;       // Circular circular_buffers for delayed buffers
     std::map<std::string, parameter>        parameters;
 
     bool                                    first_request;
@@ -246,7 +245,7 @@ public:
     double                                  last_cpu;
     float                                   last_cpu_time;
 
-    Timer                                   timer;                  // Main timer
+    Timer                                   timer;          // Main timer
     bool                                    start;          // Start automatically                   
 
     // Timing parameters and functions
@@ -254,9 +253,9 @@ public:
     tick_count                              tick;
     tick_count                              stop_after;
     double                                  lag;            // Lag of a tick in real-time mode
-    double                                  lag_min;     // Largest negative lag
-    double                                  lag_max;     // Largest positive lag
-    double                                  lag_sum;     // Sum |lag|
+    double                                  lag_min;        // Largest negative lag
+    double                                  lag_max;        // Largest positive lag
+    double                                  lag_sum;        // Sum |lag|
 
     ServerSocket *                          socket;
     long                                    session_id;
@@ -276,6 +275,7 @@ public:
 
     bool Terminate();
     void ScanClasses(std::string path);
+    void ScanFiles(std::string path);
 
     void ListClasses();
     void ResolveParameter(parameter & p,  std::string & name,  std::string & default_value);
@@ -332,6 +332,7 @@ public:
     void DoNetwork(std::string uri, std::string args);
     void DoGetLog(std::string uri, std::string args);
     void DoSendClasses(std::string uri, std::string args);
+    void DoSendFileList(std::string uri, std::string args);
     void DoSendFile(std::string file);
     void DoSendError();
     void HandleHTTPRequest();
