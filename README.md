@@ -27,19 +27,19 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | XML               |<div style="color:green">🟢 OK | some std::string functions missing |
 | Kernel            |<div style="color:#c60">🟡 Partial |  |
 | Shared Dict        |<div style="color:#e00">🔴 Pending |  |
-| Scheduler         |<div style="color:#c60">Minimal | no zero-delays, single thread |
-| SetSizes    |     <div style="color:green">🟢 OK | 
-| Input resizing    |<div style="color:green">🟢 OK     |  |
+| Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
+| SetSizes    |     <div style="color:green">🟢 OK |
+| Input resizing    |<div style="color:green">🟢 OK |     |  |
 | Delays            |<div style="color:#green">🟢 OK | copy not completed |
 | Task Sorting      |<div style="color:#e00">🔴 Pending |  |
 | Real Time         |<div style="color:green">🟢 OK |  |
-| WebUI             |<div style="color:#c60">🟡 Partial |  |
+| WebUI             |<div style="color:#c60">🟢 OK | no image types |
 | BrainStudio       |<div style="color:#e00">🔴 Pending | templates & editing |
 | Message queue     |<div style="color:#c60">🟡 Partial |  |
 | Log               |<div style="color:#c60">🟡 Partial |  |
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
 | Editing           |<div style="color:#e00">🔴 Pending |  |
-| Sockets           |<div style="color:green">🟢 OK | std::string not supported |
+| Sockets           |<div style="color:green">🟢 OK |  |
 | UtilityModules    |<div style="color:#c60">🟡 Partial | 4 modules |
 | Named Dimensions  |<div style="color:#c60">🟡 Partial | only in matrices |
 
