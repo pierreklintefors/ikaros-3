@@ -1392,12 +1392,6 @@ namespace ikaros
     {
     LoadFiles(files, opts); // INIT
 
-    //std::cout << JSONString() << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << XMLString() << std::endl;
-    return;
-
     InitSocket();
     SetUp();
     // Run loop
