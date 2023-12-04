@@ -37,6 +37,11 @@ namespace ikaros
         {
             return "null";
         }
+
+        std::string xml()
+        {
+            return "null";
+        }
     };
 
     struct dictionary
@@ -53,8 +58,10 @@ namespace ikaros
             return dict_.count(s);
         }
 
+
         operator std::string ();
         std::string json();
+        std::string xml();
 
         std::map<std::string, value>::iterator begin()  { return dict_.begin(); };
         std::map<std::string, value>::iterator end()   { return dict_.end(); };
@@ -85,6 +92,7 @@ namespace ikaros
 
         operator std::string ();
         std::string json();
+        std::string xml();
 
         value & operator[] (int i)
         {
@@ -105,19 +113,21 @@ namespace ikaros
     {
         valueVariant    value_;
 
-        value(null n=null())         { value_ = null(); };
-        value(const char * s)        { value_ = s; };
-        value(const std::string & s) { value_ = s; };
-        value(const list & v)        { value_ = v; };
-        value(const dictionary & d)  { value_ = d; };
+        value(null n=null())         { value_ = null(); }
+        value(const char * s)        { value_ = s; }
+        value(const std::string & s) { value_ = s; }
+        value(const list & v)        { value_ = v; }
+        value(const dictionary & d)  { value_ = d; }
 
         value & operator =(null n) { value_ = null(); return *this; };
-        value & operator =(const std::string & s) { value_ = s; return *this; };
-        value & operator =(const char * s) { value_ = s; return *this; };
-        value & operator =(const list & v) { value_ = v; return *this; };
-        value & operator =(const dictionary & d) { value_ = d; return *this; };
+        value & operator =(const std::string & s) { value_ = s; return *this; }
+        value & operator =(const char * s) { value_ = s; return *this; }
+        value & operator =(const list & v) { value_ = v; return *this; }
+        value & operator =(const dictionary & d) { value_ = d; return *this; }
 
-        bool is_list() { return std::holds_alternative<list>(value_); };
+        bool is_list() { return std::holds_alternative<list>(value_); }
+        bool is_null() { return std::holds_alternative<null>(value_); }
+
 
         value & operator[] (const char * s) // Captures literals as argument
         {
@@ -207,6 +217,20 @@ namespace ikaros
                 return std::get<list>(value_).json();
             else if(std::holds_alternative<dictionary>(value_))
                 return std::get<dictionary>(value_).json();
+            else if(std::holds_alternative<null>(value_))
+                return "null";
+            else
+                return "*";
+        }
+
+    std::string xml()
+        {
+            if(std::holds_alternative<std::string>(value_))
+                return "\""+std::get<std::string>(value_)+"\"";
+            else if(std::holds_alternative<list>(value_))
+                return std::get<list>(value_).xml();
+            else if(std::holds_alternative<dictionary>(value_))
+                return std::get<dictionary>(value_).xml();
             else if(std::holds_alternative<null>(value_))
                 return "null";
             else

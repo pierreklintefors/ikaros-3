@@ -135,6 +135,8 @@ public:
     virtual void Init() {}
 
     std::string JSONString();
+    std::string XMLString();
+
     std::string GetValue(const std::string & name);    // Get value of a attribute/variable in the context of this component
     std::string GetBind(const std::string & name);
     std::string SubstituteVariables(const std::string & s);
@@ -307,10 +309,15 @@ public:
     void AllocateInputs();
     void InitComponents();
     void SetUp();
+
     void LoadFiles(std::vector<std::string> files, options & opts);
+    void Save();
+
     void SortNetwork();
     void Propagate();
-    std::string JSONString();
+    std::string JSONString();   // renamse json and xml
+    std::string XMLString();
+
     void InitSocket();
     void Pause();
 

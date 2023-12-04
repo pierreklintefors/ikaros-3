@@ -31,6 +31,8 @@ dictionary::operator std::string ()
     return s;
 }
 
+// JSON
+
 std::string 
 list::json()
 {
@@ -58,6 +60,50 @@ dictionary::json()
     s += "}";
     return s;
 }
+
+// XML
+
+std::string 
+list::xml()
+{
+    std::string s; //  = "\n<list>\n"; // FIXME: Look at tag
+    std::string sep = "";
+    for(auto & v : list_)
+    {
+        s += sep + v.xml();
+        sep = "\n";
+    }
+    //s += "\n</list>\n";
+    return s;
+}
+
+std::string  
+dictionary::xml()
+{
+    std::string s = "<";
+    s += std::string(dict_["tag"]) + " ";
+    for(auto & a : dictionary(dict_["attributes"]))
+        if(a.first != "tag")
+            s += a.first + "=" + a.second.xml() + " ";
+
+    if(dict_.size() == 1)
+    {
+        s += "/>\n";
+        return s;
+    }
+    else
+        s += ">\n";
+
+    for(auto & e : dict_)
+        if(e.first != "tag" && e.first != "attributes" && !e.second.is_null())
+        {
+            s += e.second.xml();
+        }
+    s += "</"+std::string(dict_["tag"])+">";
+    return s;
+}
+
+// Print
 
 void dictionary::print()
 {

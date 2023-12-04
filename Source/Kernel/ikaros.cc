@@ -1285,6 +1285,12 @@ namespace ikaros
     }
 
 
+    void Kernel::Save()
+    {
+
+    }
+
+
     void Kernel::SortNetwork()
     {
         // Resolve paths
@@ -1385,6 +1391,13 @@ namespace ikaros
     Kernel::Run(std::vector<std::string> files, options & opts)
     {
     LoadFiles(files, opts); // INIT
+
+    std::cout << JSONString() << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << XMLString() << std::endl;
+    return;
+
     InitSocket();
     SetUp();
     // Run loop
@@ -1517,6 +1530,79 @@ namespace ikaros
     }
 
 
+
+    std::string 
+    Component::XMLString()
+    {
+        return info_.xml();
+
+
+           // Collect group strings
+
+        std::string gsep;
+        std::string gs;
+        if(info_["groups"].size() > 0)
+            for(auto & g :  info_["groups"])
+            {
+                std::string cn =  std::string(info_["name"])+"."+std::string(g["attributes"]["name"]);
+                Kernel &k = kernel();
+                gs += gsep + k.components.at(cn)->XMLString();
+                gsep =", ";
+            }
+
+        // Collect module strings
+
+        std::string msep;
+        std::string ms;
+        if(info_["modules"].size() > 0)
+            for(auto & m :  info_["modules"])
+            {
+                std::string mn =  std::string(info_["name"])+"."+std::string(m["attributes"]["name"]);
+                Kernel &k = kernel();
+                ms += msep + k.components.at(mn)->XMLString();
+                msep =", ";
+            }
+
+        std::string s;
+
+        if(std::string(info_["is_group"])=="true")
+            s += "<group ";
+        else
+            s += "<module ";
+
+        for(auto & a : dictionary(info_["attributes"]))
+        {
+            s += a.first + "=\"" + std::string(a.second) + "\" ";
+        }
+
+        s += ">\n";
+
+        s += info_["parameters"].xml();
+
+        // Use decit to select only inputs and outptus
+
+        //s+= " , \"buffers\": " + info_["buffers"].json();
+        s+= info_["inputs"].xml();
+        s+= info_["outputs"].xml();
+        s+= info_["connections"].xml();
+
+        for(auto & m :  info_["modules"])
+            s += m.xml() + "\n";
+
+        for(auto & g :  info_["groups"])
+            s += g.xml() + "\n";
+
+            s+= " , \"views\": " + info_["views"].json();
+
+        if(std::string(info_["is_group"])=="true")
+            s += "\n</group>\n";
+        else
+            s += "\n</module>\n";
+
+        return s;
+    }
+
+
     std::string 
     Kernel::JSONString()
     {
@@ -1525,6 +1611,18 @@ namespace ikaros
         else
             return components.begin()->second->JSONString();
     }
+
+
+
+    std::string 
+    Kernel::XMLString()
+    {
+        if(components.empty())
+            return "";
+        else
+            return components.begin()->second->XMLString();
+    }
+
 
 
     //
@@ -1793,7 +1891,7 @@ namespace ikaros
     Kernel::DoOpen(std::string uri, std::string args)
     {
         std::string file = tail(args,'=');
-        std::cout << "Open: " << file << std::endl;
+        //std::cout << "Open: " << file << std::endl;
         Pause();
         run_mode = run_mode_stop;
         Clear();    // Remove all things
@@ -1804,9 +1902,11 @@ namespace ikaros
         DoUpdate(uri, args);
     }
 
+
     void
     Kernel::DoSave(std::string uri, std::string args)
     {
+        Save();
     }
 
 
