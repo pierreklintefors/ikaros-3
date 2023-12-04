@@ -1392,7 +1392,7 @@ namespace ikaros
     {
     LoadFiles(files, opts); // INIT
 
-    std::cout << JSONString() << std::endl;
+    //std::cout << JSONString() << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << XMLString() << std::endl;
@@ -1537,17 +1537,16 @@ namespace ikaros
         return info_.xml();
 
 
+/*
            // Collect group strings
 
-        std::string gsep;
         std::string gs;
         if(info_["groups"].size() > 0)
             for(auto & g :  info_["groups"])
             {
                 std::string cn =  std::string(info_["name"])+"."+std::string(g["attributes"]["name"]);
                 Kernel &k = kernel();
-                gs += gsep + k.components.at(cn)->XMLString();
-                gsep =", ";
+                gs += k.components.at(cn)->XMLString();
             }
 
         // Collect module strings
@@ -1600,6 +1599,7 @@ namespace ikaros
             s += "\n</module>\n";
 
         return s;
+*/
     }
 
 

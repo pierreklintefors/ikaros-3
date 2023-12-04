@@ -95,13 +95,14 @@ dictionary::xml()
         s += ">\n";
 
     for(auto & e : dict_)
-        if(e.first != "tag" && e.first != "attributes" && !e.second.is_null())
+        if(e.first != "tag" && e.first != "attributes" && e.first != "class"&& e.first != "is_group"&& e.first != "name" && !e.second.is_null())
         {
             s += e.second.xml();
         }
     s += "</"+std::string(dict_["tag"])+">";
     return s;
 }
+
 
 // Print
 
