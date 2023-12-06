@@ -217,6 +217,12 @@ namespace ikaros
         throw exception("Type conversion error for parameter.");
     }
 
+    parameter::operator bool()
+    {
+        return int(*this) != 0;
+    }
+
+/*
     parameter::operator int()
     {
         switch(type)
@@ -232,7 +238,7 @@ namespace ikaros
         }
         throw exception("Type conversion error for  parameter");
     }
-
+*/
     parameter::operator float()
     {
         switch(type)
@@ -246,7 +252,7 @@ namespace ikaros
             //case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
             default: ;
         }
-    throw exception("Type conversion error for  parameter.");
+     throw exception("Type conversion error for  parameter.");
     }
 
     std::string 
@@ -281,6 +287,31 @@ namespace ikaros
 
         return os;
     }
+
+float operator+(parameter p, float x) { return (float)p+x; }
+float operator+(float x, parameter p) { return (float)p+x; }
+float operator+(parameter p, double x) { return (float)p+x; }
+float operator+(double x, parameter p) { return (float)p+x; }
+float operator+(parameter x, parameter p) { return (float)p+(float)x; }
+
+float operator-(parameter p, float x) { return (float)p-x; }
+float operator-(float x, parameter p) { return x-(float)p; }
+float operator-(parameter p, double x) { return (float)p-x; }
+float operator-(double x, parameter p) { return x-(float)p; }
+float operator-(parameter x, parameter p) { return (float)x-(float)p; }
+
+float operator*(parameter p, float x) { return (float)p*x; }
+float operator*(float x, parameter p) { return (float)p*x; }
+float operator*(parameter p, double x) { return (float)p*x; }
+float operator*(double x, parameter p) { return (float)p*x; }
+float operator*(parameter x, parameter p) { return (float)p*(float)x; }
+
+
+float operator/(parameter p, float x) { return (float)p*x; }
+float operator/(float x, parameter p) { return x/(float)p; }
+float operator/(parameter p, double x) { return (float)p*x; }
+float operator/(double x, parameter p) { return x/(float)p; }
+float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
 // Component
@@ -1234,14 +1265,25 @@ namespace ikaros
                     d[x.first] = x.second;
                 AddGroup("Untitled", d);
 
-                    // FIXME: ONLY ONCE!!!!
+                // FIXME: ONLY ONCE!!!!
+
+                if(d.contains("webui_port"))
                     port = d["webui_port"];
+
+                if(d.contains("start"))
                     start = is_true(d["start"]);
+
+                if(d.contains("stop"))
                     stop_after = d["stop"];
+
+                if(d.contains("tick_duration"))
                     tick_duration = d["tick_duration"];
+
+                if(d.contains("real_time"))
                     if(is_true(d["real_time"]))
                         run_mode = run_mode_realtime;
-                    session_id = std::time(nullptr);
+
+                session_id = std::time(nullptr);
 
                 return;
             }
@@ -1269,12 +1311,23 @@ namespace ikaros
                     // Set basic parameters from loaded file
 
                       dictionary d = components.begin()->second->info_["attributes"]; // Get top group
-                    port = d["webui_port"];
-                    start = is_true(d["start"]);
-                    stop_after = d["stop"];
-                    tick_duration = d["tick_duration"];
-                    if(is_true(d["real_time"]))
-                        run_mode = run_mode_realtime;
+
+                    if(d.contains("webui_port"))
+                        port = d["webui_port"];
+
+                    if(d.contains("start"))
+                        start = is_true(d["start"]);
+
+                    if(d.contains("stop"))
+                        stop_after = d["stop"];
+
+                    if(d.contains("tick_duration"))
+                        tick_duration = d["tick_duration"];
+
+                    if(d.contains("real_time"))
+                        if(is_true(d["real_time"]))
+                            run_mode = run_mode_realtime;
+
                     session_id = std::time(nullptr);
                 }
                 catch(const std::exception& e)
@@ -1365,25 +1418,25 @@ namespace ikaros
     void
     Kernel::SetUp()
     {
-    ResolveParameters();
-    CalculateDelays();
-    CalculateSizes();
-    InitCircularBuffers();
-    InitComponents();
-    /*
-    InitComponents();
-    ListComponents();
-    ListConnections();
+        ResolveParameters();
+        CalculateDelays();
+        CalculateSizes();
+        InitCircularBuffers();
+        InitComponents();
+        /*
+        InitComponents();
+        ListComponents();
+        ListConnections();
 
-    //ListInputs();
-    //ListOutputs();
+        //ListInputs();
+        //ListOutputs();
 
-    ListBuffers();
-    ListCircularBuffers();
+        ListBuffers();
+        ListCircularBuffers();
 
-    ListParameters();
-    PrintLog();
-    */
+        ListParameters();
+        PrintLog();
+        */
     }
 
 
@@ -2161,7 +2214,7 @@ void
 
     std::string args = cut(uri, "?");
 
-    std::cout << uri << args << std::endl;
+    //std::cout << uri << args << std::endl;
 
     // SELECT METHOD
 

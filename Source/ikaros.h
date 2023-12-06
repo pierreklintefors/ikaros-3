@@ -98,13 +98,42 @@ public:
     int operator=(int v);
     float operator=(float v);
     float operator=(double v);
-    std::string operator=(std::string v); // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 *** 
+    std::string operator=(std::string v); // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 ***
+
     operator matrix & ();
     operator std::string();
-    operator int();
+    operator bool();
+    //explicit operator int(); // Do not convert to int explicitly
     operator float();
+
     std::string json();    friend std::ostream& operator<<(std::ostream& os, parameter p);
 };
+
+// Operators on parameters
+
+float operator+(parameter p, float x);
+float operator+(float x, parameter p);
+float operator+(parameter p, double x);
+float operator+(double x, parameter p);
+float operator+(parameter x, parameter p);
+
+float operator-(parameter p, float x);
+float operator-(float x, parameter p);
+float operator-(parameter p, double x);
+float operator-(double x, parameter p);
+float operator-(parameter x, parameter p);
+
+float operator*(parameter p, float x);
+float operator*(float x, parameter p);
+float operator*(parameter p, double x);
+float operator*(double x, parameter p);
+float operator*(parameter x, parameter p);
+
+float operator/(parameter p, float x);
+float operator/(float x, parameter p);
+float operator/(parameter p, double x);
+float operator/(double x, parameter p);
+float operator/(parameter x, parameter p);
 
 //
 // COMPONENT
