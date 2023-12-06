@@ -22,7 +22,7 @@ main(int argc, char *argv[])
         o.add_option("d", "tick_duration", "duration of each tick");
         o.add_option("r", "real_time", "run in real-time mode");
         o.add_option("S", "start", " start-up automatically without waiting for commands from WebUI");
-        o.add_option("s", "stop", "stop Ikaros after this tick");
+        o.add_option("s", "stop", "stop Ikaros after this tick", "0");
         o.add_option("w", "webui_port", "port for ikaros WebUI", "8000");
  
         o.parse_args(argc, argv);
