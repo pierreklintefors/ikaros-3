@@ -1,4 +1,8 @@
-#include "matrix.h"
+
+
+#include "utilities.cc" 
+#include "matrix.cc"
+//#include "matrix.h"    
 #include <string>
 
 using namespace ikaros;
@@ -6,8 +10,12 @@ using namespace ikaros;
 int
 main()
 {
-    matrix m = "1,2";
+    matrix m = "1, 2; 3, 4";
 
+    std::cout << m.size() << std::endl;
+    std::cout << m.sum() << std::endl;
+    std::cout << m.average() << std::endl;
+/*
     std::cout << m << std::endl;
     m.print("XXX");
 
@@ -32,4 +40,6 @@ matrix x;
     std::cout << m << std::endl;
 
     std::cout << m.size() << std::endl;
+    */
 }
+

@@ -101,7 +101,7 @@ namespace ikaros
             iterator(matrix & m) : matrix_(&m), index_(0) {}
             iterator(matrix & m, int i) : matrix_(&m), index_(i) {}
 
-            matrix operator*() { return (*matrix_)[index_]; }
+            matrix operator*() { return (*matrix_)[index_]; } // FIXME: should probably be removed
             
             //pointer operator->() { return m_ptr; }
 
@@ -428,12 +428,14 @@ namespace ikaros
 
             std::string sep;
             std::string  s = "[";
+
             for(auto x : *this)
             {
                 s += sep + x.json();
                 sep = ", ";
             }
             s += "]";
+
             return s;
         }
 
@@ -505,7 +507,6 @@ namespace ikaros
             return *this;
         }
 
-
         float
         dot(matrix A)
         {
@@ -523,7 +524,6 @@ namespace ikaros
         {
             return apply([=](float x) {return v;});
         }
-
 
         matrix & 
         copy(matrix m)  // asign matrix or submatrix - copy data
@@ -710,7 +710,6 @@ namespace ikaros
             info_->shape_ = v;
             return *this;
         }
-
 
         template <typename... Args>
         matrix & 
@@ -971,6 +970,12 @@ namespace ikaros
         }
 
         // Math Functions
+
+        float sum();
+        float average();
+
+        float min() { throw std::logic_error("min(). Not implemented."); return 0; }
+        float max() { throw std::logic_error("max(). Not implemented."); return 0; }
 
         float matrank() { throw std::logic_error("matrank(). Not implemented."); return 0; }
         float trace() { throw std::logic_error("Not implemented."); return 0; }
