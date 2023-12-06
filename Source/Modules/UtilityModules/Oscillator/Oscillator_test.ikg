@@ -1,13 +1,57 @@
-<group name="Test" stop="99" realtime="">
-	<module class = "Oscillator" name = "Oscillator" type="square" frequency="1, 2, 3, 400" />
+<group name="Test">
+	<module class = "Oscillator" name = "Oscillator" type="sin" frequency="0.1, 0; 0, 0" />
 
-	<module class = "Print" name = "Print" />
-	<module class = "Logger" name = "Logger"/>	
-
-	<group name="Subgroup">
-		<module class = "Logger" name = "Logger"/>
-	</group>
-
+	<_module class = "Print" name = "Print" />
+	<module class = "Logger" name = "Logger"/>
 	<connection  source = "Oscillator.OUTPUT"  	target = "Print.INPUT" />
+
+	<view name="View">
+		<table
+			class = "table"
+			height = "300"
+			title = "A"
+			width = "300"
+			source = "Oscillator.frequency"
+			y = "20"
+			x = "40"
+			decimals = "4"
+			colorize = "true"
+			show_title = "true"
+			show_frame = "true"
+		/>
+
+		<bar-graph
+			class = "bar-graph"
+			height = "300"
+			title = "A"
+			width = "300"
+			source = "Oscillator.OUTPUT"
+			y = "20"
+			x = "450"
+			decimals = "1"
+			min = "-1"
+			colorize = "true"
+			show_title = "true"
+			show_frame = "true"
+		/>
+
+		<bar-graph
+			class = "plot"
+			height = "300"
+			title = "A"
+			width = "600"
+			source = "Oscillator.OUTPUT"
+			y = "440"
+			x = "40"
+			decimals = "1"
+			min = "-1"
+			colorize = "true"
+			show_title = "true"
+			show_frame = "true"
+		/>
+
+	</view>
 </group>
+
+
 

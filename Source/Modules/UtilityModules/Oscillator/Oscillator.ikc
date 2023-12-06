@@ -2,6 +2,5 @@
 	<parameter name="type" type="options" options="sin, square" default="sin" />
 	<parameter name="frequency" type="matrix" default="1" />
 	<output name="OUTPUT" description="The output" size="frequency.size"/>
-
 </class>
 

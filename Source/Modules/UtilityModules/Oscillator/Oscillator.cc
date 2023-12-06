@@ -10,7 +10,6 @@ class Oscillator: public Module
     parameter   frequency;
     matrix      output;
 
-
     void Init()
     {
         Bind(osc_type, "type");
@@ -19,8 +18,9 @@ class Oscillator: public Module
     }
 
 
-    float func(float freq, float time)
+    float func(float time, float freq)
     {
+    //    std::cout << "func " << time << " " << freq << std::endl;
         switch(int(osc_type))
         {
             case 0: return sin((1/(2*M_PI))*time*freq);
@@ -33,10 +33,9 @@ class Oscillator: public Module
     {
         float time = kernel().GetTime();
 
-        output.apply(frequency, [=](float x, float f) {return func(f, kernel().GetTime());});
+        output.apply(frequency, [=](float x, float f) {return func(time, f);});
     }
 };
-
 
 INSTALL_CLASS(Oscillator)
 
