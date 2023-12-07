@@ -219,7 +219,7 @@ namespace ikaros
 
     parameter::operator bool()
     {
-        return int(*this) != 0;
+        return *int_value!=0;   // FIXME: Check all types here
     }
 
 /*
@@ -705,7 +705,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             begin_index += s;
             flattened_input_size += s;
         }
-        kernel().buffers[name].realloc(flattened_input_size);
+        if(flattened_input_size != 0)
+            kernel().buffers[name].realloc(flattened_input_size);   // FIXME: else buffer = {} ???
 
         if(!add_labels)
             return;
@@ -759,7 +760,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         //if(max_delay > 1)
         //    r.push_front(0, max_delay);
 
-        kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size
+        kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size // FIXME: Check empty input
     }
 
 

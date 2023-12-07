@@ -9,6 +9,7 @@
 #include <set>
 #include <iostream>
 #include <filesystem>
+#include <algorithm>
 
 #define INSTALL_CLASS(class_name)  static InitClass init_##class_name(#class_name, []() { return new class_name(); });
 
