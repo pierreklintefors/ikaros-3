@@ -22,9 +22,5 @@
 	<input name="SHUNTING_INHIBITION" description="The shunting inhibitory input" optional="yes" flatten="yes" />
 
 	<output name="OUTPUT" description="The output from the nucleus" size="1" />
-
-	<input name="INPUT1" description="The first input" />
-	<input name="INPUT2" description="The second input" />
-	<output name="OUTPUT" description="The output" size="1" />
 </class>
 

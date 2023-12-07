@@ -3,9 +3,9 @@
 <group name="Test">
 	
     <module
-        class="FunctionGenerator"
+        class="Oscillator"
         name="L"
-        type = "ticksquare"
+        type = "square"
         basetime = "200"
         tickduty = "50"
         amplitude = "1.0"
@@ -36,6 +36,7 @@
 
 	<view name="View">
         <plot
+            class = "plot"
             x="40" y="40"
             width="301"
             height="301"
@@ -46,6 +47,7 @@
             style = ""
         />
 		<plot
+            class = "plot"
             x="40" y="340"
             width="301"
             height="301"
@@ -56,6 +58,7 @@
             style = ""
         />
 		<plot
+            class = "plot"
             x="40" y="640"
             width="301"
             height="301"
@@ -66,6 +69,7 @@
             style = ""
         />
 		<plot
+            class = "plot"
             x="40" y="940"
             width="301"
             height="301"
