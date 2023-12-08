@@ -1673,7 +1673,7 @@ controller = {
         controller.send_stamp = Date.now();
         var last_request = url;
         xhr = new XMLHttpRequest();
-        console.log("<<< controller.get: \""+url+"\"");
+        //console.log("<<< controller.get: \""+url+"\"");
         xhr.open("GET", url, true);
 
         xhr.onload = function(evt)
@@ -1903,7 +1903,7 @@ controller = {
 
         else if(controller.session_id != session_id) // new session
         {
-            console.log(">>> new session");
+            //console.log(">>> new session");
             session_id = session_id;
             controller.get("network", controller.update);
             return;
