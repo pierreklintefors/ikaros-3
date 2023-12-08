@@ -107,6 +107,8 @@ public:
     //explicit operator int(); // Do not convert to int explicitly
     operator float();
 
+    int as_int();
+
     std::string json();    friend std::ostream& operator<<(std::ostream& os, parameter p);
 };
 

@@ -239,6 +239,24 @@ namespace ikaros
         throw exception("Type conversion error for  parameter");
     }
 */
+
+    int parameter::as_int()
+    {
+        switch(type)
+        {
+            case no_type: throw exception("Uninitialized_parameter.");
+            case int_type: if(int_value) return *int_value;
+            case options_type: if(int_value) return *int_value;
+            case float_type: if(float_value) return *float_value;
+            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base
+            case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
+            case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
+            default: ;
+        }
+        throw exception("Type conversion error for  parameter");
+    }
+
+
     parameter::operator float()
     {
         switch(type)
