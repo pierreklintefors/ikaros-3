@@ -1,6 +1,6 @@
 <class name="Oscillator" description="basic sin oscillator; one output per frequency value">
 	<parameter name="type" type="options" options="sin, square" default="sin" />
-	<parameter name="frequency" type="matrix" default="1" />
+	<parameter name="frequency" type="matrix" default="1" description="frequency in Hz" />
 	<output name="OUTPUT" description="The output" size="frequency.size"/>
 </class>
 

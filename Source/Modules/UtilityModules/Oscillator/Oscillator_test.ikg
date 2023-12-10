@@ -1,5 +1,5 @@
 <group name="Test">
-	<module class = "Oscillator" name = "Oscillator" type="sin" frequency="0.1, 0; 0, 0" />
+	<module class = "Oscillator" name = "Oscillator" type="sin" frequency="1; 0.5; 2" />
 
 	<_module class = "Print" name = "Print" />
 	<module class = "Logger" name = "Logger"/>
@@ -9,7 +9,7 @@
 		<table
 			class = "table"
 			height = "300"
-			title = "A"
+			title = "Osc frequency"
 			width = "300"
 			source = "Oscillator.frequency"
 			y = "20"
@@ -23,7 +23,7 @@
 		<bar-graph
 			class = "bar-graph"
 			height = "300"
-			title = "A"
+			title = "Osc Out"
 			width = "300"
 			source = "Oscillator.OUTPUT"
 			y = "20"
@@ -38,7 +38,7 @@
 		<bar-graph
 			class = "plot"
 			height = "300"
-			title = "A"
+			title = "Osc Out"
 			width = "600"
 			source = "Oscillator.OUTPUT"
 			y = "440"

@@ -20,10 +20,11 @@ class Oscillator: public Module
 
     float func(float time, float freq)
     {
+        //std::cout << "   " << time << "  " << << std::endl;
         switch(osc_type.as_int())
         {
-            case 0: return sin((1/(2*M_PI))*time*freq);
-            case 1: return sin((1/(2*M_PI))*time*freq) > 0 ? 1 : 0;
+            case 0: return sin(2*M_PI*time*freq);
+            case 1: return sin(2*M_PI*time*freq) > 0 ? 1 : 0;
             default: return 0;
         }
     }
