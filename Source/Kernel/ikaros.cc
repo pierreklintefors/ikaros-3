@@ -884,11 +884,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             circular_buffers.clear();
             parameters.clear();
 
-        tick = 0;
-        is_running = false;
-        tick_is_running = false;
-        time_usage = 0;
-        idle_time = 0;
+            tick = 0;
+            is_running = false;
+            tick_is_running = false;
+            time_usage = 0;
+            idle_time = 0;
 
             AddGroup("Untitled");
 
@@ -901,7 +901,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::Tick()
     {
         for(auto & m : components)
-            m.second->Tick();
+            try
+            {
+                m.second->Tick();
+            }
+            catch(const not_a_matrix_element& e)
+            {
+                throw std::out_of_range(m.first+"."+e.message+" (Possibly an empty matrix or an input that is not connected).");  
+            }
+            catch(const std::exception& e)
+            {
+                throw exception(m.first+". "+std::string(e.what()));
+            }
 
         RotateBuffers();
         Propagate();
@@ -1466,6 +1477,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     InitSocket();
     SetUp();
+
+    ListInputs();
     // Run loop
     // chdir(ikc_dir);
 
@@ -1493,7 +1506,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         if (is_running)
         {
             tick_is_running = true; // Flag that state changes are not allowed
-            Tick();
+            Tick(); // FIXME: Check activation status
             tick_is_running = false;
             
             // Calculate idle_time

@@ -13,6 +13,7 @@
 
 #define INSTALL_CLASS(class_name)  static InitClass init_##class_name(#class_name, []() { return new class_name(); });
 
+#include "Kernel/exceptions.h"
 #include "Kernel/utilities.h"
 #include "Kernel/dictionary.h"
 #include "Kernel/options.h"
@@ -35,20 +36,6 @@ const int run_mode_realtime = 4;
 using tick_count = long long int;
 
 std::string  validate_identifier(std::string s);
-
-class exception : public std::exception
-{
-public:
-    std::string message;
-    exception(std::string msg): message(msg) {};
-    const char * what () const throw () { return message.c_str(); }
-};
-
-  class fatal_error : public exception 
-  {
-  public:
-    fatal_error(std::string msg) : exception(msg) {}
-  };
 
 class Component;
 class Module;

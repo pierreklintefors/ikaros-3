@@ -18,6 +18,7 @@
 
 // #define NO_MATRIX_CHECKS   // Define to remove checks of matrix size and index ranges
 
+#include "exceptions.h"
 #include "utilities.h"
 #include "range.h"
 
@@ -569,7 +570,7 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if(info_->size_ != 1)
-                throw std::out_of_range("Not a matrix element");
+                throw not_a_matrix_element(info_->name_+" Not a matrix element.");
             #endif
             //std::cout << "*" << offset_ << "**" << (*data_)[offset_] << std::endl;
             return (*data_)[info_->offset_];
