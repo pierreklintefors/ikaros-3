@@ -18,10 +18,10 @@ namespace ikaros {
     };
 
 
-    class not_a_matrix_element : public exception 
+    class empty_matrix_error : public exception 
     {
     public:
-        not_a_matrix_element(std::string msg) : exception(msg) {}
+        empty_matrix_error(std::string msg) : exception(msg) {}
     };
 };
 

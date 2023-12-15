@@ -339,6 +339,14 @@ namespace ikaros
             return *this;
         }
 
+        std::string get_name(std::string post=" ") const // post added to string if not empty
+        {
+            if(!info_->name_.empty())
+                return info_->name_+post;
+            else
+                return "";
+        }
+
         template <typename... Args>
         matrix &
         set_labels(int dimension, Args... labels)
@@ -570,7 +578,7 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if(info_->size_ != 1)
-                throw not_a_matrix_element(info_->name_+" Not a matrix element.");
+                throw empty_matrix_error(get_name()+" Not a matrix element.");
             #endif
             //std::cout << "*" << offset_ << "**" << (*data_)[offset_] << std::endl;
             return (*data_)[info_->offset_];
@@ -585,7 +593,7 @@ namespace ikaros
         operator float ** ()  // Get pointer to data in a row
         { 
             if(rank() != 2)
-                throw std::out_of_range("Matrix must be two-dimensional.");
+                throw std::out_of_range(get_name()+"Matrix must be two-dimensional.");
 
             if(row_pointers_.empty())
                 for(int i=0; i<info_->shape_.front(); i++)
@@ -611,11 +619,11 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if(v.size() != info_->shape_.size())
-                throw std::out_of_range("Index has incorrect rank.");
+                throw std::out_of_range(get_name()+"Index has incorrect rank.");
 
             for (int i = 0; i < v.size(); ++i)
                 if (v[i] < 0 || v[i] >= info_->shape_[i]) 
-                    throw std::out_of_range("Index out of range.");
+                    throw std::out_of_range(get_name()+"Index out of range.");
             #endif
         }
 
@@ -628,13 +636,13 @@ namespace ikaros
             #endif
 
            if(sizeof...(indices) != info_->shape_.size())
-                throw std::out_of_range("Index has incorrect rank.");
+                throw std::out_of_range(get_name()+"Index has incorrect rank.");
 
             std::vector<int> v{static_cast<int>(indices)...};
             for (int i = 0; i < v.size(); ++i)
             {
                 if (v[i] < 0 || v[i] >= info_->shape_[i]) 
-                    throw std::out_of_range("Index out of range.");
+                    throw std::out_of_range(get_name()+"Index out of range.");
             }
         }
 
@@ -642,7 +650,7 @@ namespace ikaros
         check_same_size(matrix & A)
         {
             if(info_->shape_ != A.info_-> shape_)
-                throw std::invalid_argument("Matrix sizes must match.");
+                throw std::invalid_argument(get_name()+A.get_name()+"Matrix sizes must match.");
         }
 
         template <typename... Args>
@@ -650,7 +658,7 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if (sizeof...(indices) != info_->shape_.size())
-            throw std::invalid_argument("Number of indices must match matrix rank.");
+            throw std::invalid_argument(get_name()+"Number of indices must match matrix rank.");
 
             check_bounds(indices...);
             #endif
@@ -663,7 +671,7 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if (sizeof...(indices) != info_->shape_.size())
-                throw std::invalid_argument("Number of indices must match matrix rank."); // TODO nove to check bounds
+                throw std::invalid_argument(get_name()+"Number of indices must match matrix rank."); // TODO nove to check bounds
                 check_bounds(indices...);
             #endif
 
@@ -706,7 +714,7 @@ namespace ikaros
 
             for(int i=0; i<info_->shape_.size(); i++)
                 if(v[i] > info_->max_size_[i])
-                    throw std::out_of_range("New size larger than allocated space.");
+                    throw std::out_of_range(get_name()+"New size larger than allocated space.");
             #endif
             info_->shape_ = v;
             return *this;
@@ -736,7 +744,7 @@ namespace ikaros
                 n *= i;
             
             if(n != data_->size())
-                throw std::out_of_range("Incompatible matrix sizes.");
+                throw std::out_of_range(get_name()+"Incompatible matrix sizes.");
 
             info_->shape_ = std::vector<int>({new_shape...});
             info_->stride_ = info_->shape_;
@@ -751,13 +759,13 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if(rank() != m.rank()+1)
-            throw std::out_of_range("Incompatible matrix sizes");
+            throw std::out_of_range(get_name()+"Incompatible matrix sizes");
             for(int i=0; i<m.info_->shape_.size(); i++)
                 if(info_->shape_[i+1] != m.info_->shape_[i])
-                    throw std::out_of_range("Pushed matrix has wrong shape.");
+                    throw std::out_of_range(get_name()+"Pushed matrix has wrong shape.");
 
             if(info_->shape_.front() >= info_->max_size_.front())
-                throw std::out_of_range("No room for additional element");
+                throw std::out_of_range(get_name()+"No room for additional element");
             #endif
             if(info_->shape_.front() < info_->max_size_.front())
                 return (*this)[info_->shape_.front()++].copy(m);
@@ -770,7 +778,7 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if(m.info_->shape_.front() == 0)
-                throw std::out_of_range("Nothing to pop.");
+                throw std::out_of_range(get_name()+"Nothing to pop.");
             #endif
             copy(m[m.info_->shape_.front()-1]);
             m.info_->shape_.front()--;
@@ -781,7 +789,7 @@ namespace ikaros
         matrix operator[](std::string n)
         {
             if(info_->labels_.empty())
-                throw  std::out_of_range("No labels found in matrix.");
+                throw  std::out_of_range(get_name()+"No labels found in matrix.");
 
             int i=0;
             for(auto l : info_->labels_.at(0))
@@ -790,7 +798,7 @@ namespace ikaros
                     return (*this)[i];
                 i++;
             }
-            throw  std::out_of_range("Label not found.");
+            throw  std::out_of_range(get_name()+"Label "+n+" not found.");
         }
 
         matrix operator[](const char * n)
@@ -802,7 +810,7 @@ namespace ikaros
         {
             #ifndef NO_MATRIX_CHECKS
             if(info_->size_ != 1)
-                throw std::out_of_range("Not a matrix element.");
+                throw std::out_of_range(get_name()+"Not a matrix element.");
             #endif
             data_->at(info_->offset_) = v;
             return  v; 

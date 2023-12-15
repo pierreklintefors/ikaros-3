@@ -905,7 +905,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             {
                 m.second->Tick();
             }
-            catch(const not_a_matrix_element& e)
+            catch(const empty_matrix_error& e)
             {
                 throw std::out_of_range(m.first+"."+e.message+" (Possibly an empty matrix or an input that is not connected).");  
             }
