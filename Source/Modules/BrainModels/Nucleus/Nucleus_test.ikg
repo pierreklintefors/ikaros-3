@@ -6,11 +6,9 @@
         class="Oscillator"
         name="L"
         type = "square"
-        basetime = "200"
-        tickduty = "50"
+        frequency = "25.0"
         amplitude = "1.0"
     />
-
 
 	<module
 		class = "Nucleus"
