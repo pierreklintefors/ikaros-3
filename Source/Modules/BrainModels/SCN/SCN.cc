@@ -27,6 +27,7 @@ class SCN: public Module
         float time = kernel().GetTime();
         output = sin(2*M_PI*(time+time_shift)*frequency);
 
+
         if(input.empty())
             return;
 
