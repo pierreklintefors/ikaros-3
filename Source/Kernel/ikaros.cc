@@ -1154,14 +1154,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     // Functions for creating the network
 
-    void Kernel::AddInput(std::string name, dictionary parameters)
+    void Kernel::AddInput(std::string name, dictionary parameters) // FIXME: use name as argument insteas of parameters
     {
-        buffers[name] = matrix();
+        buffers[name] = matrix().set_name(parameters["name"]);
     }
 
     void Kernel::AddOutput(std::string name, dictionary parameters)
     {
-        buffers[name] = matrix();
+        buffers[name] = matrix().set_name(parameters["name"]);
       }
 
     void Kernel::AddParameter(std::string name, dictionary params)
