@@ -1,6 +1,6 @@
 <group name="Test">
 	<module class = "Oscillator" name = "Oscillator" type="sin" frequency="1" />
-	<module class = "SCN" name = "SCN" frequency="1.1" />
+	<module class = "SCN" name = "SCN" frequency="2.0" />
 
 	<module class = "Logger" name = "Logger"/>
 

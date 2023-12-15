@@ -34,7 +34,7 @@ class SCN: public Module
         float o = output;
         diff = o-i;
 
-        time_shift += +0.01 * diff;
+        time_shift += +0.0001 * diff;
     }
 };
 
