@@ -15,10 +15,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    	message( STATUS "Detected APPLE system")
 	add_definitions(-DMAC_OS_X)
 
-#ARM64 flag
-if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64")
-endif()
+  # ARM64 flag #
+  if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64") # This will gice a binary with both x86 and arm64. 
+    set(CMAKE_OSX_ARCHITECTURES "arm64") # Forcing the arcitecture to be arm64. 
+  endif()
+
 
 
  	# Set compiler
@@ -33,13 +35,13 @@ endif()
   mark_as_advanced(ACCELERATE_LIBRARY COCOA_LIBRARY QUARTZ_LIBRARY)
     set(EXTRA_LIBS ${ACCELERATE_LIBRARY} ${COCOA_LIBRARY} ${QUARTZ_LIBRARY} )
 
-  # CoreMIDI
-  add_definitions(-D__MACOSX_CORE__)
-  find_library(COREAUDIO CoreAudio)
-  find_library(COREFOUNDATION CoreFoundation)
-  find_library(COREMIDI CoreMidi)
-  find_library(CORESERVICES CoreServices)
-  set(EXTRA_LIBS ${EXTRA_LIBS} ${COREAUDIO} ${COREFOUNDATION} ${COREMIDI} ${CORESERVICES})
+  # CoreMIDI Not part of the core
+  #add_definitions(-D__MACOSX_CORE__)
+  #find_library(COREAUDIO CoreAudio)
+  #find_library(COREFOUNDATION CoreFoundation)
+  #find_library(COREMIDI CoreMidi)
+  #find_library(CORESERVICES CoreServices)
+  #set(EXTRA_LIBS ${EXTRA_LIBS} ${COREAUDIO} ${COREFOUNDATION} ${COREMIDI} ${CORESERVICES})
   
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
@@ -120,14 +122,14 @@ else()
     message(FATAL_ERROR "\nIkaros require the BLAS library.\nVisit www.ikaros-project.org for information about dependencies")
 endif (BLAS_FOUND)
 
-# Threads
-find_package(Threads)
-if (Threads_FOUND)
-  include_directories(${Threads_INCLUDE_DIRS})
-  target_link_libraries (ikaros ${CMAKE_THREAD_LIBS_INIT})
-  else()
-    message(FATAL_ERROR "\nIkaros require the THREADS library.\nVisit www.ikaros-project.org for information about dependencies")
-endif (Threads_FOUND)
+# Threads Not part of the core
+#find_package(Threads)
+#if (Threads_FOUND)
+#  include_directories(${Threads_INCLUDE_DIRS})
+#  target_link_libraries (ikaros ${CMAKE_THREAD_LIBS_INIT})
+#  else()
+#    message(FATAL_ERROR "\nIkaros require the THREADS library.\nVisit www.ikaros-project.org for information about dependencies")
+#endif (Threads_FOUND)
 
 # Turbo JPEG
 find_package (Jpeg-Turbo)
@@ -138,22 +140,22 @@ find_package (Jpeg-Turbo)
    		 message(FATAL_ERROR "\nIkaros require the Turbo-JPEG library. \nVisit www.ikaros-project.org for information about dependencies")
 	endif (TURBO_JPEG_FOUND)
 
-# PNG
-find_package (PNG)
-if (PNG_FOUND)
-  include_directories(${PNG_INCLUDE_DIRS})
-  target_link_libraries (ikaros ${PNG_LIBRARIES})
-    else()
-    message(FATAL_ERROR "\nIkaros require the PNG library. \nVisit www.ikaros-project.org for information about dependencies")
-endif (PNG_FOUND)
+# PNG not part of the core
+# find_package (PNG)
+#if (PNG_FOUND)
+#  include_directories(${PNG_INCLUDE_DIRS})
+#  target_link_libraries (ikaros ${PNG_LIBRARIES})
+#    else()
+#    message(FATAL_ERROR "\nIkaros require the PNG library. \nVisit www.ikaros-project.org for information about dependencies")
+#endif (PNG_FOUND)
 
-# ALSA Midi
-find_package(ALSA)                                    
-if (ALSA_FOUND)      
-    add_definitions(-D__LINUX_ALSA__)                                        
-    include_directories(${ALSA_INCLUDE_DIRS})                  
-    target_link_libraries (ikaros ${ALSA_LIBRARIES})      
-endif(ALSA_FOUND)
+# ALSA Midi not part of the core
+#find_package(ALSA)                                    
+#if (ALSA_FOUND)      
+#    add_definitions(-D__LINUX_ALSA__)                                        
+#    include_directories(${ALSA_INCLUDE_DIRS})                  
+#    target_link_libraries (ikaros ${ALSA_LIBRARIES})      
+#endif(ALSA_FOUND)
 
 # Add extra libraries when linking
 target_link_libraries(ikaros ${EXTRA_LIBS} )
