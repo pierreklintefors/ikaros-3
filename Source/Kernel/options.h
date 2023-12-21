@@ -3,6 +3,11 @@
 #ifndef OPTIONS
 #define OPTIONS
 
+#include <string>
+#include <map>
+#include <iostream>
+#include <filesystem>
+
 namespace ikaros {
 
     class options
