@@ -24,8 +24,14 @@ main(int argc, char *argv[])
         o.add_option("S", "start", " start-up automatically without waiting for commands from WebUI");
         o.add_option("s", "stop", "stop Ikaros after this tick", "0");
         o.add_option("w", "webui_port", "port for ikaros WebUI", "8000");
- 
+        o.add_option("h", "help", "list command line options");
+
         o.parse_args(argc, argv);
+        if(o.is_set("help"))
+        {
+            o.print_help();
+            return 0;
+        }
 
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
         k.Run(o.filenames, o);
