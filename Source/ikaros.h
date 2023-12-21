@@ -160,7 +160,7 @@ public:
     std::string GetBind(const std::string & name);
     std::string SubstituteVariables(const std::string & s);
     Component * GetComponent(const std::string & s); // Get component; sensitive to variables and indirection
-    std::string Evaluate(const std::string & s);     // Evaluate an expression in the current context - as string?
+    std::string Evaluate(const std::string & s, bool is_string=false);     // Evaluate an expression in the current context
     bool LookupParameter(parameter & p, const std::string & name);
     //std::string Lookup(const std::string & name) const;
     int EvaluateIntExpression(std::string & s);

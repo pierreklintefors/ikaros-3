@@ -366,11 +366,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::string v = GetValue(name);
         if(!v.empty())
         {
-            SetParameter(name, Evaluate(v));
+            SetParameter(name, Evaluate(v, p.type == string_type));
             return true;
         }
 
-        SetParameter(name, Evaluate(default_value));
+        SetParameter(name, Evaluate(default_value, p.type == string_type));
         return true; // IF refault value ******
     }
 
@@ -570,12 +570,12 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     std::string 
-    Component::Evaluate(const std::string & s)     // Evaluate an expression in the current context - as string?
+    Component::Evaluate(const std::string & s, bool is_string)
     {
         if(s.empty())
             return "";
 
-    if(!expression::is_expression(s))
+    if(!expression::is_expression(s) || is_string)
     {
         if(s[0]=='@') // Handle indirection (unless expresson)
         {
@@ -592,14 +592,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         // Handle mathematical expression
 
-        if(!expression::is_expression(s))
+        if(!expression::is_expression(s) || is_string)
             return s;
 
          expression e = expression(s);
             std::map<std::string, std::string> vars;
             for(auto v : e.variables())
             {
-                std::string value = Evaluate(v); // was GetValue
+                std::string value = Evaluate(v);
                 if(value.empty())
                     throw exception("Variable \""+v+"\" not defined.");
                 vars[v] = value;
@@ -614,7 +614,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         expression e = expression(s);
         std::map<std::string, std::string> vars;
         for(auto v : e.variables())
-            vars[v] = Evaluate(v); // FIXME: Use Evaluate() instead later **************
+            vars[v] = Evaluate(v);
         return expression(s).evaluate(vars);
     }
 
