@@ -69,15 +69,15 @@ namespace ikaros {
 
         void print_help()
         {
-            std::cout << "Command line options for ikaros" << std::endl;
+            std::cout << "usage: ikaros [options] [variable=value] [filenames]" << std::endl;
+            std::cout << "\tCommand line options:" << std::endl;
             for(auto & p : full)
             {
-                std::cout << "-"<< p.first << " (" << p.second << "): " << description[p.second];
+                std::cout << "\t-"<< p.first << " (" << p.second << "): " << description[p.second];
                 if(d.count(p.second))
                     std::cout << " [" << d[p.second] << "]"; 
                 std::cout << std::endl;
             }
-            std::cout << std::endl;
         }
 
 
