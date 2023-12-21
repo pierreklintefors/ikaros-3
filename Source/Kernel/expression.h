@@ -2,7 +2,7 @@
 //
 // evaluates a numerical expression with optional variables
 //
-// variables msut start with a letter or _ or @  and may also include dots and numbers
+// variables must start with a letter or _ or @  and may also include dots and numbers
 //
 // expression e = expression(string) creates the expression
 // e.variables() retusn a set of strings that contains the variables in the expression

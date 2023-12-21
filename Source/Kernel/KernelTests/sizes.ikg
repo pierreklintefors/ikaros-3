@@ -1,0 +1,19 @@
+<group name="Outer" xyz="77" q="12">
+ 
+     <group name="image2" sx="101" sy="20">
+        <output name="OUTPUT" size="@xyz,@q" />
+    </group>
+    
+    <group name="image" sx="10" sy="20">
+        <parameter name="sx" type="int" default="10" />
+        <parameter name="sx" type="int" default="20" />
+
+        <output name="OUTPUT" size="30, 40" />
+    </group>
+
+    <group name="image3" sx="10" sy="20">
+        <output name="OUTPUT" size="@sx" />
+    </group>
+
+</group>
+

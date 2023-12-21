@@ -573,6 +573,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Component::Evaluate(const std::string & s)     // Evaluate an expression in the current context - as string?
     {
         if(s.empty())
+            return "";
 
     if(!expression::is_expression(s))
     {
@@ -607,14 +608,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-
     int 
     Component::EvaluateIntExpression(std::string & s)
     {
         expression e = expression(s);
         std::map<std::string, std::string> vars;
-        //for(auto v : e.variables())
-        //    vars[v] = Lookup(v); // FIXME: Use Evaluate() instead later **************
+        for(auto v : e.variables())
+            vars[v] = Evaluate(v); // FIXME: Use Evaluate() instead later **************
         return expression(s).evaluate(vars);
     }
 
@@ -1186,7 +1186,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void Kernel::AddGroup(std::string name, dictionary info)
     {
         if(components.count(name)> 0)
-            throw exception("Module or group with this name already exists.");
+            throw exception("Module or group named \""+name+"\" already exists.");
 
 
         current_component_info = info;
@@ -1363,6 +1363,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 catch(const std::exception& e)
                 {
                     log.push_back(e.what());
+                    throw;
                 }
         SetUp();
     }
