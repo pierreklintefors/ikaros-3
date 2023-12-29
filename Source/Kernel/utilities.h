@@ -18,8 +18,17 @@ namespace ikaros
     bool starts_with(const std::string & s, const std::string & start); // waiting for C++20
     bool ends_with(const std::string & s, const std::string & end); // waiting for C++20
     
-    const std::string head(std::string s, char token); // without token
 
+    // NEW FUNCTIONS
+
+    std::string head(std::string & s, const std::string & delimiter); // return string before delimiter and remove it from s
+    std::string tail(std::string & s, const std::string & delimiter);
+    std::string rhead(std::string & s, const std::string & delimiter); // return string before delimiter and remove it from s
+    std::string rtail(std::string & s, const std::string & delimiter);
+
+    // OLD FUNCTIONS
+
+    const std::string head(std::string s, char token); // without token
     const std::string tail(std::string s, char token, bool include_token=false);
     const std::string rhead(std::string s, char token); // like head but split from end
     const std::string rtail(std::string s, char token); // like tail but split from end
@@ -41,6 +50,8 @@ namespace ikaros
     void print_attribute_value(const std::string & name, const std::vector<int> & values, int indent=0, int max_items=0);
     void print_attribute_value(const std::string name, std::vector<float> & values, int indent=0, int max_items=0);
     void print_attribute_value(const std::string & name, const std::vector<std::vector<std::string>> &  values, int indent=0, int max_items=0);
+
+    char * base64_encode(const unsigned char * data, size_t size_in, size_t *size_out);
 };
 
 #endif
