@@ -296,24 +296,7 @@ bool ends_with(const std::string & s, const std::string & end) // waiting for C+
     return  s.size() >= end.size() && s.compare(s.size() - end.size(), end.size(), end) == 0;
 }
 
-std::string
-head(std::string & s, const std::string & delimiter)
-{
-    int end = s.find(delimiter);
-    if(end == -1)
-    {
-        std::string h = s;
-        s = "";
-        return h;
-    }
-    else
-    {
-        std::string h = s.substr(0, end);
-        s.erase(0, end+delimiter.length());
-        return h;
-    }
-}
-
+/*
 std::string 
 cut(std::string & s, const std::string & delimiter)
 {
@@ -341,7 +324,7 @@ rcut(std::string & s, const std::string & delimiter)
 
     return tail;
 }
-
+*/
 
 // trim from start (in place)
 std::string ltrim(const std::string &ss)
