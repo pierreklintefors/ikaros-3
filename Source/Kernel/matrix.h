@@ -394,6 +394,11 @@ namespace ikaros
             return rank() == 0 && (info_->size_  == 1);
         }
 
+        const bool connected()
+        {
+            return !empty();
+        }
+
         bool
         print_(int depth=0)
         {
