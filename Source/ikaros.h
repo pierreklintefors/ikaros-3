@@ -24,6 +24,7 @@
 #include "Kernel/timing.h"
 #include "Kernel/socket.h"
 #include "Kernel/deprecated.h"
+#include "Kernel/image_file_formats.h"
 
 namespace ikaros {
 
@@ -95,6 +96,7 @@ public:
     operator float();
 
     int as_int();
+    const char* c_str() const noexcept;
 
     std::string json();    friend std::ostream& operator<<(std::ostream& os, parameter p);
 };

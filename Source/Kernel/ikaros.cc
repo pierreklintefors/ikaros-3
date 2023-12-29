@@ -37,11 +37,6 @@ namespace ikaros
     {
         buffer_[index_].copy(m);
         index_ = ++index_ % buffer_.size();
-        /*
-        for(int i=1; i<=buffer_.size(); i++)
-            std::cout << i << " " << get(i); 
-        std::cout << std::endl;
-        */
     }
 
     matrix & 
@@ -257,6 +252,15 @@ namespace ikaros
     }
 
 
+    const char* parameter::c_str() const noexcept
+    {
+        if(string_value)
+            return string_value->c_str();
+        else
+            return NULL;
+    }
+
+
     parameter::operator float()
     {
         switch(type)
@@ -272,6 +276,8 @@ namespace ikaros
         }
      throw exception("Type conversion error for  parameter.");
     }
+
+
 
     std::string 
     parameter::json()
@@ -923,7 +929,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     bool Kernel::Terminate()
     {
-        return stop_after!= 0 &&  tick >= stop_after;
+        return stop_after!= -1 &&  tick >= stop_after;
     }
 
 
@@ -1709,6 +1715,28 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     // WebUI
     //
 
+
+static bool
+SendColorJPEGbase64(ServerSocket * socket, matrix & r, matrix & g, matrix & b) // Compress image to jpg and send from memory after base64 encoding
+{
+    long  size;
+    unsigned char * jpeg = (unsigned char *)create_jpeg(size, r, g, b, 90);
+
+    size_t input_length = size;
+    size_t output_length;
+    char * jpeg_base64 = base64_encode(jpeg, input_length, &output_length);
+    
+    socket->Send("\"data:image/jpeg;base64,");
+    bool ok = socket->SendData(jpeg_base64, output_length);
+    socket->Send("\"");
+    
+    destroy_jpeg((char *)jpeg);
+    free(jpeg_base64);
+    return ok;
+}
+
+
+
     void
     Kernel::Pause()
     {
@@ -1720,10 +1748,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     long
-    get_session_id(std::string & args)
+    get_session_id(std::string args)
     {
     std::string id_string =  ::head(args, "&");     // FIXME: sort out string functions
-    std::string id_number = cut(id_string, "id=");
+    std::string id_number = tail(id_string, "id=");
 
     try
     {
@@ -1743,8 +1771,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     while(tick_is_running)
         {}
 
-    std::string root = cut(args, "data=");
-    std::string data = cut(root, "#");
+    std::string root = tail(args, "data=");
+    std::string data = tail(root, "#");
 
     Dictionary header;
     header.Set("Session-Id", std::to_string(session_id).c_str()); // FIXME: GetValue("session_id")
@@ -1791,7 +1819,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     while(!data.empty())
     {
         std::string source = cut_head(data, "#");
-        std::string  format = rcut(source, ":");
+        std::string  format = rtail(source, ":");
 
         //auto root_group = main_group->GetGroup(root);
         
@@ -1837,11 +1865,38 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                         sep = ",\n";
                     }
                 }
-                else
+
+
+            }
+
+            /*
+            else if(format == "rgb" && !source.empty())
+            {
+                auto a = rsplit(source, ".", 1); // separate out buffers
+                auto o = split(a[1], "+"); // split channel names
+                
+                if(o.size() == 3)
                 {
-                    // FIXME: output not found error
+                    auto c1 = a[0]+"."+o[0];
+                    auto c2 = a[0]+"."+o[1];
+                    auto c3 = a[0]+"."+o[2];
+
+                    Module_IO * io1 = root_group->GetSource(c1);
+                    Module_IO * io2 = root_group->GetSource(c2);
+                    Module_IO * io3 = root_group->GetSource(c3);
+                    
+                    // TODO: check that all buffers have the same size
+
+                    if(io2 && io2 && io3)
+                    {
+                        socket->Send(sep);
+                        socket->Send("\t\t\"%s:rgb\": ", source.c_str()); // FIXME: Check return
+                        SendColorJPEGbase64(socket, *io1->matrix[0], *io2->matrix[0], *io3->matrix[0], io1->sizex, io1->sizey);
+                        sep = ",\n";
+                    }
                 }
             }
+            */
                     /*
                 Module_IO * io = root_group->GetSource(source); // FIXME: Also look for buffers here
                 if(io)
@@ -2245,9 +2300,9 @@ void
         return;
     }
 
-    std::string args = cut(uri, "?");
+    std::string args = tail(uri, "?");
 
-    //std::cout << uri << args << std::endl;
+    std::cout << uri << " " << args << std::endl;
 
     // SELECT METHOD
 
