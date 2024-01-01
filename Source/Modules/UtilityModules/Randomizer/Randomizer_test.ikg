@@ -1,0 +1,16 @@
+<group name="Test">
+	<module class = "Randomizer" name = "R" size="3,8,8" />
+	<module class = "Randomizer" name = "G" size="32,32" />
+
+	<_module class = "Print" name = "Print" />
+	<module class = "Logger" name = "Logger" />	
+
+	<_connection  source = "R.OUTPUT" target = "Print.INPUT" />
+
+	<view name="Image" title="IMG">
+		<image  class="image" x = "60" y = "20" height = "461" width = "481" title = "Image" source = "R.OUTPUT" file = "" index = "" module = "" command = "" format = "rgb" scale = "both" opacity = "1" scales = "no" min_x = "0" max_x = "1" min_y = "0" max_y = "1" flipXAxis = "no" flipYAxis = "no" flipXCanvas = "no" flipYCanvas = "no" show_title = "false" show_frame = "true" style = "" frame-style = ""/>
+		<image  class="image" x = "60" y = "490" height = "461" width = "481" title = "Image" source = "G.OUTPUT" file = "" index = "" module = "" command = "" format = "gray" scale = "both" opacity = "1" scales = "no" min_x = "0" max_x = "1" min_y = "0" max_y = "1" flipXAxis = "no" flipYAxis = "no" flipXCanvas = "no" flipYCanvas = "no" show_title = "false" show_frame = "true" style = "" frame-style = ""/>
+
+	</view>
+</group>
+
