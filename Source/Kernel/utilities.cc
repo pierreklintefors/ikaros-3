@@ -145,7 +145,6 @@ join(const std::string & separator, const std::vector<std::string> & v, bool rev
 
 // NEW FUNCTION
 
-
 // head: return head of string and erase head and delimiter from original string. Returns full string if delimiter not found.
 
 std::string
@@ -213,6 +212,70 @@ rtail(std::string & s, const std::string & delimiter)
 
 
 
+// peek
+
+// head: return head of string and erase head and delimiter from original string. Returns full string if delimiter not found.
+
+std::string
+peek_head(const std::string & s, const std::string & delimiter)
+{
+    int end = s.find(delimiter);
+    if(end == std::string::npos)
+    {
+        std::string h = s;
+        return h;
+    }
+
+    std::string h = s.substr(0, end);
+    return h;
+}
+
+
+std::string
+peek_rhead(const std::string & s, const std::string & delimiter)
+{
+    int end = s.rfind(delimiter);
+    if(end == std::string::npos)
+    {
+        std::string h = s;
+        return h;
+    }
+
+    std::string h = s.substr(0, end);
+    return h;
+}
+
+
+
+// tail: return tail of string and erase tail and delimiter from original string. Returns empty string if delimiter not found.
+
+std::string
+peek_tail(const std::string & s, const std::string & delimiter)
+{
+    int end = s.find(delimiter);
+    if(end == std::string::npos)
+        return "";
+
+    std::string t = s.substr(end+delimiter.length());
+    return t;
+}
+
+
+
+std::string
+peek_rtail(const std::string & s, const std::string & delimiter)
+{
+    int end = s.rfind(delimiter);
+    if(end == std::string::npos)
+        return "";
+
+    std::string t = s.substr(end+delimiter.length());
+    return t;
+}
+
+
+
+
 
 
 bool
@@ -227,7 +290,7 @@ bool ends_with(const std::string & s, const std::string & end) // waiting for C+
 }
 
 
-
+/*
 const std::string head(std::string s, char token) // without token
 {
     int p = s.find(token);
@@ -287,7 +350,7 @@ const std::string rtail(std::string s, char token) // without token
     else
         return s.substr(p+1, s.size()-p);
 }
-
+*/
 
 
 bool contains(std::string & s, std::string n)
