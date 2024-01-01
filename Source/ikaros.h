@@ -355,6 +355,9 @@ public:
     void DoCommand(std::string uri, std::string args);
     void DoControl(std::string uri, std::string args);
     void DoSendNetwork(std::string uri, std::string args);
+
+    void DoSendDataHeader();
+    void DoSendDataStatus();
     void DoSendData(std::string uri, std::string args);
     void DoUpdate(std::string uri, std::string args);
     void DoNetwork(std::string uri, std::string args);
@@ -363,6 +366,8 @@ public:
     void DoSendFileList(std::string uri, std::string args);
     void DoSendFile(std::string file);
     void DoSendError();
+    void SendImage(matrix & image, std::string & format);
+
     void HandleHTTPRequest();
     void HandleHTTPThread();
     void Tick();

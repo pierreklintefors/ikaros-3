@@ -3,7 +3,7 @@
 
 #include "matrix.h"
 #include "image_file_formats.h"
-
+#include "color_tables.h"
 
 extern "C"
 {
@@ -12,6 +12,34 @@ extern "C"
 }
 namespace ikaros
 {
+
+
+    static void
+	float_to_byte(unsigned char * r, float * a, float min, float max, long size)
+	{
+#ifdef USE_VIMAGE
+		struct vImage_Buffer src =
+        {
+            a, 1, static_cast<vImagePixelCount>(size), size*sizeof(float)
+        };
+		struct vImage_Buffer dest =
+        {
+            r, 1, static_cast<vImagePixelCount>(size), size*sizeof(float)
+        };
+		vImage_Error err = vImageConvert_PlanarFtoPlanar8 (&src, &dest, max, min, 0);
+		if (err < 0) 
+            throw exception("image_file_formats:float_to_byte: vImage_Error");
+#else
+		for (long i=0; i<size; i++)
+			if (a[i] < min)
+				r[i] = 0;
+			else if (a[i] > max)
+				r[i] = 255;
+			else
+				r[i] = int(255.0*(a[i]-min)/(max-min));
+#endif
+	}
+	
 
     // create jpeg functions
     
@@ -34,8 +62,7 @@ namespace ikaros
         dst->dest_mgr.free_in_buffer = dst->size; 
         return; 
     }
-    
-    
+
     // FIXME:   Something goes wrong when dst_empty is called more than once
     //          Fortunately it never happens since the size set by dst_init is large enough
     
@@ -93,7 +120,7 @@ namespace ikaros
         
         jpeg_create_compress(&cinfo);	// Replace with ikaros error handler later
         
-        cinfo.image_width = sizex; 	//* image width and height, in pixels
+        cinfo.image_width = sizex; 	/// image width and height, in pixels
         cinfo.image_height = sizey;
         cinfo.input_components = 1;	// # of color components per pixel
         cinfo.in_color_space = JCS_GRAYSCALE;
@@ -131,18 +158,15 @@ namespace ikaros
         size = dst.used;
         return (char *)dst.buffer;
     }
+    */
     
     
-    
-    char *
-    create_jpeg(long int & size, float ** matrix, int sizex, int sizey, float minimum, float maximum, int quality)
+    unsigned char *
+    create_gray_jpeg(long int & size, matrix & image, float minimum, float maximum, int quality)
     {
-        if (matrix == NULL)
-        {
-            size = 0;
-            return NULL;
-        }
-        
+        long sizex = image.size(1);
+        long sizey = image.size(0);
+
         JSAMPLE *   image_buffer = new JSAMPLE [sizex];
         JSAMPROW    row_pointer[1];
         
@@ -156,7 +180,7 @@ namespace ikaros
         
         jpeg_create_compress(&cinfo);	// Replace with ikaros error handler later
         
-        cinfo.image_width = sizex; 	//* image width and height, in pixels
+        cinfo.image_width = sizex; 	/// image width and height, in pixels
         cinfo.image_height = sizey;
         cinfo.input_components = 1;	// # of color components per pixel
         cinfo.in_color_space = JCS_GRAYSCALE;
@@ -177,8 +201,8 @@ namespace ikaros
             // Convert row to image buffer (assume max == 1 for now)
             
             JSAMPLE * ib = image_buffer;
-            if (maximum != minimum)
-                float_to_byte(image_buffer, matrix[j], minimum, maximum, sizex);
+            if (maximum != minimum) // FIXME: test in conversion instead
+                float_to_byte(image_buffer, image[j], minimum, maximum, sizex);
             else
                 for (int i=0; i<sizex; i++)
                     *ib++ = 0;
@@ -195,20 +219,18 @@ namespace ikaros
         delete [] image_buffer;
         
         size = dst.used;
-        return (char *)dst.buffer;
+        return dst.buffer;
     }
     
     
-   
-    char *
-    create_jpeg(long int & size, float * matrix, int sizex, int sizey, int color_table[256][3], int quality)
+    unsigned char * create_pseudocolor_jpeg(long int & size, matrix & image, float minimum, float maximum, const std::string & table,  int quality)
     {
-        if (matrix == NULL)
-        {
-            size = 0;
-            return NULL;
-        }
-        
+        if(!color_table.count(table))
+            return nullptr;
+
+        long sizex = image.size(1);
+        long sizey = image.size(0);
+
         JSAMPLE *   image_buffer = new JSAMPLE [3*sizex];
         JSAMPROW    row_pointer[1];
         
@@ -220,7 +242,7 @@ namespace ikaros
         
         jpeg_create_compress(&cinfo); // TODO: Replace with ikaros error handler later
         
-        cinfo.image_width = sizex; 	//* image width and height, in pixels
+        cinfo.image_width = sizex; 	//
         cinfo.image_height = sizey;
         cinfo.input_components = 3;	// # of color components per pixel
         cinfo.in_color_space = JCS_RGB;
@@ -232,26 +254,27 @@ namespace ikaros
         // Do the compression
         
         jpeg_start_compress(&cinfo, true);
+        int j=0;
         
         unsigned char * z = new unsigned char [sizex];
         while (cinfo.next_scanline < cinfo.image_height)
         {
-            float_to_byte(z, matrix, 0.0, 1.0, sizex);
+            float_to_byte(z, image[j], minimum, maximum, sizex);
             int x = 0;
             unsigned char * zz = z;
             
             for (int i=0; i<sizex; i++)
             {
-                image_buffer[x++] = color_table[*zz][0];
-                image_buffer[x++] = color_table[*zz][1];
-                image_buffer[x++] = color_table[*zz][2];
+                image_buffer[x++] = color_table[table][*zz][0];
+                image_buffer[x++] = color_table[table][*zz][1];
+                image_buffer[x++] = color_table[table][*zz][2];
                 zz++;
             }
             
             // Write to compressor
             row_pointer[0] = image_buffer;
             (void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
-            matrix += sizex;
+            j++;
         }
         
         jpeg_finish_compress(&cinfo);
@@ -261,9 +284,8 @@ namespace ikaros
         delete [] image_buffer;
         
         size = dst.used;
-        return (char *)dst.buffer;
+        return dst.buffer;
     }
-    */
     
     /*
     char *
@@ -295,7 +317,7 @@ namespace ikaros
         
         jpeg_create_compress(&cinfo);	// Replace with ikaros error handler later
         
-        cinfo.image_width = sizex; 	//* image width and height, in pixels
+        cinfo.image_width = sizex; 	/// image width and height, in pixels
         cinfo.image_height = sizey;
         cinfo.input_components = 3;	// # of color components per pixel
         cinfo.in_color_space = JCS_RGB;
@@ -308,7 +330,7 @@ namespace ikaros
         
         jpeg_start_compress(&cinfo, true);
         
-        //row_stride = sizex * 3;		/* JSAMPLEs per row in image_buffer */
+        //row_stride = sizex * 3;		// JSAMPLEs per row in image_buffer
         int j=0;
         
         float * rp = r;
@@ -361,7 +383,7 @@ namespace ikaros
     
     
     void
-    destroy_jpeg(char * jpeg)
+    destroy_jpeg(unsigned char * jpeg)
     {
         free(jpeg);
     }
@@ -482,7 +504,7 @@ namespace ikaros
             planes = 0;
             return false;
         }
-        
+
         jpeg_create_decompress(&cinfo);
         jpeg_memory_src(&cinfo, (JOCTET *)data, size);
         (void) jpeg_read_header(&cinfo, TRUE);
@@ -495,10 +517,17 @@ namespace ikaros
     }
 
 
-char *
-    create_jpeg(long int & size, float * r, float * g, float * b, int sizex, int sizey, int quality)
+    unsigned char *
+    create_color_jpeg(long int & size, matrix & image, int quality)
     {
         size = 0;
+
+        float * r = image[0][0];
+        float * g = image[1][0];
+        float * b = image[2][0];
+        long sizex = image.shape()[2];  // FIXME: Change to size(2)
+        long sizey = image.shape()[1];
+
         if (r==NULL) return NULL;
         if (g==NULL) return NULL;
         if (b==NULL) return NULL;
@@ -568,7 +597,7 @@ char *
         delete [] image_buffer;
         
         size = dst.used;
-        return (char *)dst.buffer;
+        return dst.buffer;
     }
     
 };

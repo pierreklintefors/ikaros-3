@@ -337,7 +337,6 @@ float operator/(parameter p, double x) { return (float)p*x; }
 float operator/(double x, parameter p) { return x/(float)p; }
 float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
-
 // Component
 
     void 
@@ -549,14 +548,34 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
     */
 
+    Component * Component::GetComponent(const std::string & s) // Get component; sensitive to variables and indirection - changed to peek versions
+    {
+        std::string path = SubstituteVariables(s);
+        try
+        {
+            if(path.empty()) // this
+                return this;
+            if(path[0]=='.') // global
+                return kernel().components.at(path.substr(1));
+            if(kernel().components.count(name_+"."+peek_head(path,"."))) // inside
+                return kernel().components[name_+"."+peek_head(path,".")]->GetComponent(peek_tail(path,"."));
+            if(peek_rtail(peek_rhead(name_,"."),".") == peek_head(path,".") && parent_) // parent
+                return parent_->GetComponent(peek_tail(path,"."));
+            throw exception("Component does not exist.");
+        }
+        catch(const std::exception& e)
+        {
+            throw exception("Component \""+path+"\" does not exist.");
+        }
+    }
+
+
+/*
     Component * Component::GetComponent(const std::string & s) // Get component; sensitive to variables and indirection
     {
         std::string path = SubstituteVariables(s);
         try
-        {        
-            std::string aaa = rhead(name_,'.');
-            std::string xxx = rtail(rhead(name_,'.'),'.');
-
+        {
             if(path.empty()) // this
                 return this;
             if(path[0]=='.') // global
@@ -572,8 +591,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             throw exception("Component \""+path+"\" does not exist.");
         }
     }
-
-
+*/
 
     std::string 
     Component::Evaluate(const std::string & s, bool is_string)
@@ -588,8 +606,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             if(s.find('.')==std::string::npos)
                 return GetValue(s.substr(1));
             
-            std::string component_path = rhead(s.substr(1), '.');
-            std::string variable_name = SubstituteVariables(rtail(s, '.'));
+            std::string component_path = peek_rhead(s.substr(1), ".");
+            std::string variable_name = SubstituteVariables(peek_rtail(s, "."));
             return GetComponent(component_path)->GetValue(variable_name);
         }
         else
@@ -627,6 +645,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::vector<int> 
     Component::EvaluateSizeList(std::string & s) // return list of size from size list in string
     {
+        s = Evaluate(s, true); // FIXME: evaluate as string fir s shold probably be used in more places
         std::vector<int> shape;
         for(std::string e : split(s, ","))
         shape.push_back(EvaluateIntExpression(e));
@@ -849,10 +868,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
         {
-            source = head(s, '[');
-            source_range = range(tail(s, '[', true)); // FIXME: CHECK NEW TAIL FUNCTION WITHOUT SEPARATOR
-            target = head(t, '[');
-            target_range = range(tail(t, '[', true));
+            source = peek_head(s, "[");
+            source_range = range(peek_tail(s, "[")); // FIXME: CHECK NEW TAIL FUNCTION (used to include separator)
+            target = peek_head(t, "[");
+            target_range = range(peek_tail(t, "[")); // FIXME: CHECK NEW TAIL FUNCTION (used to include separator)
             delay_range_ = delay_range;
             flatten_ = false;
             alias_ = alias;
@@ -1715,25 +1734,57 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     // WebUI
     //
 
+/*
+    static bool
+    SendColorJPEGbase64(ServerSocket * socket, matrix & image) // Compress image to jpg and send from memory after base64 encoding
+    {
+        long  size;
+        unsigned char * jpeg = (unsigned char *)create_color_jpeg(size, image, 90);
 
-static bool
-SendColorJPEGbase64(ServerSocket * socket, matrix & r, matrix & g, matrix & b) // Compress image to jpg and send from memory after base64 encoding
-{
-    long  size;
-    unsigned char * jpeg = (unsigned char *)create_jpeg(size, r, g, b, 90);
+        size_t input_length = size;
+        size_t output_length;
+        char * jpeg_base64 = base64_encode(jpeg, input_length, &output_length);
+        
+        socket->Send("\"data:image/jpeg;base64,");
+        bool ok = socket->SendData(jpeg_base64, output_length);
+        socket->Send("\"");
+        
+        destroy_jpeg(jpeg);
+        free(jpeg_base64);
+        return ok;
+    }
+*/
 
-    size_t input_length = size;
-    size_t output_length;
-    char * jpeg_base64 = base64_encode(jpeg, input_length, &output_length);
-    
-    socket->Send("\"data:image/jpeg;base64,");
-    bool ok = socket->SendData(jpeg_base64, output_length);
-    socket->Send("\"");
-    
-    destroy_jpeg((char *)jpeg);
-    free(jpeg_base64);
-    return ok;
-}
+
+    void
+    Kernel::SendImage(matrix & image, std::string & format) // Compress image to jpg and send from memory after base64 encoding
+    {
+        long size = 0;
+        unsigned char * jpeg = nullptr;
+        size_t output_length = 0 ;
+        
+        if(format=="rgb" && image.rank() == 3 && image.size(0) == 3)
+            jpeg = (unsigned char *)create_color_jpeg(size, image, 90);
+
+        else if(format=="gray" && image.rank() == 2)
+            jpeg = (unsigned char *)create_gray_jpeg(size, image, 0, 1, 90);
+
+        else if(image.rank() == 2) // taking our chances with the format...
+            jpeg = (unsigned char *)create_pseudocolor_jpeg(size, image, 0, 1, format, 90);
+
+            if(!jpeg)
+            {
+                socket->Send("\"\"");
+                return;
+            }
+
+        char * jpeg_base64 = base64_encode(jpeg, size, &output_length);
+        socket->Send("\"data:image/jpeg;base64,");
+        bool ok = socket->SendData(jpeg_base64, output_length);
+        socket->Send("\"");
+        destroy_jpeg(jpeg);
+        free(jpeg_base64);
+    }
 
 
 
@@ -1764,88 +1815,82 @@ SendColorJPEGbase64(ServerSocket * socket, matrix & r, matrix & g, matrix & b) /
     }
 
 
+     void
+    Kernel::DoSendDataHeader()
+    {
+        Dictionary header;
+        header.Set("Session-Id", std::to_string(session_id).c_str()); // FIXME: GetValue("session_id")
+        header.Set("Package-Type", "data");
+        header.Set("Content-Type", "application/json");
+        header.Set("Cache-Control", "no-cache");
+        header.Set("Cache-Control", "no-store");
+        header.Set("Pragma", "no-cache");
+        header.Set("Expires", "0");
+        socket->SendHTTPHeader(&header);
+    }
+
+
+
+    void
+     Kernel::DoSendDataStatus()
+    {
+        if(stop_after >= 0)
+        {
+            socket->Send("\t\"tick\": \"%d / %d\",\n", GetTick(), stop_after);
+            socket->Send("\t\"progress\": %f,\n", float(tick)/float(stop_after));
+        }
+        else
+        {
+            socket->Send("\t\"tick\": %lld,\n", GetTick());
+            socket->Send("\t\"progress\": 0,\n");
+        }
+
+        // Timing information
+
+        float total_time = 0; // timer->GetTime()/1000.0; // in seconds // FIXME: ---------
+
+        socket->Send("\t\"timestamp\": %ld,\n", 0); // Timer::GetRealTime() // FIXME: -----------
+        socket->Send("\t\"total_time\": %.2f,\n", total_time);
+        socket->Send("\t\"ticks_per_s\": %.2f,\n", 1); // FIXME: float(tick)/total_time
+        socket->Send("\t\"timebase\": %d,\n", tick_duration);
+        socket->Send("\t\"timebase_actual\": %.0f,\n", tick > 0 ? 1000*float(total_time)/float(tick) : 0);
+        socket->Send("\t\"lag\": %.0f,\n", lag);
+        socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
+        socket->Send("\t\"time_usage\": %.3f,\n", time_usage);  // TODO: move to kernel from WebUI
+        socket->Send("\t\"cpu_usage\": %.3f", cpu_usage);
+    }
+
+
+
     void
     Kernel::DoSendData(std::string uri, std::string args)
     {    
-    sending_ui_data = true; // must be set while main thread is still running
-    while(tick_is_running)
-        {}
+        sending_ui_data = true; // must be set while main thread is still running
+        while(tick_is_running)
+            {}
 
-    std::string root = tail(args, "data=");
-    std::string data = tail(root, "#");
+        DoSendDataHeader();
 
-    Dictionary header;
-    header.Set("Session-Id", std::to_string(session_id).c_str()); // FIXME: GetValue("session_id")
-    header.Set("Package-Type", "data");
-    header.Set("Content-Type", "application/json");
-    header.Set("Cache-Control", "no-cache");
-    header.Set("Cache-Control", "no-store");
-    header.Set("Pragma", "no-cache");
-    header.Set("Expires", "0");
+        std::string root = tail(args, "data=");
+        std::string data = tail(root, "#");
 
-    socket->SendHTTPHeader(&header);
+        socket->Send("{\n");
+        socket->Send("\t\"state\": %d,\n", run_mode);
+        DoSendDataStatus();
+        socket->Send(",\n\t\"data\":\n\t{\n");
+        std::string sep = "";
 
-    socket->Send("{\n");
-    socket->Send("\t\"state\": %d,\n", run_mode);
-
-    if(stop_after > 0)
-    {
-        socket->Send("\t\"tick\": \"%d / %d\",\n", GetTick(), stop_after);
-        socket->Send("\t\"progress\": %f,\n", float(tick)/float(stop_after));
-    }
-    else
-    {
-        socket->Send("\t\"tick\": %lld,\n", GetTick());
-        socket->Send("\t\"progress\": 0,\n");
-    }
-
-    // Timing information
-
-    float total_time = 0; // timer->GetTime()/1000.0; // in seconds // FIXME: ---------
-
-    socket->Send("\t\"timestamp\": %ld,\n", 0); // Timer::GetRealTime() // FIXME: -----------
-    socket->Send("\t\"total_time\": %.2f,\n", total_time);
-    socket->Send("\t\"ticks_per_s\": %.2f,\n", 1); // FIXME: float(tick)/total_time
-    socket->Send("\t\"timebase\": %d,\n", tick_duration);
-    socket->Send("\t\"timebase_actual\": %.0f,\n", tick > 0 ? 1000*float(total_time)/float(tick) : 0);
-    socket->Send("\t\"lag\": %.0f,\n", lag);
-    socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
-    socket->Send("\t\"time_usage\": %.3f,\n", time_usage);  // TODO: move to kernel from WebUI
-    socket->Send("\t\"cpu_usage\": %.3f", cpu_usage);
-
-    socket->Send(",\n\t\"data\":\n\t{\n");
-    std::string sep = "";
-
-    while(!data.empty())
-    {
-        std::string source = cut_head(data, "#");
-        std::string  format = rtail(source, ":");
-
-        //auto root_group = main_group->GetGroup(root);
-        
-        std::string src = source;
-        //if(!root.empty())    // FIXME: Empty or Not empty?
-        //    src = root+"."+src;
-        
-        if(!source.empty())
+        while(!data.empty())
         {
-            // Use data from module function if available
-            /*
-            auto module_source = rsplit(source, ".", 1);
-            if(GroupElement * g = root_group->GetGroup(module_source.at(0)))
-            {
-                std::string json_data;
-                if(g->module)
-                    json_data = g->module->GetJSONData(module_source.at(1)); //  : ""
-            */
+            std::string source = head(data, "#");
+            std::string format = rtail(source, ":");
+            std::string source_with_root = root+"."+source;
 
-
-            
-            if(format == "") // as default, send a matrix
+            if(buffers.count(source_with_root))
             {
-                if(buffers.count(root+"."+source))
+                if(format.empty())
                 {
-                    std::string json_data = buffers[root+"."+source].json();
+                    std::string json_data = buffers[source_with_root].json();
                     if(!json_data.empty())
                     {
                         socket->Send(sep);
@@ -1854,161 +1899,49 @@ SendColorJPEGbase64(ServerSocket * socket, matrix & r, matrix & g, matrix & b) /
                         sep = ",\n";
                     }
                 }
-                else if(parameters.count(root+"."+source))
-                {
-                    std::string json_data = parameters[root+"."+source].json();
-                    if(!json_data.empty())
-                    {
+                else if(format=="rgb")
+                { 
                         socket->Send(sep);
-                        std::string s = "\t\t\"" + source + "\": "+json_data;
+                        std::string s = "\t\t\"" + source + ":"+format+"\": "; 
                         socket->Send(s);
+                        SendImage(buffers[source_with_root], format);
                         sep = ",\n";
-                    }
                 }
-
-
-            }
-
-            /*
-            else if(format == "rgb" && !source.empty())
-            {
-                auto a = rsplit(source, ".", 1); // separate out buffers
-                auto o = split(a[1], "+"); // split channel names
-                
-                if(o.size() == 3)
-                {
-                    auto c1 = a[0]+"."+o[0];
-                    auto c2 = a[0]+"."+o[1];
-                    auto c3 = a[0]+"."+o[2];
-
-                    Module_IO * io1 = root_group->GetSource(c1);
-                    Module_IO * io2 = root_group->GetSource(c2);
-                    Module_IO * io3 = root_group->GetSource(c3);
-                    
-                    // TODO: check that all buffers have the same size
-
-                    if(io2 && io2 && io3)
-                    {
+                else if(format=="gray" || format=="red" || format=="green" || format=="blue" || format=="spectrum" || format=="fire")
+                { 
                         socket->Send(sep);
-                        socket->Send("\t\t\"%s:rgb\": ", source.c_str()); // FIXME: Check return
-                        SendColorJPEGbase64(socket, *io1->matrix[0], *io2->matrix[0], *io3->matrix[0], io1->sizex, io1->sizey);
+                        std::string s = "\t\t\"" + source + ":"+format+"\": "; 
+                        socket->Send(s);
+                        SendImage(buffers[source_with_root], format);
                         sep = ",\n";
-                    }
                 }
             }
-            */
-                    /*
-                Module_IO * io = root_group->GetSource(source); // FIXME: Also look for buffers here
-                if(io)
-                {
-                    socket->Send(sep);
-                    SendJSONMatrixData(socket, source, *io->matrix[0], io->sizex, io->sizey);
-                    sep = ",\n";
-                }
-            */
-            /*
-                else if(bindings.count(src))
-                {
-                    socket->Send(sep);
-                    auto bs = bindings.at(src);
-                    Binding * b = bs.at(0);   // Use first binding
-                    switch(b->type)
-                    {
-                        case data_source_int:
-                        case data_source_list:
-                            socket->Send("\t\t\"%s\": [[%d]]", source.c_str(), *(int *)(b->value));
-                            break;
-
-                        case data_source_bool:
-                            socket->Send("\t\t\"%s\": [[%d]]", source.c_str(), int(*(bool *)(b->value)));
-                            break;
-
-                        case data_source_float:
-                            socket->Send("\t\t\"%s\": [[%f]]", source.c_str(), *(float *)(b->value));
-                            break;
-
-                        case data_source_string:
-                            socket->Send("\t\t\"%s\": \"%s\"", source.c_str(), ((std::string *)(b->value))->c_str());
-                            break;
-            
-                        case data_source_matrix:
-                            SendJSONMatrixData(socket, source, *(float **)(b->value), b->size_x, b->size_y);
-                            break;
-                            
-                        case data_source_array:
-                            SendJSONArrayData(socket, source, (float *)(b->value), b->size_x);
-                            break;
-                            
-                        default:
-                            socket->Send("\"ERRROR_type_is\": %d", b->type);
-                    }
-                    sep = ",\n";
-                }
-            }
-            else if(format == "gray" && source[0])
+            else if(parameters.count(source_with_root))
             {
-                if(Module_IO * io = root_group->GetSource(source))
+                std::string json_data = parameters[source_with_root].json();
+                if(!json_data.empty())
                 {
                     socket->Send(sep);
-                    socket->Send("\t\t\"%s:gray\": ", source.c_str()); // FIXME: Check return
-                    SendColorJPEGbase64(socket, *io->matrix[0], *io->matrix[0], *io->matrix[0], io->sizex, io->sizey);
+                    std::string s = "\t\t\"" + source + "\": "+json_data;
+                    socket->Send(s);
                     sep = ",\n";
                 }
             }
-            else if(format == "rgb" && !source.empty())
-            {
-                auto a = rsplit(source, ".", 1); // separate out buffers
-                auto o = split(a[1], "+"); // split channel names
-                
-                if(o.size() == 3)
-                {
-                    auto c1 = a[0]+"."+o[0];
-                    auto c2 = a[0]+"."+o[1];
-                    auto c3 = a[0]+"."+o[2];
-
-                    Module_IO * io1 = root_group->GetSource(c1);
-                    Module_IO * io2 = root_group->GetSource(c2);
-                    Module_IO * io3 = root_group->GetSource(c3);
-                    
-                    // TODO: check that all buffers have the same size
-
-                    if(io2 && io2 && io3)
-                    {
-                        socket->Send(sep);
-                        socket->Send("\t\t\"%s:rgb\": ", source.c_str()); // FIXME: Check return
-                        SendColorJPEGbase64(socket, *io1->matrix[0], *io2->matrix[0], *io3->matrix[0], io1->sizex, io1->sizey);
-                        sep = ",\n";
-                    }
-                }
-            }
-            else if(source[0] && (format == "fire" || format == "spectrum" || format == "red" || format == "green" || format == "blue"))
-            {
-                if(Module_IO * io = root_group->GetSource(source))
-                {
-                    socket->Send(sep);
-                    socket->Send("\t\t\"%s:%s\": ", source.c_str(), format.c_str()); // FIXME: Check return
-                    SendPseudoColorJPEGbase64(socket, *io->matrix[0], io->sizex, io->sizey, format.c_str());
-                    sep = ",\n";
-                }
-            }
-            */
         }
-    }
 
+        socket->Send("\n\t}");
 
-    socket->Send("\n\t}");
+        if(tick_is_running) // new tick has started during sending
+        {
+            socket->Send(",\n\t\"has_data\": 0\n"); // there may be data but it cannot be trusted
+        }
+        else
+        {
+            socket->Send(",\n\t\"has_data\": 1\n");
+        }
+        socket->Send("}\n");
 
-    if(tick_is_running) // new tick has started during sending
-    {
-        socket->Send(",\n\t\"has_data\": 0\n"); // there may be data but it cannot be trusted
-    }
-    else
-    {
-        socket->Send(",\n\t\"has_data\": 1\n");
-    }
-    socket->Send("}\n");
-
-    sending_ui_data = false;
+        sending_ui_data = false;
     }
 
 
@@ -2025,7 +1958,7 @@ SendColorJPEGbase64(ServerSocket * socket, matrix & r, matrix & g, matrix & b) /
     void
     Kernel::DoOpen(std::string uri, std::string args)
     {
-        std::string file = tail(args,'=');
+        std::string file = peek_tail(args,"=");
         //std::cout << "Open: " << file << std::endl;
         Pause();
         run_mode = run_mode_stop;
@@ -2348,21 +2281,21 @@ void
     void
     Kernel::HandleHTTPThread()
     {
-    while(!Terminate())
-    {
-        if (socket != nullptr && socket->GetRequest(true))
+        while(!Terminate())
         {
-            if (equal_strings(socket->header.Get("Method"), "GET"))
+            if (socket != nullptr && socket->GetRequest(true))
             {
-                while(tick_is_running)
-                    {}
-                handling_request = true;
-                HandleHTTPRequest();
-                handling_request = false;
+                if (equal_strings(socket->header.Get("Method"), "GET"))
+                {
+                    while(tick_is_running)
+                        {}
+                    handling_request = true;
+                    HandleHTTPRequest();
+                    handling_request = false;
+                }
+                socket->Close();
             }
-            socket->Close();
         }
-    }
     }
 
 

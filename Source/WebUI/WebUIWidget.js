@@ -118,7 +118,7 @@ class WebUIWidget extends HTMLElement
         try {
             let v = this.receivedData[this.parameters[source]];
 
-            if(typeof v[0] != "object") // FIXME: Temporary fix for arrays
+            if(v != undefined && typeof v[0] != "object") // FIXME: Temporary fix for arrays
                 v = [v];
 
             if(v)
