@@ -1834,6 +1834,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
      Kernel::DoSendDataStatus()
     {
+        socket->Send("\t\"state\": %d,\n", run_mode);
         if(stop_after >= 0)
         {
             socket->Send("\t\"tick\": \"%d / %d\",\n", GetTick(), stop_after);
@@ -1857,7 +1858,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         socket->Send("\t\"lag\": %.0f,\n", lag);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
         socket->Send("\t\"time_usage\": %.3f,\n", time_usage);  // TODO: move to kernel from WebUI
-        socket->Send("\t\"cpu_usage\": %.3f", cpu_usage);
+        socket->Send("\t\"cpu_usage\": %.3f,\n", cpu_usage);
     }
 
 
@@ -1871,14 +1872,16 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         DoSendDataHeader();
 
+        socket->Send("{\n");
+
+        DoSendDataStatus();
+
+        socket->Send("\t\"data\":\n\t{\n");
+    
         std::string root = tail(args, "data=");
         std::string data = tail(root, "#");
-
-        socket->Send("{\n");
-        socket->Send("\t\"state\": %d,\n", run_mode);
-        DoSendDataStatus();
-        socket->Send(",\n\t\"data\":\n\t{\n");
         std::string sep = "";
+        bool sent = false;
 
         while(!data.empty())
         {
@@ -1890,55 +1893,29 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             {
                 if(format.empty())
                 {
-                    std::string json_data = buffers[source_with_root].json();
-                    if(!json_data.empty())
-                    {
-                        socket->Send(sep);
-                        std::string s = "\t\t\"" + source + "\": "+json_data;
-                        socket->Send(s);
-                        sep = ",\n";
-                    }
+                    sent = socket->Send(sep + "\t\t\"" + source + "\": "+buffers[source_with_root].json());
                 }
                 else if(format=="rgb")
                 { 
-                        socket->Send(sep);
-                        std::string s = "\t\t\"" + source + ":"+format+"\": "; 
-                        socket->Send(s);
+                        sent = socket->Send(sep + "\t\t\"" + source + ":"+format+"\": ");
                         SendImage(buffers[source_with_root], format);
-                        sep = ",\n";
                 }
                 else if(format=="gray" || format=="red" || format=="green" || format=="blue" || format=="spectrum" || format=="fire")
                 { 
-                        socket->Send(sep);
-                        std::string s = "\t\t\"" + source + ":"+format+"\": "; 
-                        socket->Send(s);
+                        sent = socket->Send(sep + "\t\t\"" + source + ":"+format+"\": ");
                         SendImage(buffers[source_with_root], format);
-                        sep = ",\n";
                 }
             }
             else if(parameters.count(source_with_root))
             {
-                std::string json_data = parameters[source_with_root].json();
-                if(!json_data.empty())
-                {
-                    socket->Send(sep);
-                    std::string s = "\t\t\"" + source + "\": "+json_data;
-                    socket->Send(s);
-                    sep = ",\n";
-                }
+                sent = socket->Send(sep + "\t\t\"" + source + "\": "+parameters[source_with_root].json());
             }
+            if(sent)
+                sep = ",\n";
         }
 
         socket->Send("\n\t}");
-
-        if(tick_is_running) // new tick has started during sending
-        {
-            socket->Send(",\n\t\"has_data\": 0\n"); // there may be data but it cannot be trusted
-        }
-        else
-        {
-            socket->Send(",\n\t\"has_data\": 1\n");
-        }
+        socket->Send(",\n\t\"has_data\": "+std::to_string(!tick_is_running)+"\n"); // new tick has started during sending; there may be data but it cannot be trusted
         socket->Send("}\n");
 
         sending_ui_data = false;
@@ -2229,15 +2206,13 @@ void
     std::string uri = socket->header.Get("URI");
     if(uri.empty())
     {
-        // Notify(msg_warning, "No URI");
+        log.push_back"No URI"); // warning
         return;
     }
 
     std::string args = tail(uri, "?");
 
     std::cout << uri << " " << args << std::endl;
-
-    // SELECT METHOD
 
     if(uri == "/update")
         DoUpdate(uri, args);
