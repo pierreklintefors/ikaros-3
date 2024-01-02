@@ -925,6 +925,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::Tick()
     {
+        // TEST
+
+       // log.push_back("Tick "+std::to_string(tick));
+
         for(auto & m : components)
             try
             {
@@ -1862,6 +1866,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
+    void
+     Kernel::DoSendLog(std::string uri, std::string args)
+     {
+        socket->Send(",\n\"log\": [");
+        std::string sep;
+        for(std::string line : log)
+        {
+            socket->Send(sep + "\""+line+"\"");
+        }
+        socket->Send("]");
+        log.clear();
+     }
 
     void
     Kernel::DoSendData(std::string uri, std::string args)
@@ -1915,6 +1931,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         }
 
         socket->Send("\n\t}");
+        DoSendLog(uri, args);
         socket->Send(",\n\t\"has_data\": "+std::to_string(!tick_is_running)+"\n"); // new tick has started during sending; there may be data but it cannot be trusted
         socket->Send("}\n");
 
@@ -1964,6 +1981,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoStop(std::string uri, std::string args)
     {
+        log.push_back("stop");
         Pause();
         run_mode = run_mode_stop;
         DoUpdate(uri, args);
@@ -2013,7 +2031,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoPause(std::string uri, std::string args)
     {
-    std::cout << "DoPause" << std::endl;
+    log.push_back("pause");
     Pause();
     run_mode = run_mode_pause;
     master_id = get_session_id(args);
@@ -2024,7 +2042,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoStep(std::string uri, std::string args)
     {
-    std::cout << "DoPStep" << std::endl;
+    log.push_back("step");
     Pause();
     run_mode = run_mode_pause;
     master_id = get_session_id(args);
@@ -2036,7 +2054,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoPlay(std::string uri, std::string args)
     {
-    std::cout << "DoPlay" << std::endl;
+    log.push_back("play");
     Pause();
     run_mode = run_mode_play;
     master_id = get_session_id(args);
@@ -2048,7 +2066,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoRealtime(std::string uri, std::string args)
     {
-    std::cout << "DoRealtime" << std::endl;
+    log.push_back("realtime");
     run_mode = run_mode_realtime;
     master_id = get_session_id(args);
     is_running = true;
@@ -2105,44 +2123,54 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
+
+    void
+    Kernel::AddWidget(std::string uri, std::string args)
+    {
+        std::cout << "AddWidget: " << args << std::endl;
+
+        DoSendData(uri, args);
+    }
+
+
+    void
+    Kernel::DeleteWidget(std::string uri, std::string args)
+    {
+      std::cout << "DeleteWidget: " << args << std::endl;
+    }
+
+
+    void
+    Kernel::SetWidgetParameter(std::string uri, std::string args)
+    {
+      std::cout << "SetWidgetParameter: " << args << std::endl;
+    }
+
+
     void
     Kernel::DoUpdate(std::string uri, std::string args)
     {
-    if(args.empty() || first_request) // not a data request - send view data
-    {
-        first_request = false;
-        DoSendNetwork(uri, args);
-    }
-    else if(run_mode == run_mode_play && master_id == get_session_id(args))
-    {
-        Pause();
-        Tick();
-        DoSendData(uri, args);
-    }
-    else 
-        DoSendData(uri, args);
+        if(args.empty() || first_request) // not a data request - send view data
+        {
+            first_request = false;
+            DoSendNetwork(uri, args);
+        }
+        else if(run_mode == run_mode_play && master_id == get_session_id(args))
+        {
+            Pause();
+            Tick();
+            DoSendData(uri, args);
+        }
+        else 
+            DoSendData(uri, args);
     }
 
 
-
-void
+    void
     Kernel::DoNetwork(std::string uri, std::string args)
     {
         first_request = false;
         DoSendNetwork(uri, args);
-    }
-
-
-
-    void
-    Kernel::DoGetLog(std::string uri, std::string args)
-    {
-    /*
-    if (logfile)
-        socket->SendFile("logfile", webui_dir);
-    else
-        socket->Send("ERROR - No logfile found\n");
-    */
     }
 
 
@@ -2165,8 +2193,6 @@ void
     }
     socket->Send("\"\n]\n}\n");
     }
-
-
 
 
     void
@@ -2206,7 +2232,7 @@ void
     std::string uri = socket->header.Get("URI");
     if(uri.empty())
     {
-        log.push_back"No URI"); // warning
+        log.push_back("No URI"); // warning
         return;
     }
 
@@ -2236,8 +2262,6 @@ void
         DoSaveAs(uri, args);
     else if(uri == "/stop")
         DoStop(uri, args);
-    else if(uri == "/getlog")
-        DoGetLog(uri, args);
     else if(uri == "/classes") 
         DoSendClasses(uri, args);
     else if(uri == "/filelist") 
@@ -2248,6 +2272,14 @@ void
         DoCommand(uri, args);
     else if(starts_with(uri, "/control/"))
         DoControl(uri, args);
+
+    else if(starts_with(uri, "/addwidget"))
+        AddWidget(uri, args);
+    else if(starts_with(uri, "/delwidget"))
+        DeleteWidget(uri, args);
+    else if(starts_with(uri, "/setwidgetparam"))
+        SetWidgetParameter(uri, args);
+
     else 
         DoSendFile(uri);
     }
