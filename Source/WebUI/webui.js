@@ -1186,8 +1186,10 @@ interaction = {
         let widget_class = widget_select.options[widget_select.selectedIndex].value;
         let w = interaction.addWidget({'class': widget_class, 'x': interaction.curnewpos, 'y': interaction.curnewpos, 'height': 200, 'width': 200});
         interaction.curnewpos += 20;
-        interaction.currentView.objects.push(w.widget.parameters);
+        interaction.currentView.elements.push(w.widget.parameters);
         interaction.selectObject(w);
+        controller.get("addwidget?data="+encodeURIComponent(interaction.currentViewName), controller.update);
+
     },
     addWidget(w)
     {
@@ -1437,7 +1439,10 @@ interaction = {
         {
             interaction.view_mode = true;
             for(let i=0; i<v.length; i++)
+            {
+                v[i].attributes.class = v[i].tag;
                 interaction.addWidget(v[i].attributes);
+            }
             if(interaction.edit_mode)
                 displayAside('view_inspector');
             else
@@ -1920,6 +1925,13 @@ controller = {
             //console.log(">>> controller.update: unkown package type");
         }
 
+
+        if(response.log)
+        {
+            let logElement = document.querySelector('.log');
+            response.log.forEach((element) => logElement.innerHTML += "<p>"+element+"</p>\n");
+            logElement.scrollTop = logElement.scrollHeight;
+        }
 
           return;
 
