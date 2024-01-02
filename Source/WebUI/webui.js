@@ -286,9 +286,9 @@ nav = {
             
             for(i in group.views)
             {
-                if(!group.views[i].name)
-                    group.views[i].name = "View #"+i;
-                s += "<li data-name='"+name+"/"+group.attributes.name+"#"+group.views[i].name+"'>-&nbsp" + "<span  onclick='return nav.navClick(event)'>"+ group.views[i].name + "</span></li>";
+                if(!group.views[i].attributes.name)
+                    group.views[i].attributes.name = "View #"+i;
+                s += "<li class='view' data-name='"+name+"/"+group.attributes.name+"#"+group.views[i].attributes.name+"'>-&nbsp" + "<span  onclick='return nav.navClick(event)'>"+ group.views[i].attributes.name + "</span></li>";
             }
             s += "</ul>";
         }
@@ -310,7 +310,6 @@ nav = {
             s +=  "<ul>"
             for(i in group.groups)
                 s += nav.buildList(group.groups[i], name+"/"+group.attributes.name);
-     
         }
         s += "</li>";
         return s;
@@ -1406,8 +1405,8 @@ interaction = {
             let vw = controller.views[viewName];
             if(vw && vw.views && vw.views[0])
             {
-                viewPath += "#"+vw.views[0].name;
-                h+= "<div class='bread' onclick='controller.selectView(\""+viewPath+"\")'>"+vw.views[0].name+"</div>";
+                viewPath += "#"+vw.views[0].attributes.name;
+                h+= "<div class='bread' onclick='controller.selectView(\""+viewPath+"\")'>"+vw.views[0].attributes.name+"</div>";
             }
         }
 
@@ -1760,7 +1759,7 @@ controller = {
 
         if(group.views)
             for(i in group.views)
-                controller.views[name+"/"+group.attributes.name+"#"+group.views[i].name] = group.views[i];
+                controller.views[name+"/"+group.attributes.name+"#"+group.views[i].attributes.name] = group.views[i];
 
         if(group.groups)
             for(i in group.groups)
@@ -2036,19 +2035,19 @@ controller = {
 
     viewToXML: function(view, indent="")
     {
-        let text = indent + '<view name="'+view.name+'"';
-        for(let a in view)
+        let text = indent + '<view name="'+view.attributes.name+'"';
+        for(let a in view.attributes)
             if(!['name', 'objects'].includes(a))
-                text += ' ' + a + ' = "'+view[a]+'"';
+                text += ' ' + a + '="'+view.attributes[a]+'"';
         text += ' >\n';
         
-        for(let w in view.objects)
+        for(let w in view.elements)
         {
-            text += '\t'+indent + '<'+view.objects[w].class+' ';
+            text += '\t'+indent + '<'+view.elements[w].attributes.class+' ';
 
-            for(let a in view.objects[w])
+            for(let a in view.elements[w].attributes)
                 if(!['class'].includes(a))
-                    text += ' '+ a + ' = "'+view.objects[w][a]+'"';
+                    text += ' '+ a + '="'+view.elements[w].attributes[a]+'"';
 
             text += '/>\n';
         }
@@ -2060,7 +2059,7 @@ controller = {
     {
         let text = indent + '<module\n';
         for(let a in module.attributes)
-            text += indent + '\t' + a + ' = "'+module.attributes[a]+'"\n';
+            text += indent + '\t' + a + '="'+module.attributes[a]+'"\n';
         text += indent+'>\n';
 
          for(let v in module.views)
