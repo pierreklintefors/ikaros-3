@@ -1,6 +1,7 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_subdirectory(Logger)
 add_subdirectory(Constant)
+add_subdirectory(Randomizer)
 add_subdirectory(Add)
 add_subdirectory(Scale)
 add_subdirectory(Oscillator)
