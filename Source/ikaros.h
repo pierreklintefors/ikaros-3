@@ -352,8 +352,16 @@ public:
     void DoStep(std::string uri, std::string args);
     void DoPlay(std::string uri, std::string args);
     void DoRealtime(std::string uri, std::string args);
+    
     void DoCommand(std::string uri, std::string args);
     void DoControl(std::string uri, std::string args);
+    
+    void AddWidget(std::string uri, std::string args);
+    void DeleteWidget(std::string uri, std::string args);
+    void SetWidgetParameter(std::string uri, std::string args);
+
+
+
     void DoSendNetwork(std::string uri, std::string args);
 
     void DoSendDataHeader();
@@ -361,7 +369,7 @@ public:
     void DoSendData(std::string uri, std::string args);
     void DoUpdate(std::string uri, std::string args);
     void DoNetwork(std::string uri, std::string args);
-    void DoGetLog(std::string uri, std::string args);
+    void DoSendLog(std::string uri, std::string args);
     void DoSendClasses(std::string uri, std::string args);
     void DoSendFileList(std::string uri, std::string args);
     void DoSendFile(std::string file);
