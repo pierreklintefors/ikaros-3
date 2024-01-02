@@ -441,7 +441,7 @@ namespace ikaros
             }
 
             std::string sep;
-            std::string  s = "[";
+            std::string s = "[";
 
             for(auto x : *this)
             {
