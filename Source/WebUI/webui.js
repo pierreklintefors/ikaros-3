@@ -1186,10 +1186,9 @@ interaction = {
         let widget_class = widget_select.options[widget_select.selectedIndex].value;
         let w = interaction.addWidget({'class': widget_class, 'x': interaction.curnewpos, 'y': interaction.curnewpos, 'height': 200, 'width': 200});
         interaction.curnewpos += 20;
-        interaction.currentView.elements.push(w.widget.parameters);
+        interaction.currentView.elements.push({"attributes": w.widget.parameters, "tag":widget_class});
         interaction.selectObject(w);
         controller.get("addwidget?data="+encodeURIComponent(interaction.currentViewName), controller.update);
-
     },
     addWidget(w)
     {
@@ -1201,6 +1200,7 @@ interaction = {
         newTitle.innerHTML = "TITLE";
         newObject.appendChild(newTitle);
 
+        let index = interaction.main.querySelectorAll(".widget").length;
         interaction.main.appendChild(newObject);
         newObject.addEventListener('mousedown', interaction.startDrag, false);
 
@@ -1212,6 +1212,7 @@ interaction = {
             newObject.widget.element = newObject; // FIXME: why not also below??
             newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
             newObject.widget.parameters['text'] = "\""+"webui-widget-"+w['class']+"\" not found. Is it included in index.html?";
+            newObject.widget.parameters['_index_'] = index;
         }
         else
         {
@@ -1230,6 +1231,7 @@ interaction = {
             }
 
             newObject.widget.parameters = w;
+            newObject.widget.parameters['_index_'] = index;
         }
 
         newObject.widget.setAttribute('class', 'widget');
