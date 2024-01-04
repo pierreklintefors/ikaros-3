@@ -145,7 +145,7 @@ public:
     void print();
     void AddInput(dictionary parameters);
     void AddOutput(dictionary parameters);
-    void AddParameter(dictionary parameters);
+    void AddParameter(dictionary & parameters);
     void SetParameter(std::string name, std::string value);
     bool BindParameter(parameter & p,  std::string & name);
     bool ResolveParameter(parameter & p,  std::string & name,   std::string & default_value);
@@ -156,7 +156,7 @@ public:
     virtual void Init() {}
 
     std::string JSONString();
-    std::string XMLString();
+    std::string xml();
 
     std::string GetValue(const std::string & name);    // Get value of a attribute/variable in the context of this component
     std::string GetBind(const std::string & name);
@@ -323,10 +323,12 @@ public:
     void AddOutput(std::string name, dictionary parameters=dictionary());
     void AddParameter(std::string name, dictionary params=dictionary());
     void SetParameter(std::string name, std::string value);
-    void AddGroup(std::string name, dictionary info=dictionary());
-    void AddModule(std::string name, dictionary info=dictionary());
-    void AddConnection(std::string souce, std::string target, std::string delay_range, std::string alias);
-    void ParseGroupFromXML(XMLElement * xml, std::string path="");
+    void AddGroup(dictionary & info);
+    void AddModule(dictionary & info);
+    void AddConnection(dictionary & info); // std::string souce, std::string target, std::string delay_range, std::string alias
+    //void ParseGroupFromXML(XMLElement * xml, std::string path="");
+    void BuildGroup(dictionary & d, std::string path="");
+
     void AllocateInputs();
     void InitComponents();
     void SetUp();
@@ -340,12 +342,13 @@ public:
     std::string XMLString();
 
     void InitSocket();
+
     void Pause();
 
-        void DoNew(std::string uri, std::string args);
-        void DoOpen(std::string uri, std::string args);
-        void DoSave(std::string uri, std::string args);
-        void DoSaveAs(std::string uri, std::string args);
+    void DoNew(std::string uri, std::string args);
+    void DoOpen(std::string uri, std::string args);
+    void DoSave(std::string uri, std::string args);
+    void DoSaveAs(std::string uri, std::string args);
 
     void DoStop(std::string uri, std::string args);
     void DoPause(std::string uri, std::string args);
@@ -359,7 +362,6 @@ public:
     void AddWidget(std::string uri, std::string args);
     void DeleteWidget(std::string uri, std::string args);
     void SetWidgetParameter(std::string uri, std::string args);
-
 
 
     void DoSendNetwork(std::string uri, std::string args);
