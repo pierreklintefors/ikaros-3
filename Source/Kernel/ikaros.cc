@@ -1635,7 +1635,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     //
 
     std::string 
-    Component::JSONString()
+    Component::json()
     {
         // return info_.json(); // FIXME: Will be used when shared dictionaries are implemented
 
@@ -1648,7 +1648,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             {
                 std::string cn =  std::string(info_["name"])+"."+std::string(g["name"]);   // ["attributes"]
                 Kernel &k = kernel();
-                gs += gsep + k.components.at(cn)->JSONString();
+                gs += gsep + k.components.at(cn)->json();
                 gsep =", ";
             }
 
@@ -1661,7 +1661,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             {
                 std::string mn =  std::string(info_["name"])+"."+std::string(m["name"]); // ["attributes"]
                 Kernel &k = kernel();
-                ms += msep + k.components.at(mn)->JSONString();
+                ms += msep + k.components.at(mn)->json();
                 msep =", ";
             }
 
@@ -1770,18 +1770,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     std::string 
-    Kernel::JSONString()
+    Kernel::json()
     {
         if(components.empty())
             return "{}";
         else
-            return components.begin()->second->JSONString();
+            return components.begin()->second->json();
     }
 
 
 
     std::string 
-    Kernel::XMLString()
+    Kernel::xml()
     {
         if(components.empty())
             return "";
@@ -2074,7 +2074,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendNetwork(std::string uri, std::string args)
     {
-        std::string s = JSONString(); 
+        std::string s = json(); 
         Dictionary rtheader;
         rtheader.Set("Session-Id", std::to_string(session_id).c_str());
         rtheader.Set("Package-Type", "network");

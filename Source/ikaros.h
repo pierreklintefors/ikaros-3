@@ -155,7 +155,7 @@ public:
     virtual void Tick() {}
     virtual void Init() {}
 
-    std::string JSONString();
+    std::string json();
     std::string xml();
 
     std::string GetValue(const std::string & name);    // Get value of a attribute/variable in the context of this component
@@ -338,8 +338,9 @@ public:
 
     void SortNetwork();
     void Propagate();
-    std::string JSONString();   // renamse json and xml
-    std::string XMLString();
+    
+    std::string json();
+    std::string xml();
 
     void InitSocket();
 
