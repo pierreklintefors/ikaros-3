@@ -1,4 +1,4 @@
-// dictionary.h (c) Christian Balkenius 2023
+// dictionary.h (c) Christian Balkenius 2023-2024
 // Recursive JSON-like dictionary
 
 #ifndef DICTIONARY
@@ -7,11 +7,13 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <variant>
 #include <iterator>
 #include <iostream>
 
+#include "utilities.h"
 #include "xml.h"
 
 namespace ikaros 
@@ -38,9 +40,9 @@ namespace ikaros
             return "null";
         }
 
-        std::string xml()
+        std::string xml(std::string name, int depth=0)
         {
-            return "null";
+            return tab(depth)+"<null/>\n";
         }
     };
 
@@ -59,9 +61,15 @@ namespace ikaros
         }
 
 
+        size_t count(std::string s)
+        {
+            return dict_.count(s);
+        }
+
+
         operator std::string ();
         std::string json();
-        std::string xml();
+        std::string xml(std::string name, int depth=0);
 
         std::map<std::string, value>::iterator begin()  { return dict_.begin(); };
         std::map<std::string, value>::iterator end()   { return dict_.end(); };
@@ -76,8 +84,8 @@ namespace ikaros
         }
 
         dictionary() {};
-        dictionary(XMLElement * xml, bool merge=false);
-        dictionary(std::string filename, bool merge=false);
+        dictionary(XMLElement * xml);
+        dictionary(std::string filename);
     };
 
     struct list
@@ -92,7 +100,7 @@ namespace ikaros
 
         operator std::string ();
         std::string json();
-        std::string xml();
+        std::string xml(std::string name, int depth=0);
 
         value & operator[] (int i)
         {
@@ -223,16 +231,16 @@ namespace ikaros
                 return "*";
         }
 
-    std::string xml()
+        std::string xml(std::string name, int depth=0)
         {
             if(std::holds_alternative<std::string>(value_))
-                return "\""+std::get<std::string>(value_)+"\"";
+                return tab(depth)+"<string>"+std::get<std::string>(value_)+"</string>\n";
             else if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).xml();
+                return std::get<list>(value_).xml(name, depth);
             else if(std::holds_alternative<dictionary>(value_))
-                return std::get<dictionary>(value_).xml();
+                return std::get<dictionary>(value_).xml(name, depth);
             else if(std::holds_alternative<null>(value_))
-                return "null";
+                return tab(depth)+"<null/>\n";
             else
                 return "*";
         }
@@ -257,6 +265,14 @@ namespace ikaros
             else
                 return std::get<dictionary>(value_);
         }
+
+
+
+        dictionary & dref()
+        {
+            return std::get<dictionary>(value_); // FIXME: No error checking
+        }
+
 
         void print()
         {
