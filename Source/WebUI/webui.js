@@ -519,7 +519,7 @@ module_inspector = {
 
         let m = module_inspector.module;
         
-        if(m.parameters.groups.length > 0) // add group
+        if(m.parameters.class = undefined) // add group
         {
             module_inspector.addHeader("GROUP");
             module_inspector.addRow("name", m.parameters.name);
@@ -545,7 +545,7 @@ module_inspector = {
         
         else // add module
         {
-            module_inspector.addHeader("MODULE (not live)");
+            module_inspector.addHeader("MODULE");
             module_inspector.addRow("name", m.parameters.name);
             module_inspector.addRow("class", m.parameters.class);
 
@@ -619,7 +619,7 @@ module_edit_inspector = {
 
         let m = module_edit_inspector.module;
         
-        if(m.parameters.groups.length > 0) // add group
+        if(m.parameters.class == undefined) // add group
         {
             module_edit_inspector.addHeader("GROUP");
             module_edit_inspector.addRow("name", m.parameters.name);
@@ -1606,6 +1606,8 @@ interaction = {
         let module_name = interaction.selectedObject.firstElementChild.innerText;
         interaction.module_pos[module_name] = {'x':newLeft , 'y': newTop};
         interaction.calculateIOPositions(interaction.selectedObject.parameters, interaction.selectedObject.parameters._x, interaction.selectedObject.parameters._y);
+
+        module_inspector.select(interaction.selectedObject);
     },
     selectModule: function(obj) {
         interaction.deselectObject()
@@ -1623,6 +1625,7 @@ interaction = {
         }
       },
     releaseModule: function(evt) {
+        
         interaction.main.removeEventListener('mousemove',interaction.moveModule,true);
         interaction.main.removeEventListener('mouseup',interaction.releaseModule,true);
         interaction.selectedObject.className = interaction.selectedObject.className.replace(/dragged/,'');
