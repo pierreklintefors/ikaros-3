@@ -136,7 +136,7 @@ class Component
 public:
     Component *     parent_;
     dictionary      info_;
-    std::string     name_;
+    std::string     path_;
 
     Component();
 
@@ -238,6 +238,7 @@ public:
 class Kernel
 {
 public:
+    dictionary                              info_;
     std::string                             webui_dir;
     std::map<std::string, Class>            classes;
     std::map<std::string, std::string>      files;                  // ikg-files
@@ -257,8 +258,8 @@ public:
     int                                     run_mode;
     long                                    port;    
 
-    dictionary *                            current_component_info; // From class or group
-    //dictionary *                            current_module_info;    // FIXME: Should be removed *************
+    dictionary                              current_component_info; // Implivit parameters to create Component
+    std::string                             current_component_path;
 
     float                                   idle_time;              // TODO: change to duration<float>             
     float                                   time_usage;             // TODO: change to duration<float>
@@ -323,9 +324,9 @@ public:
     void AddOutput(std::string name, dictionary parameters=dictionary());
     void AddParameter(std::string name, dictionary params=dictionary());
     void SetParameter(std::string name, std::string value);
-    void AddGroup(dictionary info);
-    void AddModule(dictionary info);
-    void AddConnection(dictionary info); // std::string souce, std::string target, std::string delay_range, std::string alias
+    void AddGroup(dictionary info, std::string path);
+    void AddModule(dictionary info, std::string path);
+    void AddConnection(dictionary info, std::string path); // std::string souce, std::string target, std::string delay_range, std::string alias
     //void ParseGroupFromXML(XMLElement * xml, std::string path="");
     void BuildGroup(dictionary d, std::string path="");
 

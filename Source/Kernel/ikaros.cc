@@ -8,7 +8,7 @@ namespace ikaros
 {
     std::string  validate_identifier(std::string s)
     {
-        static std::string legal = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_1234567890";
+        static std::string legal = "_0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ";
         if(s.empty())
             throw exception("Identifier cannot be empty string");
         if('0' <= s[0] && s[0] <= '9')
@@ -125,7 +125,7 @@ namespace ikaros
 
 
     std::string 
-    parameter::operator=(std::string v) // FIXME: Handle exceptions higher up *******  // FIXME: ADD ALL TYPE HERE!!! *** STEP 1 *** 
+    parameter::operator=(std::string v) // FIXME: ADD ALL TYPE HERE!!! *** 
     {
         switch(type)
         {
@@ -395,10 +395,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
   std::string 
     Component::GetBind(const std::string & name)
     {
-        //std::cout << "Getting binding: " << name << std::endl;
-        if(dictionary(info_).contains(name))   // FIXME: unnecessary copy *********
+         if(dictionary(info_).contains(name))
             return ""; // Value set in attribute - do not bind
-        if(dictionary(info_).contains(name+".bind"))    // FIXME: unnecessary copy *********
+        if(dictionary(info_).contains(name+".bind")) 
             return info_[name+".bind"];
         if(parent_)
             return parent_->GetBind(name);
@@ -428,7 +427,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void Component::Bind(parameter & p, std::string name)
     {
         Kernel & k = kernel();
-        std::string pname = name_+"."+name;
+        std::string pname = path_+"."+name;
         if(k.parameters.count(pname))
             p = kernel().parameters[pname];
         else
@@ -438,7 +437,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     void Component::Bind(matrix & m, std::string n) // Bind input, output or parameter
     {
-        std::string name = name_+"."+n;
+        std::string name = path_+"."+n;
         try
         {
             Kernel & k = kernel();
@@ -451,7 +450,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             else if(k.parameters.count(name))
                 throw exception("Cannot bind to attribute \""+name+"\". Define it as a parameter!");
             else
-                throw exception("Input or output named \""+name+"\" does not exist");
+                throw exception("Input, output or parameter named \""+name+"\" does not exist");
         }
         catch(exception e)
         {
@@ -461,43 +460,42 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     void Component::AddInput(dictionary parameters)
     {
-        std::string input_name = std::string(info_["name"])+"."+validate_identifier(parameters["name"]);
+        std::string input_name = path_+"."+validate_identifier(parameters["name"]);
         kernel().AddInput(input_name, parameters);
     }
 
     void Component::AddOutput(dictionary parameters)
     {
-        std::string output_name = std::string(info_["name"])+"."+validate_identifier(parameters["name"]);
+        std::string output_name = path_+"."+validate_identifier(parameters["name"]);
         kernel().AddOutput(output_name, parameters);
       };
 
     void Component::AddParameter(dictionary parameters)
     {
-        std::string parameter_name;
         try
         {
-            std::string pn = parameters["name"];
-            if(pn=="name")
-                return;
-            if(pn=="class")
-                return;            
-            parameter_name = std::string(info_["name"])+"."+validate_identifier(pn);
+           // std::string pn = parameters["name"];    // FIXME: Can probably be removed
+            //if(pn=="name")                          // FIXME: Add comparison to dictionary value
+            //    return;
+            //if(pn=="class")
+             //   return;            
+            std::string parameter_name = path_+"."+validate_identifier(parameters["name"]);
             kernel().AddParameter(parameter_name, parameters);
-            }
+        }
         catch(const std::exception& e)
         {
-            throw exception("While adding parameter \""+parameter_name+"\": "+ e.what());
+            throw exception("While adding parameter \""+std::string(parameters["name"])+"\": "+ e.what());
         }
     }
 
 
     void Component::SetParameter(std::string name, std::string value)
     {
-        if(name=="name")
-            return;
-        if(name=="class")
-            return;  
-        std::string parameter_name = std::string(info_["name"])+"."+validate_identifier(name);
+        //if(name=="name")
+        //    return;
+        //if(name=="class")
+        //    return;  
+        std::string parameter_name = path_+"."+validate_identifier(name);
         kernel().SetParameter(parameter_name, value);
       }
 
@@ -505,9 +503,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     bool Component::LookupParameter(parameter & p, const std::string & name)
     {
         Kernel & k = kernel();
-        if(k.parameters.count(name_+"."+name))
+        if(k.parameters.count(path_+"."+name))
         {
-            p = k.parameters[name_+"."+name];
+            p = k.parameters[path_+"."+name];
             return true;
         }
         else if(parent_)
@@ -516,37 +514,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             return false;
     }
 
-    /*
-    std::string Component::Lookup(const std::string & name) const // FIXME: Should this funciton throw????
-    {
-        std::string component_name = name_;
-        while (true)
-        {
-            auto it = kernel().parameters.find(component_name + "." + name);
-            if (it != kernel().parameters.end() && it->second.is_set)
-                return it->second;
-            int p = component_name.rfind('.');
-            if(p == std::string::npos)
-                return std::string();
-            component_name = component_name.substr(0, p);
-        }
-    }
-
-
-    // Recursive
-
-    std::string Component::Lookup(const std::string & name) const
-    {
-        auto it = kernel().parameters.find(name_ + "." + name);
-        if (it != kernel().parameters.end() && it->second.is_set)
-            return it->second;
-        else if(parent)
-            return parent->Lookup(name)
-        else 
-            return "";
-        }
-    }
-    */
 
     Component * Component::GetComponent(const std::string & s) // Get component; sensitive to variables and indirection - changed to peek versions
     {
@@ -557,9 +524,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 return this;
             if(path[0]=='.') // global
                 return kernel().components.at(path.substr(1));
-            if(kernel().components.count(name_+"."+peek_head(path,"."))) // inside
-                return kernel().components[name_+"."+peek_head(path,".")]->GetComponent(peek_tail(path,"."));
-            if(peek_rtail(peek_rhead(name_,"."),".") == peek_head(path,".") && parent_) // parent
+            if(kernel().components.count(path_+"."+peek_head(path,"."))) // inside
+                return kernel().components[path_+"."+peek_head(path,".")]->GetComponent(peek_tail(path,"."));
+            if(peek_rtail(peek_rhead(path_,"."),".") == peek_head(path,".") && parent_) // parent
                 return parent_->GetComponent(peek_tail(path,"."));
             throw exception("Component does not exist.");
         }
@@ -569,29 +536,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         }
     }
 
-
-/*
-    Component * Component::GetComponent(const std::string & s) // Get component; sensitive to variables and indirection
-    {
-        std::string path = SubstituteVariables(s);
-        try
-        {
-            if(path.empty()) // this
-                return this;
-            if(path[0]=='.') // global
-                return kernel().components.at(path.substr(1));
-            if(kernel().components.count(name_+"."+head(path,'.'))) // inside
-                return kernel().components[name_+"."+head(path,'.')]->GetComponent(tail(path,'.'));
-            if(rtail(rhead(name_,'.'),'.') == head(path,'.') && parent_) // parent
-                return parent_->GetComponent(tail(path,'.'));
-            throw exception("Component does not exist.");
-        }
-        catch(const std::exception& e)
-        {
-            throw exception("Component \""+path+"\" does not exist.");
-        }
-    }
-*/
 
     std::string 
     Component::Evaluate(const std::string & s, bool is_string)
@@ -650,7 +594,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         for(std::string e : split(s, ","))
         shape.push_back(EvaluateIntExpression(e));
         return shape;
-//        throw exception("Could not parse size list string");
     }
 
     std::vector<int> 
@@ -670,8 +613,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
   Component::Component():
     parent_(nullptr),
-    info_(*kernel().current_component_info),
-    name_(info_["name"])                        // FIXME: remove???? ********** duplicate value - also in in dict
+    info_(kernel().current_component_info),
+    path_(kernel().current_component_path)
 {
     for(auto p: info_["parameters"])
         AddParameter(p);
@@ -684,17 +627,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     // Set parent
 
-    auto p = name_.rfind('.');
+    auto p = path_.rfind('.');
     if(p != std::string::npos)
-        parent_ = kernel().components.at(name_.substr(0, p));
+        parent_ = kernel().components.at(path_.substr(0, p));
 }
 
   Module::Module()
     {
-    // Copy module attributes into info structure taht already contains class attributes
-    //    for(auto p: dictionary(kernel().current_module_info)) // ["attributes"]
-    //        info_[p.first] = p.second; 
-
     }
 
 
@@ -713,7 +652,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         Kernel& k = kernel();
 
         std::string n = d["name"];   // ["attributes"]
-        for(auto & c : ingoing_connections[name_+'.'+n])
+        for(auto & c : ingoing_connections[path_+'.'+n])
             if(k.buffers.at(c->source).rank()==0)
                 return false;
         return true;
@@ -800,9 +739,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         for(auto & c : ingoing_connections)  // STEP 1: Calculate range extent
             r |= c->target_range;
 
-        //if(max_delay > 1)
-        //    r.push_front(0, max_delay);
-
         kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size // FIXME: Check empty input
     }
 
@@ -810,13 +746,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
     {
             Kernel& k = kernel();
-            std::string input_name = name_ + "." + std::string(d["name"]);   // ["attributes"]
+            std::string input_name = path_ + "." + std::string(d["name"]);
 
             // FIXME: Use input type heuristics here ************
 
-            std::string add_labels = d["add_labels"];    // ["attributes"]
+            std::string add_labels = d["add_labels"];
 
-            std::string flatten = d["flatten"];   // ["attributes"]
+            std::string flatten = d["flatten"];
             if(is_true(flatten))
                 SetInputSize_Flat(input_name, ingoing_connections[input_name],is_true(add_labels));
             else
@@ -834,7 +770,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         // Set input sizes (if possible)
 
         for(auto d : info_["inputs"])
-            if(k.buffers[name_+"."+std::string(d["name"])].empty()) // ["attributes"]
+            if(k.buffers[path_+"."+std::string(d["name"])].empty())
             {   
                 if(InputsReady(dictionary(d), ingoing_connections))
                     SetInputSize(dictionary(d), ingoing_connections);
@@ -845,8 +781,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         int outputs_with_size = 0;
         for(auto & d : info_["outputs"])
         {
-            std::string n = d["name"];// ["attributes"]
-            std::string s = d["size"];// ["attributes"]
+            std::string n = d["name"];
+            std::string s = d["size"];
             std::vector<int> shape = EvaluateSize(s);
             matrix o;
             Bind(o, n); // FIXME: Get directly?
@@ -857,7 +793,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             outputs_with_size++;
         }
 
-        if(outputs_with_size == info_["class"]["outputs"].size())       // STRANGE LINE **********************************
+        if(outputs_with_size == info_["outputs"].size())
             return 0; // all buffers have been set
         else
             return 0; // needs to be called again - FIXME: Report progress later on
@@ -925,10 +861,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::Tick()
     {
-        // TEST
-
-       // log.push_back("Tick "+std::to_string(tick));
-
         for(auto & m : components)
             try
             {
@@ -976,8 +908,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             if(std::string(p.path().extension())==".ikg")
             {
                 std::string name = p.path().stem();
-                //std::cout << name << ":   " << p.path() << std::endl;
-                files[name] = p.path();
+                 files[name] = p.path();
             }
     }
 
@@ -1013,8 +944,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             {
                 auto c = components.at(p->first.substr(0, i));
                 std::string parameter_name = p->first.substr(i+1, p->first.size());
-                //std::cout << "Resolve: " << parameter_name << std::endl;
-                c->ResolveParameter(p->second, parameter_name, p->second.default_value);
+                  c->ResolveParameter(p->second, parameter_name, p->second.default_value);
             }
         }
     }
@@ -1064,7 +994,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 max_delays[c.source] = 0;
             if(c.delay_range_.extent()[0] > max_delays[c.source])
             {
-                //int xxx = c.delay_range_.extent()[0];
                 max_delays[c.source] = c.delay_range_.extent()[0];
             }
         }
@@ -1085,18 +1014,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             std::cout << "\t" << it.first << std::endl;
             circular_buffers.emplace(it.first, CircularBuffer(buffers[it.first], it.second)); // FIXME: Change to initialization list in C++20
         }
-
-        /*
-        std::cout << "\nBuffers:" << std::endl;
-        for(auto it : circular_buffers)
-            std::cout << "\t" << it.first << "  " << it.second.buffer_.size() <<  std::endl;
-        */
     }
 
 
     void Kernel::RotateBuffers()
     {
-        //std::cout << "Rotate circular_buffers"   << std::endl;
         for(auto & it : circular_buffers)
             it.second.rotate(buffers[it.first]);
     }
@@ -1212,55 +1134,43 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Kernel::AddGroup(dictionary info)    // FIXME: Move to BuildGroup and rename Build -> Add
+    void Kernel::AddGroup(dictionary info, std::string path)    // FIXME: Move to BuildGroup and rename Build -> Add
     {
-        std::cout << "AddingGroup:" << info << std::endl<< std::endl;
-        std::string name = info["name"];
-        if(components.count(name)> 0)
-            throw exception("Module or group named \""+name+"\" already exists.");
+        current_component_info = info;
+        current_component_path = path;
 
-        current_component_info = &info;
-        //current_component_info["name"] = name;
-        //current_component_info["is_group"] = "true";
-        components[name] = new Group(); // Implicit argument passing as for components
+        if(components.count(current_component_path)> 0)
+            throw exception("Module or group named \""+current_component_path+"\" already exists.");
+
+        components[current_component_path] = new Group(); // Implicit argument passing as for components
     }
 
 
-    void Kernel::AddModule(dictionary info)
+    void Kernel::AddModule(dictionary info, std::string path)
     {
-        std::string name = info["name"];
-        if(components.count(name)> 0)
+        current_component_info = info;
+        current_component_path = path+"."+std::string(info["name"]);
+
+        if(components.count(current_component_path)> 0)
             throw exception("Module or group with this name already exists.");
 
         std::string classname = info["class"];
         if(!classes.count(classname))
             throw exception("Class \""+classname+"\" does not exist.");
 
-        std::cout << std::endl<< "INFO:" <<  info.json() << std::endl<< std::endl;
-        // std::cout << std::endl<< "CLASS:" <<  dictionary(classes[classname].path).json() << std::endl<< std::endl;
-
-        info.merge(dictionary(classes[classname].path));  // merge with class data structure
-
-        std::cout << std::endl<< "MERGED:" << info.json() << std::endl<< std::endl;
-
-
-        //info["is_group"] = "false"; // FIXME: Allow boolean Value *********** use class = instead *******************
-
-        current_component_info = &info; // dictionary(classes[classname].path); // FIXME: HERE ****************
-        //current_component_info["name"] = name;
-        //current_module_info = info;
-        //current_module_info["name"] = name;
+         info.merge(dictionary(classes[classname].path));  // merge with class data structure
 
         if(classes[classname].module_creator == nullptr)
             throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
-        components[name] = classes[classname].module_creator(); // throws bad function call if not defined *** should be only difference from Group/Component
+        components[current_component_path] = classes[classname].module_creator(); // throws bad function call if not defined *** should be only difference from Group/Component
     }
 
 
-    void Kernel::AddConnection(dictionary info) // FIXME: Include dict later **********
+    void Kernel::AddConnection(dictionary info, std::string path)
     {
-         std::string souce = info["source"];
-         std::string target = info["target"];
+         std::string souce = path+"."+std::string(info["source"]);   // FIXME: Look for global paths later - string conversion should not be necessary
+         std::string target = path+"."+std::string(info["target"]);
+
          std::string delay_range = info.contains("delay") ? info["delay"] : "";// FIXME: return "" if name not in dict - or use containts *********
          std::string alias = info.contains("alias") ? info["alias"] : "";// FIXME: return "" if name not in dict - or use containts *********
 
@@ -1272,34 +1182,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         connections.push_back(Connection(souce, target, r, alias));
     }
 
-    // Functions for reading from file
-
-/*
-    void Kernel::ParseGroupFromXML(XMLElement * xml, std::string path)
-    {
-        std::string name = validate_identifier((*xml)["name"]);
-        if(!path.empty())
-            name = path+"."+name;
-        AddGroup(name, dictionary(xml)); // FIME: Should only build dictionary once for whole ikg-file ******************
-
-        for (XMLElement * xml_node = xml->GetContentElement(); xml_node != nullptr; xml_node = xml_node->GetNextElement())
-        {
-            if(xml_node->IsElement("module"))
-            {
-                AddModule(name+"."+validate_identifier((*xml_node)["name"]), dictionary(xml_node)); 
-            }
-            else if(xml_node->IsElement("group"))
-            {
-                ParseGroupFromXML(xml_node, name);
-            }
-            else if(xml_node->IsElement("connection"))
-            {
-                AddConnection(name+"."+(*xml_node)["source"], name+"."+(*xml_node)["target"], (*xml_node)["delay"], (*xml_node)["alias"]);
-            }
-        }
-    }
-*/
-
 
     void Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
     {
@@ -1307,22 +1189,15 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         if(!path.empty())
             name = path+"."+name;
 
-        AddGroup(d);
+        AddGroup(d, name);
 
         for(auto g : d["groups"])
             BuildGroup(g, name);
 
         for(auto m : d["modules"])
-            AddModule(m);
-
+            AddModule(m, name);
         for(auto c : d["connections"])
-            AddConnection(c);
-    }
-
-
-    void Kernel::AllocateInputs()
-    {
-        // Allocate memory for all buffers and delay lines 
+            AddConnection(c, name);
     }
 
 
@@ -1336,24 +1211,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             }
             catch(const fatal_error& e)
             {
-                log.push_back("Fatal error. Init failed for \""+c.second->name_+"\": "+std::string(e.what())); // FIXME: set end of execution
+                log.push_back("Fatal error. Init failed for \""+c.second->path_+"\": "+std::string(e.what())); // FIXME: set end of execution
             }
             catch(const std::exception& e)
             {
-                log.push_back("Init failed for \""+c.second->name_+"\": "+std::string(e.what()));
+                log.push_back("Init failed for \""+c.second->path_+"\": "+std::string(e.what()));
             }
     }
 
-    // Start up the kernel for the first time
-
-    //void Kernel::SetUp();
-
-
-        //k.ListClasses();
-        //k.ListBuffers();
-        //k.ListCircularBuffers();
-        //k.ListInputs();
-        //k.ListOutputs();
 
     void Kernel::LoadFiles(std::vector<std::string> files, options & opts)
     {
@@ -1418,9 +1283,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                     // Build the network
 
-                    std::cout << "d before:" << d.json() << std::endl;
+
                     BuildGroup(d);
-                    std::cout << "d after:" << d.json() << std::endl;
+
+
+                    info_ = d;
 
                     return; // Only use one file
                 }
@@ -1429,38 +1296,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                     log.push_back(e.what());
                     throw;
                 }
-/*
-            for(auto & filename: files)
-                try
-                {
-                    XMLDocument * xmlDoc = new XMLDocument(filename.c_str());
-                    if(xmlDoc->xml == nullptr)
-                        throw exception("File \""+filename+"\" not found");
-
-                    if(xmlDoc->xml->name != std::string("group"))
-                         throw exception("Group element not found in \""+filename+"\"."); // FIXME: request exit
-
-                
-                    for(auto & x : opts.d) // Add command line options to top element of XML before parsing // FIXME: Clean up
-                        if(!xmlDoc->xml->GetAttribute(x.first.c_str())) 
-                            ((XMLElement *)(xmlDoc->xml))->attributes = new XMLAttribute(create_string(x.first.c_str()), create_string(x.second.c_str()),0,((XMLElement *)(xmlDoc->xml))->attributes);          
-                    
-                    ParseGroupFromXML(xmlDoc->xml);
-
-                    // Set basic parameters from loaded file
-
-                      dictionary d = components.begin()->second->info_; // Get top group // ["attributes"]
-
-
-
-                    
-                }
-                catch(const std::exception& e)
-                {
-                    log.push_back(e.what());
-                    throw;
-                }
-                */
     
         session_id = std::time(nullptr); 
         SetUp();
@@ -1524,7 +1359,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                     matrix t = buffers[c.target][target_ix];
                     t.copy(s, tr, c.source_range);
 
-                    std::cout << std::endl;
                 }
             }
         }
@@ -1648,153 +1482,22 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::string 
     Component::json()
     {
-        std::string ss = info_.json();
-
-        return ss;
-
-        std::cout << ss << std::endl;
-
-        // return info_.json(); // FIXME: Will be used when shared dictionaries are implemented
-
-        // Collect group strings
-
-        std::string gsep;
-        std::string gs;
-        if(info_["groups"].size() > 0)
-            for(auto & g :  info_["groups"])
-            {
-                std::string cn =  std::string(info_["name"])+"."+std::string(g["name"]);   // ["attributes"]
-                Kernel &k = kernel();
-                gs += gsep + k.components.at(cn)->json();
-                gsep =", ";
-            }
-
-        // Collect module strings
-
-        std::string msep;
-        std::string ms;
-        if(info_["modules"].size() > 0)
-            for(auto & m :  info_["modules"])
-            {
-                std::string mn =  std::string(info_["name"])+"."+std::string(m["name"]); // ["attributes"]
-                Kernel &k = kernel();
-                ms += msep + k.components.at(mn)->json();
-                msep =", ";
-            }
-
-
-        std::string s;
-        s += "{";
-
-        s += "\"name\":\""+name_+"\"";
-
-        if(std::string(info_["is_group"])=="true")
-                s += ", \"is_group\": true";
-        else
-                s += ", \"is_group\": false";
-
-        s+= " ,\"attributes\": " + info_.json(); // ["attributes"] // FIXME: DO NOT USE attributes in JSON to WebUI
-        s+= " , \"parameters\": " + info_["parameters"].json();
-
-        // Use decit to select only inputs and outptus
-
-        s+= " , \"buffers\": " + info_["buffers"].json();
-        s+= " , \"inputs\": " + info_["inputs"].json();
-        s+= " , \"outputs\": " + info_["outputs"].json();
-        s+= " , \"connections\": " + info_["connections"].json();
-
-        s+= " , \"groups\": ["+gs+"]";
-        s+= " , \"modules\": ["+ms+"]";
-
-            s+= " , \"views\": " + info_["views"].json();
-
-        s+= "}";
-
-        return s;
+        return info_.json(); // FIXME: Will be used when shared dictionaries are implemented
     }
 
 
     std::string 
     Component::xml()
     {
-        return info_.xml("group");  // FIXME: Module AND group versions????
-
-
-/*
-           // Collect group strings
-
-        std::string gs;
-        if(info_["groups"].size() > 0)
-            for(auto & g :  info_["groups"])
-            {
-                std::string cn =  std::string(info_["name"])+"."+std::string(g["attributes"]["name"]);
-                Kernel &k = kernel();
-                gs += k.components.at(cn)->XMLString();
-            }
-
-        // Collect module strings
-
-        std::string msep;
-        std::string ms;
-        if(info_["modules"].size() > 0)
-            for(auto & m :  info_["modules"])
-            {
-                std::string mn =  std::string(info_["name"])+"."+std::string(m["attributes"]["name"]);
-                Kernel &k = kernel();
-                ms += msep + k.components.at(mn)->XMLString();
-                msep =", ";
-            }
-
-        std::string s;
-
-        if(std::string(info_["is_group"])=="true")
-            s += "<group ";
-        else
-            s += "<module ";
-
-        for(auto & a : dictionary(info_["attributes"]))
-        {
-            s += a.first + "=\"" + std::string(a.second) + "\" ";
-        }
-
-        s += ">\n";
-
-        s += info_["parameters"].xml();
-
-        // Use decit to select only inputs and outptus
-
-        //s+= " , \"buffers\": " + info_["buffers"].json();
-        s+= info_["inputs"].xml();
-        s+= info_["outputs"].xml();
-        s+= info_["connections"].xml();
-
-        for(auto & m :  info_["modules"])
-            s += m.xml() + "\n";
-
-        for(auto & g :  info_["groups"])
-            s += g.xml() + "\n";
-
-            s+= " , \"views\": " + info_["views"].json();
-
-        if(std::string(info_["is_group"])=="true")
-            s += "\n</group>\n";
-        else
-            s += "\n</module>\n";
-
-        return s;
-*/
+        return info_.xml("group");
     }
 
 
     std::string 
     Kernel::json()
     {
-        if(components.empty())
-            return "{}";
-        else
-            return components.begin()->second->json();
+        return info_.json();
     }
-
 
 
     std::string 
@@ -1811,28 +1514,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     //
     // WebUI
     //
-
-/*
-    static bool
-    SendColorJPEGbase64(ServerSocket * socket, matrix & image) // Compress image to jpg and send from memory after base64 encoding
-    {
-        long  size;
-        unsigned char * jpeg = (unsigned char *)create_color_jpeg(size, image, 90);
-
-        size_t input_length = size;
-        size_t output_length;
-        char * jpeg_base64 = base64_encode(jpeg, input_length, &output_length);
-        
-        socket->Send("\"data:image/jpeg;base64,");
-        bool ok = socket->SendData(jpeg_base64, output_length);
-        socket->Send("\"");
-        
-        destroy_jpeg(jpeg);
-        free(jpeg_base64);
-        return ok;
-    }
-*/
-
 
     void
     Kernel::SendImage(matrix & image, std::string & format) // Compress image to jpg and send from memory after base64 encoding
@@ -1879,7 +1560,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     long
     get_session_id(std::string args)
     {
-    std::string id_string =  ::head(args, "&");     // FIXME: sort out string functions
+    std::string id_string =  ::head(args, "&");
     std::string id_number = tail(id_string, "id=");
 
     try
@@ -1897,7 +1578,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::DoSendDataHeader()
     {
         Dictionary header;
-        header.Set("Session-Id", std::to_string(session_id).c_str()); // FIXME: GetValue("session_id")
+        header.Set("Session-Id", std::to_string(session_id).c_str());
         header.Set("Package-Type", "data");
         header.Set("Content-Type", "application/json");
         header.Set("Cache-Control", "no-cache");
@@ -2073,9 +1754,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         if(socket->SendFile(file, webui_dir))   // Now look in WebUI directory
             return;
-
         /*
-
         if(socket->SendFile(file, std::string(webui_dir)+"Images/"))   // Now look in WebUI/Images directory
             return;
         
@@ -2312,7 +1991,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     std::string args = tail(uri, "?");
 
-    std::cout << uri << " " << args << std::endl;
+    // std::cout << uri << " " << args << std::endl;
 
     if(uri == "/update")
         DoUpdate(uri, args);
