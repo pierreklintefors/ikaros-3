@@ -111,13 +111,12 @@ header > button:first-child {
     font-size: calc(0.55*var(--breadcrumb-height))
 }
 
+/*
 .breadcrumbs div:hover {
-    /*
 	background-color:var(--breadcrumb-hover-color);
-    */
 }
 
-
+*/
 
 .breadcrumbs div:active {
 	background-color:var(--breadcrumb-active-color);
@@ -233,6 +232,7 @@ td {
     padding-top: 5px;
     padding-bottom: 2px;
     padding-left: 20px;
+    padding-right: 5px;
     color: #b0b0b0;
     font-size: 10pt;
 /*    font-weight: bold; */
@@ -331,10 +331,11 @@ aside table td.header {
     padding-bottom: 10px;
     font-weight: bold;
 }
-
+/*
 aside table td.textedit {
-//    border: 1px solid gray;
+   border: 1px solid gray;
 }
+*/
 
 aside #classes {
     background-color: #333;
@@ -350,15 +351,16 @@ webui-widget-table div {
     height: 35px;
     padding: 0;
 }
-
+/*
 table {
-//    width: 100%;
+   width: 100%; 
 }
+*/
 
-_webui-widget-bar-graph {
+/*webui-widget-bar-graph {
 
 }
-
+*/
 webui-widget-button button {
     width: 100%;
     height: 100%;
@@ -510,13 +512,14 @@ div.module {
 /*
 div.module:hover {
     border: 1px solid var(--accent-color);
-*/
-}
 
+}
+*/
+/*
 div.group {
 
 }
-
+*/
 div.input {
     padding: 3px 20px 3px 0px;
     text-align: left;
@@ -530,7 +533,7 @@ div.iconnector {
     width: 10px;
     height: 10px;
     margin-right: 10px;
-    margin-top 0px;
+    margin-top: 0px;
     float: left;
 }
 
@@ -549,7 +552,7 @@ div.oconnector {
     width: 10px;
     height: 10px;
     margin-left: 10px;
-    margin-top 0px;
+    margin-top: 0px;
     position:absolute;
     left:97px;
 }
