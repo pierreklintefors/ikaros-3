@@ -23,70 +23,43 @@ namespace ikaros
     struct list;
     struct value;
 
-    using valueVariant = std::variant<null, std::string, list, dictionary>;
+    using valueVariant = std::variant<bool, int, float, null, std::string, list, dictionary>;
+    using mapPtr = std::shared_ptr<std::map<std::string, value>>;
 
     static std::vector<value> empty;
 
     struct null
     {
-        friend std::ostream& operator<<(std::ostream& os, null v)
-        {
-            os << "null";
-            return os;
-        }
-
-        std::string json()
-        {
-            return "null";
-        }
-
-        std::string xml(std::string name, int depth=0)
-        {
-            return tab(depth)+"<null/>\n";
-        }
+        operator std::string () const;
+        std::string json();
+        std::string xml(std::string name, int depth=0);
+        friend std::ostream& operator<<(std::ostream& os, const null & v);
     };
+
 
     struct dictionary
     {
-        std::map<std::string, value> dict_;
+        mapPtr dict_;
 
-        value & operator [](std::string s)
-        {
-            return dict_[s];
-        }
+        std::map<std::string, value>::iterator begin()  { return dict_->begin(); };
+        std::map<std::string, value>::iterator end()   { return dict_->end(); };
 
-        bool contains(std::string s)
-        {
-            return dict_.count(s);
-        }
-
-
-        size_t count(std::string s)
-        {
-            return dict_.count(s);
-        }
-
-
-        operator std::string ();
-        std::string json();
-        std::string xml(std::string name, int depth=0);
-
-        std::map<std::string, value>::iterator begin()  { return dict_.begin(); };
-        std::map<std::string, value>::iterator end()   { return dict_.end(); };
-
-        void print();
-
-
-        friend std::ostream& operator<<(std::ostream& os, dictionary v)
-        {
-            os << std::string(v);
-            return os;
-        }
-
-        dictionary() {};
+        dictionary();
         dictionary(XMLElement * xml);
         dictionary(std::string filename);
+    dictionary(const dictionary & d);
+    
+        value & operator[](std::string s);
+        bool contains(std::string s);
+        size_t count(std::string s);
+        void merge(const dictionary & source, bool overwrite=false); // shallow merge: copy from source to this
+        operator std::string () const;
+        std::string json();
+        std::string xml(std::string name, int depth=0);
+        friend std::ostream& operator<<(std::ostream& os, const dictionary & v);
+        //void print();
     };
+
 
     struct list
     {
@@ -95,189 +68,67 @@ namespace ikaros
         std::vector<value>::iterator begin() { return list_.begin(); };
         std::vector<value>::iterator end()   { return list_.end(); };
 
+        value & operator[] (int i);
         int size() { return list_.size(); };
         list & push_back(const value & v) { list_.push_back(v); return *this; };
-
-        operator std::string ();
+        operator std::string ()  const;
         std::string json();
         std::string xml(std::string name, int depth=0);
-
-        value & operator[] (int i)
-        {
-            if(list_.size() < i+1)
-                list_.resize(i+1);
-            return list_.at(i);
-        }
-
-
-        friend std::ostream& operator<<(std::ostream& os, list v)
-        {
-            os << std::string(v);
-            return os;
-        }
+        friend std::ostream& operator<<(std::ostream& os, const list & v);
     };
+
 
     struct value
     {
         valueVariant    value_;
 
+        value(bool v)                { value_ = v; }
+        value(int v)                 { value_ = v; }
+        value(float v)               { value_ = v; }
         value(null n=null())         { value_ = null(); }
         value(const char * s)        { value_ = s; }
         value(const std::string & s) { value_ = s; }
         value(const list & v)        { value_ = v; }
         value(const dictionary & d)  { value_ = d; }
 
+        value & operator =(bool v) { value_ = v; return *this; }
+        value & operator =(int v) { value_ = v; return *this; }
+        //value & operator =(float v) { value_ = v; return *this; }
+        value & operator =(double v) { value_ = float(v); return *this; }
         value & operator =(null n) { value_ = null(); return *this; };
         value & operator =(const std::string & s) { value_ = s; return *this; }
         value & operator =(const char * s) { value_ = s; return *this; }
         value & operator =(const list & v) { value_ = v; return *this; }
         value & operator =(const dictionary & d) { value_ = d; return *this; }
 
-        bool is_list() { return std::holds_alternative<list>(value_); }
-        bool is_null() { return std::holds_alternative<null>(value_); }
+        bool is_dictionary()    { return std::holds_alternative<dictionary>(value_); }
+        bool is_list()          { return std::holds_alternative<list>(value_); }
+        bool is_null()          { return std::holds_alternative<null>(value_); }
 
 
-        value & operator[] (const char * s) // Captures literals as argument
-        {
-            return (*this)[std::string(s)];
-        }
+        value & operator[] (const char * s); // Captures literals as argument
+        value & operator[] (const std::string & s);
 
-        value & operator[] (const std::string & s)
-        {
-            if(!std::holds_alternative<dictionary>(value_))
-            value_ = dictionary();
-            return std::get<dictionary>(value_)[s];
-        }
+        value & push_back(const value & v);
 
-        friend std::ostream& operator<<(std::ostream& os, value v)
-        {
-            os << std::string(v);
-            return os;
-        }
+        friend std::ostream& operator<<(std::ostream& os, const value & v);
+        int size();
 
-        value & push_back(const value & v)
-        {
-            if(!std::holds_alternative<list>(value_))
-                value_ = list();
-                std::get<list>(value_).list_.push_back(v);
-                return *this;
-        }
+        std::vector<value>::iterator begin();
+        std::vector<value>::iterator end();
 
-        int size()
-        {
-            if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).list_.size();
-            else if(std::holds_alternative<dictionary>(value_))
-                return std::get<dictionary>(value_).dict_.size();
-            else if(std::holds_alternative<null>(value_))
-                return 0;
-            else
-                return 1;
-        }
+        value & operator[] (int i);
 
+        operator std::string () const;
+        std::string json();
 
-        std::vector<value>::iterator begin()
-        {
-            if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).list_.begin();
-            else
-                return empty.begin();
-        }
+        std::string xml(std::string name, int depth=0);
 
+        operator double ();                                        // FIXME: Add other types - both from and to
+        operator list ();
+        operator dictionary ();
 
-        std::vector<value>::iterator end()
-        {
-            if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).list_.end();
-            else
-                return empty.end();
-        }
-
-
-        value & operator[] (int i)
-        {
-            if(!std::holds_alternative<list>(value_))
-                value_ = list();
-            if(std::get<list>(value_).list_.size() < i+1)
-                std::get<list>(value_).list_.resize(i+1);
-            return std::get<list>(value_).list_.at(i);
-        }
-
-        operator std::string ()
-        {
-            if(std::holds_alternative<std::string>(value_))
-                return std::get<std::string>(value_);
-            else if(std::holds_alternative<list>(value_))
-                return std::string(std::get<list>(value_));
-            else if(std::holds_alternative<dictionary>(value_))
-                return std::string(std::get<dictionary>(value_));
-            else if(std::holds_alternative<null>(value_))
-                return "null";
-            else
-                return "*";
-        }
-
-        std::string json()
-        {
-            if(std::holds_alternative<std::string>(value_))
-                return "\""+std::get<std::string>(value_)+"\"";
-            else if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).json();
-            else if(std::holds_alternative<dictionary>(value_))
-                return std::get<dictionary>(value_).json();
-            else if(std::holds_alternative<null>(value_))
-                return "null";
-            else
-                return "*";
-        }
-
-        std::string xml(std::string name, int depth=0)
-        {
-            if(std::holds_alternative<std::string>(value_))
-                return tab(depth)+"<string>"+std::get<std::string>(value_)+"</string>\n";
-            else if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).xml(name, depth);
-            else if(std::holds_alternative<dictionary>(value_))
-                return std::get<dictionary>(value_).xml(name, depth);
-            else if(std::holds_alternative<null>(value_))
-                return tab(depth)+"<null/>\n";
-            else
-                return "*";
-        }
-
-        operator double ()
-        { 
-            if(std::holds_alternative<std::string>(value_))
-                return std::stod(std::get<std::string>(value_));
-            else
-                return 0; // FIXME: throw?
-        }
-
-        operator list ()
-        {
-            return std::get<list>(value_);
-        }
-
-            operator dictionary ()
-        {
-            if(std::holds_alternative<null>(value_))
-                return dictionary();
-            else
-                return std::get<dictionary>(value_);
-        }
-
-
-
-        dictionary & dref()
-        {
-            return std::get<dictionary>(value_); // FIXME: No error checking
-        }
-
-
-        void print()
-        {
-            std::cout << "*";
-        }
+        //void print();
     };
 };
 #endif

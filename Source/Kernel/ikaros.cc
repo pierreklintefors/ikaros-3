@@ -384,8 +384,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::string 
     Component::GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component
     {        
-        if(dictionary(info_).contains(name)) // ["attributes"]
-            return Evaluate(info_[name]); // ["attributes"]
+        if(dictionary(info_).contains(name))
+            return Evaluate(info_[name]);
         if(parent_)
             return parent_->GetValue(name);
         return "";
@@ -396,10 +396,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Component::GetBind(const std::string & name)
     {
         //std::cout << "Getting binding: " << name << std::endl;
-        if(dictionary(info_).contains(name))   // ["attributes"]
+        if(dictionary(info_).contains(name))   // FIXME: unnecessary copy *********
             return ""; // Value set in attribute - do not bind
-        if(dictionary(info_).contains(name+".bind"))  // ["attributes"]
-            return info_[name+".bind"];  // ["attributes"]
+        if(dictionary(info_).contains(name+".bind"))    // FIXME: unnecessary copy *********
+            return info_[name+".bind"];
         if(parent_)
             return parent_->GetBind(name);
         return "";
@@ -471,7 +471,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         kernel().AddOutput(output_name, parameters);
       };
 
-    void Component::AddParameter(dictionary & parameters)
+    void Component::AddParameter(dictionary parameters)
     {
         std::string parameter_name;
         try
@@ -670,17 +670,17 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
   Component::Component():
     parent_(nullptr),
-    info_(kernel().current_component_info),
-    name_(info_["name"])
+    info_(*kernel().current_component_info),
+    name_(info_["name"])                        // FIXME: remove???? ********** duplicate value - also in in dict
 {
-    for(auto & p: info_["parameters"])
-        AddParameter(p.dref());
+    for(auto p: info_["parameters"])
+        AddParameter(p);
 
-    for(auto & input: info_["inputs"])
-        AddInput(input);// ["attributes"]
+    for(auto input: info_["inputs"])
+        AddInput(input);
 
-    for(auto & output: info_["outputs"])
-        AddOutput(output);// ["attributes"]
+    for(auto output: info_["outputs"])
+        AddOutput(output);
 
     // Set parent
 
@@ -692,8 +692,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
   Module::Module()
     {
     // Copy module attributes into info structure taht already contains class attributes
-        for(auto p: dictionary(kernel().current_module_info)) // ["attributes"]
-            info_[p.first] = p.second;  // ["attributes"]
+    //    for(auto p: dictionary(kernel().current_module_info)) // ["attributes"]
+    //        info_[p.first] = p.second; 
 
     }
 
@@ -857,7 +857,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             outputs_with_size++;
         }
 
-        if(outputs_with_size == info_["class"]["outputs"].size())
+        if(outputs_with_size == info_["class"]["outputs"].size())       // STRANGE LINE **********************************
             return 0; // all buffers have been set
         else
             return 0; // needs to be called again - FIXME: Report progress later on
@@ -1212,45 +1212,57 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Kernel::AddGroup(dictionary & info)
+    void Kernel::AddGroup(dictionary info)    // FIXME: Move to BuildGroup and rename Build -> Add
     {
+        std::cout << "AddingGroup:" << info << std::endl<< std::endl;
         std::string name = info["name"];
         if(components.count(name)> 0)
             throw exception("Module or group named \""+name+"\" already exists.");
 
-
-        current_component_info = info;
-        current_component_info["name"] = name;
-        current_component_info["is_group"] = "true";
+        current_component_info = &info;
+        //current_component_info["name"] = name;
+        //current_component_info["is_group"] = "true";
         components[name] = new Group(); // Implicit argument passing as for components
     }
 
 
-    void Kernel::AddModule(dictionary & info)
+    void Kernel::AddModule(dictionary info)
     {
         std::string name = info["name"];
         if(components.count(name)> 0)
             throw exception("Module or group with this name already exists.");
-                info["is_group"] = "false"; // FIXME: Allow boolean Value
+
         std::string classname = info["class"];
-        current_component_info = dictionary(classes[classname].path); // FIXME: HERE ****************
-        current_component_info["name"] = name;
-        current_module_info = info;
-        current_module_info["name"] = name;
         if(!classes.count(classname))
             throw exception("Class \""+classname+"\" does not exist.");
+
+        std::cout << std::endl<< "INFO:" <<  info.json() << std::endl<< std::endl;
+        // std::cout << std::endl<< "CLASS:" <<  dictionary(classes[classname].path).json() << std::endl<< std::endl;
+
+        info.merge(dictionary(classes[classname].path));  // merge with class data structure
+
+        std::cout << std::endl<< "MERGED:" << info.json() << std::endl<< std::endl;
+
+
+        //info["is_group"] = "false"; // FIXME: Allow boolean Value *********** use class = instead *******************
+
+        current_component_info = &info; // dictionary(classes[classname].path); // FIXME: HERE ****************
+        //current_component_info["name"] = name;
+        //current_module_info = info;
+        //current_module_info["name"] = name;
+
         if(classes[classname].module_creator == nullptr)
             throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
-        components[name] = classes[classname].module_creator(); // throws bad function call if not defined
+        components[name] = classes[classname].module_creator(); // throws bad function call if not defined *** should be only difference from Group/Component
     }
 
 
-    void Kernel::AddConnection(dictionary & info) // FIXME: Include dict later **********
+    void Kernel::AddConnection(dictionary info) // FIXME: Include dict later **********
     {
          std::string souce = info["source"];
          std::string target = info["target"];
-         std::string delay_range = info.contains("delay") ? info["delay"] : "";// FIXME: return "" if name not in dict - or use contains *********
-         std::string alias = info.contains("alias") ? info["alias"] : "";// FIXME: return "" if name not in dict - or use contains *********
+         std::string delay_range = info.contains("delay") ? info["delay"] : "";// FIXME: return "" if name not in dict - or use containts *********
+         std::string alias = info.contains("alias") ? info["alias"] : "";// FIXME: return "" if name not in dict - or use containts *********
 
         if(delay_range.empty() || delay_range=="null")  // FIXME: return "" if name not in dict - or use contains *********
             delay_range = "[1]";
@@ -1286,28 +1298,25 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             }
         }
     }
-      */
+*/
 
 
-    void Kernel::BuildGroup(dictionary & d, std::string path) // Traverse dictionary and build all items at each level
+    void Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
     {
-        //std::cout << d << std::endl;
         std::string name = validate_identifier(d["name"]);
-        //std::cout << "BuildGroup: " << name << std::endl;
-
         if(!path.empty())
             name = path+"."+name;
 
         AddGroup(d);
 
-        for(auto & g : d["groups"])
-            BuildGroup(g.dref(), name);
+        for(auto g : d["groups"])
+            BuildGroup(g, name);
 
         for(auto m : d["modules"])
-            AddModule(m.dref());
+            AddModule(m);
 
         for(auto c : d["connections"])
-            AddConnection(c.dref());
+            AddConnection(c);
     }
 
 
@@ -1409,7 +1418,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                     // Build the network
 
+                    std::cout << "d before:" << d.json() << std::endl;
                     BuildGroup(d);
+                    std::cout << "d after:" << d.json() << std::endl;
 
                     return; // Only use one file
                 }
@@ -1637,6 +1648,12 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::string 
     Component::json()
     {
+        std::string ss = info_.json();
+
+        return ss;
+
+        std::cout << ss << std::endl;
+
         // return info_.json(); // FIXME: Will be used when shared dictionaries are implemented
 
         // Collect group strings

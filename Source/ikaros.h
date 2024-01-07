@@ -135,7 +135,7 @@ class Component
 {
 public:
     Component *     parent_;
-    dictionary      info_;      // FIXME: Make shared
+    dictionary      info_;
     std::string     name_;
 
     Component();
@@ -145,7 +145,7 @@ public:
     void print();
     void AddInput(dictionary parameters);
     void AddOutput(dictionary parameters);
-    void AddParameter(dictionary & parameters);
+    void AddParameter(dictionary parameters);
     void SetParameter(std::string name, std::string value);
     bool BindParameter(parameter & p,  std::string & name);
     bool ResolveParameter(parameter & p,  std::string & name,   std::string & default_value);
@@ -257,8 +257,8 @@ public:
     int                                     run_mode;
     long                                    port;    
 
-    dictionary                              current_component_info; // From class or group
-    dictionary                              current_module_info;
+    dictionary *                            current_component_info; // From class or group
+    //dictionary *                            current_module_info;    // FIXME: Should be removed *************
 
     float                                   idle_time;              // TODO: change to duration<float>             
     float                                   time_usage;             // TODO: change to duration<float>
@@ -323,11 +323,11 @@ public:
     void AddOutput(std::string name, dictionary parameters=dictionary());
     void AddParameter(std::string name, dictionary params=dictionary());
     void SetParameter(std::string name, std::string value);
-    void AddGroup(dictionary & info);
-    void AddModule(dictionary & info);
-    void AddConnection(dictionary & info); // std::string souce, std::string target, std::string delay_range, std::string alias
+    void AddGroup(dictionary info);
+    void AddModule(dictionary info);
+    void AddConnection(dictionary info); // std::string souce, std::string target, std::string delay_range, std::string alias
     //void ParseGroupFromXML(XMLElement * xml, std::string path="");
-    void BuildGroup(dictionary & d, std::string path="");
+    void BuildGroup(dictionary d, std::string path="");
 
     void AllocateInputs();
     void InitComponents();
@@ -338,7 +338,7 @@ public:
 
     void SortNetwork();
     void Propagate();
-    
+
     std::string json();
     std::string xml();
 
