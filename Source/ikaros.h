@@ -72,6 +72,7 @@ class parameter // FIXME: check all types everywhere; send base rate to WebUI no
 {
 private:
 public:
+    dictionary                      info_;
     parameter_type                  type;
     float                           timebase;
     std::string                     default_value;

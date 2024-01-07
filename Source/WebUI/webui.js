@@ -528,7 +528,7 @@ module_inspector = {
                 {
                     let row = module_inspector.table.insertRow(-1);
                     let value = m.parameters[p];
-                    module_inspector.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]+" default");
+                    module_inspector.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["value"]);
                 }
 
             module_inspector.addHeader("SUBGROUPS");
@@ -551,7 +551,7 @@ module_inspector = {
 
             if(m.parameters.parameters)
             for(let p of m.parameters.parameters)
-                module_inspector.addRow(p.name, p["default"]+" (default)"); // FIXME: Show actual parameter values later
+                module_inspector.addRow(p.name, p["value"]); // FIXME: Show actual parameter values later
 
             module_inspector.addRow("description", m.parameters.description);
 

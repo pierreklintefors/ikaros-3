@@ -1121,6 +1121,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::string default_value = params["default"];
         std::string options = params["options"];
         parameter p(type_string, default_value, options);
+        p.info_ = params;
         parameters.emplace(name, p);
     }
 
@@ -1130,6 +1131,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         if(parameters.count(name))
         {
             parameters[name] = value;
+            parameters[name].info_["value"] = value;
         }
     }
 
