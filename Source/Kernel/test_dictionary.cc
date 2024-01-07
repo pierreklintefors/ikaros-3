@@ -7,11 +7,39 @@
 #include "dictionary.h"
 #include "xml.h"
 
+// To allow compilation directly from editor
+#include "xml.cc"
+#include "dictionary.cc"
+
+
 using namespace ikaros;
 
 int
 main()
 {
+
+    dictionary d;
+    dictionary e = d;
+
+    d["a"] = "AAA";
+    d["b"] = "BBB";
+    d["c"] = true;
+    d["d"] = 42;
+    d["e"] = 3.14;
+
+    d["a"] = "XXX";
+
+ std::cout <<  d << std::endl;
+ std::cout <<  e.json() << std::endl;
+
+/*
+dictionary xmldict = dictionary("../Modules/TestModules/Test1.ikc");
+//std::cout << xmldict.json() << std::endl;
+std::cout <<  std::endl;
+std::cout << xmldict.xml("group") << std::endl;
+
+
+
     dictionary d;
 
     d["a"] = "AAA";
@@ -66,8 +94,6 @@ main()
 
      std::cout << z << " size:"<< z.size() << std::endl; // size is 4
 
-dictionary xmldict = dictionary("../Modules/TestModules/Test1_test.ikg", true);
-std::cout << xmldict << std::endl;
 
     std::cout << std::endl;
 
@@ -76,10 +102,42 @@ std::cout << xmldict << std::endl;
         std::cout << p.first << ": " << p.second << std::endl;
     }
 
+
+    dictionary d42("../Modules/TestModules/Test1.ikc");
+
+        std::cout << std::endl;
+        std::cout << std::endl;
+
+        dictionary dddd;
+        dddd["a"] = "32";
+        dddd["l"][0] = "X";
+        dddd["l"][1] = "Y";
+        dddd["l"][3] = "Z";
+
+        std::cout << dddd.xml("group") << std::endl;
+
+    value xxx;
+
+    int a = 42;
+    int * ap = &a;
+    int & b(*ap);
+
+        std::cout << b << std::endl;
+
+
+    dictionary p;
+    dictionary q;
+
+    p["a"] = "ap";
+    p["b"] = "bp";
+
+    q["b"] = "bq";
+    q["c"] = "cq";
+
+    p.merge(q, true);
+
+        std::cout << p << std::endl;
+*/
     return 0;
 }
 
-
-// To allow compilation directly from editor
-#include "xml.cc"
-#include "dictionary.cc"
