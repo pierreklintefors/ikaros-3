@@ -47,7 +47,7 @@ namespace ikaros
         dictionary();
         dictionary(XMLElement * xml);
         dictionary(std::string filename);
-    dictionary(const dictionary & d);
+        //dictionary(const dictionary & d);
     
         value & operator[](std::string s);
         bool contains(std::string s);

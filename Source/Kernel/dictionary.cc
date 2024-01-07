@@ -103,13 +103,13 @@ namespace ikaros
         {
             return dict_->count(s);
         }
-
+/*
         dictionary::dictionary(const dictionary & d)
         {
             //std::cout << "COPY CONSTRUCTOR" << std::endl;
             dict_ = d.dict_;
         }
-
+*/
         dictionary::dictionary():   
             dict_(std::make_shared<std::map<std::string, value>>())
         {};
@@ -213,7 +213,7 @@ dictionary::dictionary(XMLElement * xml_node):
     dictionary::dictionary(std::string filename):
         dictionary(XMLDocument(filename.c_str()).xml)
     {
-        std::cout << json() << std::endl;
+        // std::cout << json() << std::endl;
     }
 
 
