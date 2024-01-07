@@ -33,7 +33,7 @@
 	<connection  source = "N2.OUTPUT"  target = "N3.EXCITATION" />
 
 	<view name="View">
-        <plot
+        <widget
             class = "plot"
             x="40" y="40"
             width="301"
@@ -44,7 +44,7 @@
             _labels = "A, B, C, D, E, F, G"
             style = ""
         />
-		<plot
+		<widget
             class = "plot"
             x="40" y="340"
             width="301"
@@ -55,7 +55,7 @@
             _labels = "A, B, C, D, E, F, G"
             style = ""
         />
-		<plot
+		<widget
             class = "plot"
             x="40" y="640"
             width="301"
@@ -66,7 +66,7 @@
             _labels = "A, B, C, D, E, F, G"
             style = ""
         />
-		<plot
+		<widget
             class = "plot"
             x="40" y="940"
             width="301"

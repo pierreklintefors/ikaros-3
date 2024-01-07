@@ -13,7 +13,7 @@
 
 	<view name="View">
 
-		<table
+		<widget
 			class = "table"
 			height = "300"
 			title = "A"
@@ -27,7 +27,7 @@
 			show_frame = "true"
 		/>
 
-		<table
+		<widget
 			class = "table"
 			height = "300"
 			title = "B"
@@ -41,7 +41,7 @@
 			show_frame = "true"
 		/>
 
-		<table
+		<widget
 			class = "table"
 			height = "300"
 			title = "Sum"
@@ -55,7 +55,7 @@
 			show_frame = "true"
 		/>
 
-		<slider-horizontal  
+		<widget 
 			class = "slider-horizontal"
 			frame-style = "" 
 			show_title = "false" 

@@ -10,7 +10,7 @@
 
 	<view name="View">
 
-		<table
+		<widget
 			class = "table"
 			height = "300"
 			title = "Inputs"
@@ -24,7 +24,7 @@
 			show_frame = "true"
 		/>
 
-		<table
+		<widget
 			class = "table"
 			height = "300"
 			title = "Scaled Values"
@@ -38,7 +38,7 @@
 			show_frame = "true"
 		/>
 
-		<slider-horizontal  
+		<widget  
 			class = "slider-horizontal"
 			frame-style = "" 
 			show_title = "false" 

@@ -6,7 +6,7 @@
 	<connection  source = "Oscillator.OUTPUT"  	target = "Print.INPUT" />
 
 	<view name="View">
-		<table
+		<widget
 			class = "table"
 			height = "300"
 			title = "Osc frequency"
@@ -20,7 +20,7 @@
 			show_frame = "true"
 		/>
 
-		<bar-graph
+		<widget
 			class = "bar-graph"
 			height = "300"
 			title = "Osc Out"
@@ -35,7 +35,7 @@
 			show_frame = "true"
 		/>
 
-		<bar-graph
+		<widget
 			class = "plot"
 			height = "300"
 			title = "Osc Out"

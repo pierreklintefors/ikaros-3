@@ -286,9 +286,9 @@ nav = {
             
             for(i in group.views)
             {
-                if(!group.views[i].attributes.name)
-                    group.views[i].attributes.name = "View #"+i;
-                s += "<li class='view' data-name='"+name+"/"+group.attributes.name+"#"+group.views[i].attributes.name+"'>-&nbsp" + "<span  onclick='return nav.navClick(event)'>"+ group.views[i].attributes.name + "</span></li>";
+                if(!group.views[i].name)
+                    group.views[i].name = "View #"+i;
+                s += "<li class='view' data-name='"+name+"/"+group.name+"#"+group.views[i].name+"'>-&nbsp" + "<span  onclick='return nav.navClick(event)'>"+ group.views[i].name + "</span></li>";
             }
             s += "</ul>";
         }
@@ -300,7 +300,7 @@ nav = {
             {
                 if(!group.modules[i].name)
                     group.modules[i].name = "Module #"+i;
-                s += "<li data-name='"+name+"/"+group.attributes.name+"#"+group.modules[i].attributes.name+"'>-&nbsp" + "<span  onclick='return nav.navClick(event)'>"+ group.modules[i].attributes.name + "</span></li>";
+                s += "<li data-name='"+name+"/"+group.name+"#"+group.modules[i].name+"'>-&nbsp" + "<span  onclick='return nav.navClick(event)'>"+ group.modules[i].name + "</span></li>";
             }
 
             s += "</ul>";
@@ -309,7 +309,7 @@ nav = {
         {
             s +=  "<ul>"
             for(i in group.groups)
-                s += nav.buildList(group.groups[i], name+"/"+group.attributes.name);
+                s += nav.buildList(group.groups[i], name+"/"+group.name);
         }
         s += "</li>";
         return s;
@@ -522,13 +522,13 @@ module_inspector = {
         if(m.parameters.groups.length > 0) // add group
         {
             module_inspector.addHeader("GROUP");
-            module_inspector.addRow("name", m.parameters.attributes.name);
+            module_inspector.addRow("name", m.parameters.name);
             for(let p in m.parameters.parameters)
                 if(p != "parameters" && p != "views" && p!= "groups" && p!= "connections" && p!= "name" && p[0] != "_")
                 {
                     let row = module_inspector.table.insertRow(-1);
-                    let value = m.parameters.attributes[p];
-                    module_inspector.addRow(p.name, m.parameters.attributes[p.name] ? m.parameters.attributes[p.name].toString() : p["default"]+" default");
+                    let value = m.parameters[p];
+                    module_inspector.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]+" default");
                 }
 
             module_inspector.addHeader("SUBGROUPS");
@@ -536,31 +536,31 @@ module_inspector = {
             module_inspector.addRow("connections", m.parameters.connections ? m.parameters.connections.length : "0");
 
             module_inspector.addHeader("APPEARANCE");
-            module_inspector.addRow("x", m.parameters.attributes._x);
-            module_inspector.addRow("y", m.parameters.attributes._y);
-            module_inspector.addRow("color", m.parameters.attributes._color);
-            module_inspector.addRow("text_color", m.parameters.attributes._text_color);
-            module_inspector.addRow("shape", m.parameters.attributes._shape);
+            module_inspector.addRow("x", m.parameters._x);
+            module_inspector.addRow("y", m.parameters._y);
+            module_inspector.addRow("color", m.parameters._color);
+            module_inspector.addRow("text_color", m.parameters._text_color);
+            module_inspector.addRow("shape", m.parameters._shape);
         }
         
         else // add module
         {
             module_inspector.addHeader("MODULE (not live)");
-            module_inspector.addRow("name", m.parameters.attributes.name);
-            module_inspector.addRow("class", m.parameters.attributes.class);
+            module_inspector.addRow("name", m.parameters.name);
+            module_inspector.addRow("class", m.parameters.class);
 
             if(m.parameters.parameters)
             for(let p of m.parameters.parameters)
-                module_inspector.addRow(p.attributes.name, p.attributes["default"]+" (default)"); // FIXME: Show actual parameter values later
+                module_inspector.addRow(p.name, p["default"]+" (default)"); // FIXME: Show actual parameter values later
 
-            module_inspector.addRow("description", m.parameters.attributes.description);
+            module_inspector.addRow("description", m.parameters.description);
 
             module_inspector.addHeader("APPEARANCE");
-            module_inspector.addRow("x", m.parameters.attributes._x);
-            module_inspector.addRow("y", m.parameters.attributes._y);
-            module_inspector.addRow("color", m.parameters.attributes._color);
-            module_inspector.addRow("text_color", m.parameters.attributes._text_color);
-            module_inspector.addRow("shape", m.parameters.attributes._shape);
+            module_inspector.addRow("x", m.parameters._x);
+            module_inspector.addRow("y", m.parameters._y);
+            module_inspector.addRow("color", m.parameters._color);
+            module_inspector.addRow("text_color", m.parameters._text_color);
+            module_inspector.addRow("shape", m.parameters._shape);
         }
     },
     select: function (obj)
@@ -622,13 +622,13 @@ module_edit_inspector = {
         if(m.parameters.groups.length > 0) // add group
         {
             module_edit_inspector.addHeader("GROUP");
-            module_edit_inspector.addRow("name", m.parameters.attributes.name);
+            module_edit_inspector.addRow("name", m.parameters.name);
             for(let p in m.parameters.parameters)
                 if(p != "parameters" && p != "views" && p!= "groups" && p!= "connections" && p!= "name" && p[0] != "_")
                 {
                     let row = module_edit_inspector.table.insertRow(-1);
-                    let value = m.parameters.attributes[p];
-                    module_edit_inspector.addRow(p.name, m.parameters.attributes[p.name] ? m.parameters.attributes[p.name].toString() : p["default"]);
+                    let value = m.parameters[p];
+                    module_edit_inspector.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]);
                 }
 
             module_edit_inspector.addHeader("SUBGROUPS");
@@ -636,30 +636,30 @@ module_edit_inspector = {
             module_edit_inspector.addRow("connections", m.parameters.connections.length);
 
             module_edit_inspector.addHeader("APPEARANCE");
-            module_edit_inspector.addRow("x", m.parameters.attributes._x);
-            module_edit_inspector.addRow("y", m.parameters.attributes._y);
-            module_edit_inspector.addRow("color", m.parameters.attributes._color);
-            module_edit_inspector.addRow("text_color", m.parameters.attributes._text_color);
-            module_edit_inspector.addRow("shape", m.parameters.attributes._shape);
+            module_edit_inspector.addRow("x", m.parameters._x);
+            module_edit_inspector.addRow("y", m.parameters._y);
+            module_edit_inspector.addRow("color", m.parameters._color);
+            module_edit_inspector.addRow("text_color", m.parameters._text_color);
+            module_edit_inspector.addRow("shape", m.parameters._shape);
         }
         
         else // add module
         {
             module_edit_inspector.addHeader("MODULE (edit, not live)");
-            module_edit_inspector.addRow("name", m.parameters.attributes.name);
-            module_edit_inspector.addRow("class", m.parameters.attributes.class);
+            module_edit_inspector.addRow("name", m.parameters.name);
+            module_edit_inspector.addRow("class", m.parameters.class);
 
             for(let p of m.parameters.parameters)
-                module_edit_inspector.addRow(p.name, m.parameters.attributes[p.name] ? m.parameters.attributes[p.name].toString() : p["default"]);
+                module_edit_inspector.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]);
 
-            module_edit_inspector.addRow("description", m.parameters.attributes.description);
+            module_edit_inspector.addRow("description", m.parameters.description);
 
             module_edit_inspector.addHeader("APPEARANCE");
-            module_edit_inspector.addRow("x", m.parameters.attributes._x);
-            module_edit_inspector.addRow("y", m.parameters.attributes._y);
-            module_edit_inspector.addRow("color", m.parameters.attributes._color);
-            module_edit_inspector.addRow("text_color", m.parameters.attributes._text_color);
-            module_edit_inspector.addRow("shape", m.parameters.attributes._shape);
+            module_edit_inspector.addRow("x", m.parameters._x);
+            module_edit_inspector.addRow("y", m.parameters._y);
+            module_edit_inspector.addRow("color", m.parameters._color);
+            module_edit_inspector.addRow("text_color", m.parameters._text_color);
+            module_edit_inspector.addRow("shape", m.parameters._shape);
         }
     },
     select: function (obj)
@@ -744,8 +744,8 @@ group_inspector = {
         if(m.groups.length > 0) // add group
         {
             group_inspector.addHeader("GROUP");
-            group_inspector.addRow("name", m.attributes.name);
-            group_inspector.addRow("log level", m.attributes.log_level);
+            group_inspector.addRow("name", m.name);
+            group_inspector.addRow("log level", m.log_level);
             group_inspector.addRow("inputs", m.inputs.length);
             group_inspector.addRow("outputs", m.outputs.length);
             group_inspector.addRow("parameters", m.parameters.length);
@@ -754,8 +754,8 @@ group_inspector = {
             for(let p in m.parameters)
             {
                 let row = group_inspector.table.insertRow(-1);
-                let value = m.attributes[p];
-                group_inspector.addRow(p.name, m.attributes[p.name] ? m.attributes[p.name].toString() : p["default"]);
+                let value = m[p];
+                group_inspector.addRow(p.name, m[p.name] ? m[p.name].toString() : p["default"]);
             }
 
             group_inspector.addHeader("SUBGROUPS");
@@ -766,30 +766,30 @@ group_inspector = {
             group_inspector.addButton("", "Copy as XML", function () {alert("Not implemented yet")});
 
             group_inspector.addHeader("APPEARANCE");
-            group_inspector.addRow("x", m.attributes._x);
-            group_inspector.addRow("y", m.attributes._y);
-            group_inspector.addRow("color", m.attributes._color);
-            group_inspector.addRow("text_color", m.attributes._text_color);
-            group_inspector.addRow("shape", m.attributes._shape);
+            group_inspector.addRow("x", m._x);
+            group_inspector.addRow("y", m._y);
+            group_inspector.addRow("color", m._color);
+            group_inspector.addRow("text_color", m._text_color);
+            group_inspector.addRow("shape", m._shape);
         }
         
         else // add module
         {
             group_inspector.addHeader("MODULE (edit, not live)");
-            group_inspector.addRow("name", m.attributes.name);
-            group_inspector.addRow("class", m.attributes.class);
+            group_inspector.addRow("name", m.name);
+            group_inspector.addRow("class", m.class);
 
             for(let p of m.parameters)
-                group_inspector.addRow(p.name, m.attributes[p.name] ? m.attributes[p.name].toString() : p["default"]);
+                group_inspector.addRow(p.name, m[p.name] ? m[p.name].toString() : p["default"]);
 
-            group_inspector.addRow("description", m.attributes.description);
+            group_inspector.addRow("description", m.description);
 
             group_inspector.addHeader("APPEARANCE");
-            group_inspector.addRow("x", m.attributes._x);
-            group_inspector.addRow("y", m.attributes._y);
-            group_inspector.addRow("color", m.attributes._color);
-            group_inspector.addRow("text_color", m.attributes._text_color);
-            group_inspector.addRow("shape", m.attributes._shape);
+            group_inspector.addRow("x", m._x);
+            group_inspector.addRow("y", m._y);
+            group_inspector.addRow("color", m._color);
+            group_inspector.addRow("text_color", m._text_color);
+            group_inspector.addRow("shape", m._shape);
         }
     },
     select: function (obj)
@@ -1117,30 +1117,30 @@ interaction = {
                 context.fillStyle = "#999";
                 context.lineWidth = 3;
                 context.beginPath();
-                let p1 = interaction.io_pos[c.attributes.source];
+                let p1 = interaction.io_pos[c.source];
                 if(!p1)
                 {
-                    let pp = interaction.module_pos[c.attributes.source.split('.')[0]];
+                    let pp = interaction.module_pos[c.source.split('.')[0]];
                     p1 = {'x':pp.x, 'y':pp.y};
                     p1.x += 110;
                     p1.y += 26+13/2;
                 }
                 
-                let p2 = interaction.io_pos[c.attributes.target];
+                let p2 = interaction.io_pos[c.target];
                 
                 if(p1.x < p2.x)
                     draw_chord(context, p1.x, p1.y, p2.x, p2.y);
                 else
                 {
-                    let mp0 = interaction.module_pos[c.attributes.source.split('.')[0]];
-                    let mp1 = interaction.module_pos[c.attributes.target.split('.')[0]];
+                    let mp0 = interaction.module_pos[c.source.split('.')[0]];
+                    let mp1 = interaction.module_pos[c.target.split('.')[0]];
                     let top = Math.min(mp0.y, mp1.y);
                     draw_back_connection(context, p1.x, p1.y, p2.x, p2.y, top-20); // heuristics: over/under/inbetween
                 }
             }
             catch(err)
             {
-                console.log("draw connection "+c.attributes.sourcemodule+"->"+c.attributes.targetmodule+" failed.");
+                console.log("draw connection "+c.sourcemodule+"->"+c.targetmodule+" failed.");
             }
         }
     },
@@ -1186,7 +1186,7 @@ interaction = {
         let widget_class = widget_select.options[widget_select.selectedIndex].value;
         let w = interaction.addWidget({'class': widget_class, 'x': interaction.curnewpos, 'y': interaction.curnewpos, 'height': 200, 'width': 200});
         interaction.curnewpos += 20;
-        interaction.currentView.elements.push({"attributes": w.widget.parameters, "tag":widget_class});
+        interaction.currentView.widgets.push(w.widget.parameters);
         interaction.selectObject(w);
         controller.get("addwidget?data="+encodeURIComponent(interaction.currentViewName), controller.update);
     },
@@ -1279,7 +1279,7 @@ interaction = {
         if(module.inputs)
         for(let a of module.inputs)
         {
-            interaction.io_pos[module.attributes.name+"."+a.attributes.name] = {'x': x, 'y': y};
+            interaction.io_pos[module.name+"."+a.name] = {'x': x, 'y': y};
             y += yinc;
         }
 
@@ -1287,7 +1287,7 @@ interaction = {
         if(module.outputs)
         for(let a of module.outputs)
         {
-            interaction.io_pos[module.attributes.name+"."+a.attributes.name] = {'x': x, 'y': y};
+            interaction.io_pos[module.name+"."+a.name] = {'x': x, 'y': y};
             y += yinc;
         }
     },
@@ -1323,7 +1323,7 @@ interaction = {
                 else
                     newObject.setAttribute("class", "module");
 
-                newObject.innerHTML = "<div class='title'>"+v[i].attributes.name+"</div";
+                newObject.innerHTML = "<div class='title'>"+v[i].name+"</div";
                 interaction.main.appendChild(newObject);
 
                 // Add inputs & outputs
@@ -1332,7 +1332,7 @@ interaction = {
                 {
                     let io = document.createElement("div");
                     io.setAttribute("class","input");
-                    io.innerHTML = "<div class='iconnector'></div>"+a.attributes.name;
+                    io.innerHTML = "<div class='iconnector'></div>"+a.name;
                     newObject.appendChild(io);
                 }
                 
@@ -1340,34 +1340,34 @@ interaction = {
                 {
                     let io = document.createElement("div");
                     io.setAttribute("class","output");
-                    io.innerHTML = "<div class='oconnector'></div>"+a.attributes.name;
+                    io.innerHTML = "<div class='oconnector'></div>"+a.name;
                     newObject.appendChild(io);
                 }
                 
                 newObject.parameters = v[i];
                 
-                if(!newObject.parameters.attributes._x)
+                if(!newObject.parameters._x)
                 {
-                    newObject.parameters.attributes._x = interaction.main_position_x;
-                    newObject.parameters.attributes._y = interaction.main_position_y;
+                    newObject.parameters._x = interaction.main_position_x;
+                    newObject.parameters._y = interaction.main_position_y;
                     interaction.main_position_x += interaction.main_increment_x;
                     interaction.main_position_y += interaction.main_increment_y;
 
-                    //newObject.parameters.attributes._x = interaction.main_center-interaction.main_radius*Math.cos(scale*i);
-                    //newObject.parameters.attributes._y = interaction.main_center+interaction.main_radius*Math.sin(scale*i);
+                    //newObject.parameters._x = interaction.main_center-interaction.main_radius*Math.cos(scale*i);
+                    //newObject.parameters._y = interaction.main_center+interaction.main_radius*Math.sin(scale*i);
                 }
                 
-                interaction.module_pos[v[i].attributes.name] = {'x':newObject.parameters.attributes._x, 'y': newObject.parameters.attributes._y};
-                interaction.calculateIOPositions(v[i], newObject.parameters.attributes._x, newObject.parameters.attributes._y);
+                interaction.module_pos[v[i].name] = {'x':newObject.parameters._x, 'y': newObject.parameters._y};
+                interaction.calculateIOPositions(v[i], newObject.parameters._x, newObject.parameters._y);
 
-                newObject.style.top = (newObject.parameters.attributes._y)+"px";
-                newObject.style.left = (newObject.parameters.attributes._x)+"px";
+                newObject.style.top = (newObject.parameters._y)+"px";
+                newObject.style.left = (newObject.parameters._x)+"px";
  
-                if(newObject.parameters.attributes._text_color)
-                    newObject.style.color = newObject.parameters.attributes._text_color;
+                if(newObject.parameters._text_color)
+                    newObject.style.color = newObject.parameters._text_color;
 
-                if(newObject.parameters.attributes._color)
-                    newObject.style.backgroundColor = newObject.parameters.attributes._color;
+                if(newObject.parameters._color)
+                    newObject.style.backgroundColor = newObject.parameters._color;
                 
                 newObject.addEventListener('mousedown', interaction.startDragModule, true);
             }
@@ -1409,8 +1409,8 @@ interaction = {
             let vw = controller.views[viewName];
             if(vw && vw.views && vw.views[0])
             {
-                viewPath += "#"+vw.views[0].attributes.name;
-                h+= "<div class='bread' onclick='controller.selectView(\""+viewPath+"\")'>"+vw.views[0].attributes.name+"</div>";
+                viewPath += "#"+vw.views[0].name;
+                h+= "<div class='bread' onclick='controller.selectView(\""+viewPath+"\")'>"+vw.views[0].name+"</div>";
             }
         }
 
@@ -1435,15 +1435,13 @@ interaction = {
         
         // Build widget view
         
-        //let v = interaction.currentView.objects; // FIXME: objects should be called widgets
-        let v = interaction.currentView.elements; // FIXME: elements should be called widgets
+        let v = interaction.currentView.widgets;
         if(v)
         {
             interaction.view_mode = true;
             for(let i=0; i<v.length; i++)
             {
-                v[i].attributes.class = v[i].tag;
-                interaction.addWidget(v[i].attributes);
+                interaction.addWidget(v[i]);
             }
             if(interaction.edit_mode)
                 displayAside('view_inspector');
@@ -1603,11 +1601,11 @@ interaction = {
         interaction.selectedObject.style.left = newLeft + 'px';
         interaction.selectedObject.style.top = newTop + 'px';
         // Update view data
-        interaction.selectedObject.parameters.attributes._x = newLeft;
-        interaction.selectedObject.parameters.attributes._y = newTop;
+        interaction.selectedObject.parameters._x = newLeft;
+        interaction.selectedObject.parameters._y = newTop;
         let module_name = interaction.selectedObject.firstElementChild.innerText;
         interaction.module_pos[module_name] = {'x':newLeft , 'y': newTop};
-        interaction.calculateIOPositions(interaction.selectedObject.parameters, interaction.selectedObject.parameters.attributes._x, interaction.selectedObject.parameters.attributes._y);
+        interaction.calculateIOPositions(interaction.selectedObject.parameters, interaction.selectedObject.parameters._x, interaction.selectedObject.parameters._y);
     },
     selectModule: function(obj) {
         interaction.deselectObject()
@@ -1766,11 +1764,11 @@ controller = {
 
         if(group.views)
             for(i in group.views)
-                controller.views[name+"/"+group.attributes.name+"#"+group.views[i].attributes.name] = group.views[i];
+                controller.views[name+"/"+group.name+"#"+group.views[i].name] = group.views[i];
 
         if(group.groups)
             for(i in group.groups)
-                controller.buildViewDictionary(group.groups[i], name+"/"+group.attributes.name);
+                controller.buildViewDictionary(group.groups[i], name+"/"+group.name);
     },
 
     selectView: function(view) {
@@ -2049,19 +2047,19 @@ controller = {
 
     viewToXML: function(view, indent="")
     {
-        let text = indent + '<view name="'+view.attributes.name+'"';
-        for(let a in view.attributes)
+        let text = indent + '<view name="'+view.name+'"';
+        for(let a in view)
             if(!['name', 'objects'].includes(a))
-                text += ' ' + a + '="'+view.attributes[a]+'"';
+                text += ' ' + a + '="'+view[a]+'"';
         text += ' >\n';
         
-        for(let w in view.elements)
+        for(let w in view.widgets)
         {
-            text += '\t'+indent + '<'+view.elements[w].attributes.class+' ';
+            text += '\t'+indent + '<'+view.widgets[w].class+' ';
 
-            for(let a in view.elements[w].attributes)
+            for(let a in view.widgets[w])
                 if(!['class'].includes(a))
-                    text += ' '+ a + '="'+view.elements[w].attributes[a]+'"';
+                    text += ' '+ a + '="'+view.widgets[w][a]+'"';
 
             text += '/>\n';
         }
@@ -2072,8 +2070,8 @@ controller = {
     moduleToXML: function(module, indent="")
     {
         let text = indent + '<module\n';
-        for(let a in module.attributes)
-            text += indent + '\t' + a + '="'+module.attributes[a]+'"\n';
+        for(let a in module)
+            text += indent + '\t' + a + '="'+module[a]+'"\n';
         text += indent+'>\n';
 
          for(let v in module.views)
@@ -2086,8 +2084,8 @@ controller = {
     groupToXML: function(group, indent="")
     {
         let text = indent + '<group\n';
-        for(let a in group.attributes)
-            text += indent + '\t' + a + ' = "'+group.attributes[a]+'"\n';
+        for(let a in group)
+            text += indent + '\t' + a + ' = "'+group[a]+'"\n';
         text += indent+'>\n';
 
         for(let g in group.groups)
