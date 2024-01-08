@@ -172,8 +172,8 @@ public:
     bool InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
     void SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections);
-    void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections, bool add_labels);
-    void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections);
+    void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections, bool use_alias);
+    void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias);
     void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
     virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 };

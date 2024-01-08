@@ -672,7 +672,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool add_labels)
+    void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
     {
         SetSourceRanges(name, ingoing_connections);
         int begin_index = 0;
@@ -690,7 +690,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         if(flattened_input_size != 0)
             kernel().buffers[name].realloc(flattened_input_size);   // FIXME: else buffer = {} ???
 
-        if(!add_labels)
+        if(!use_alias)
             return;
 
         begin_index = 0;
@@ -705,7 +705,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections)
+    void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
     {
             SetSourceRanges(name, ingoing_connections);
             int max_delay = 0;
@@ -740,6 +740,20 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             r |= c->target_range;
 
         kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size // FIXME: Check empty input
+
+        // Set alias
+
+        if(!use_alias)
+            return;
+
+        if(ingoing_connections.size() == 1 && !ingoing_connections[0]->alias_.empty())
+        {
+            kernel().buffers[name].set_name(ingoing_connections[0]->alias_);
+        }
+        else
+        {
+            // Handle multiple dimensions
+        }
     }
 
 
@@ -750,13 +764,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
             // FIXME: Use input type heuristics here ************
 
-            std::string add_labels = d["add_labels"];
+            std::string use_alias = d["use_alias"];
 
             std::string flatten = d["flatten"];
             if(is_true(flatten))
-                SetInputSize_Flat(input_name, ingoing_connections[input_name],is_true(add_labels));
+                SetInputSize_Flat(input_name, ingoing_connections[input_name],is_true(use_alias));
             else
-                SetInputSize_Index(input_name, ingoing_connections[input_name]);
+                SetInputSize_Index(input_name, ingoing_connections[input_name],is_true(use_alias));
     }
 
 

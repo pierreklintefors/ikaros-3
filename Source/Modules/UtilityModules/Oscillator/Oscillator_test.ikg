@@ -3,7 +3,7 @@
 
 	<module class = "Print" name = "Print" />
 	<module class = "Logger" name = "Logger"/>
-	<connection  source = "Oscillator.OUTPUT"  	target = "Print.INPUT" />
+	<connection  source = "Oscillator.OUTPUT"  	target = "Print.INPUT" alias="signal" />
 
 	<view name="View">
 		<widget
