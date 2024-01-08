@@ -14,7 +14,7 @@ The simplest way to declare a matrix is as:
 matrix m;
 ```
 
-This will create an empty matrix of rank 0.
+This will create an empty matrix of rank 0. An empty matrix can be assigned any other matrix. (This is not possible for matrices with a size where the sizes must match).
 
 A matrix can also be created with a particular size, for example:
 
@@ -31,12 +31,23 @@ A two dimensional matrix in Ikaros can be defined inline as
 matrix m = {{1, 2, 3}, {4, 5, 6}};
 ```
 
-This would create a 2x3 matrix and assign it to the variable m. This type of initialization also works for higher dimensions.
+This would create a 2x3 matrix and assign it to the variable m. This type of initialization also works for higher and lower dimensions.
+
+```C++
+matrix m = {{1, 2}, {3, 4}}; // 2x2 matrix
+matrix n = {1, 2};      // Row vector
+matrix o = {{{1}, {2}}; // Column vector
+```
+
 
 A matrix can be assiged from a string. This only works for one or two-dimensional matrices. A comma is used to separate individual values on a row and a semicolon is used to end a row.
 
 ```C++
-matrix m = "1, 2; 3 4";
+matrix m = "1, 2; 3 4"; // 2x2 matrix
+
+matrix n = "1, 2";  // Row vector
+
+matrix o = "1; 2";  // Column vector
 ```
 
 ## Accessing the elements of a matrix
@@ -60,6 +71,28 @@ The same notation works for higher dimensional matrices. This means that element
 m[1][2] = 42;
 x = m[1][2];
 ```
+
+Not that it is possible to access a part of a matrix with the bracked notatopn but not using the parantheses notaition. For example, if m is a three dimensional natrix:
+
+```C++
+matrix m = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};
+
+matrix x = m[1];    // This is ok, x = {{5, 6}, {7, 8}}
+matrix y = m(1);    // This is an error and will throw and exception
+```
+
+By default matrix data is shared but can be copied using the copy() function.
+
+```C++
+matrix m = {1, 2};
+matrix n = m;
+
+matrix o;
+o.copy(m);
+
+n(1) = 5; // Both m and n will now be {1, 6} but o is still {1, 2}
+```
+
 
 ## Printing a matrix
 
@@ -89,7 +122,7 @@ The internal data structures of a matrix can be printed using info()
 m.info();
 ```
 
-The rank of a matrix is obtained using the rank function:
+The rank of a matrix is obtained using the rank function. This is the dimensionality of the matrix (and not the matrix rank that can be obtained using the matrank-function instead, when implemented...):
 
 ```C++
 m.rank();
@@ -139,13 +172,13 @@ m.set_labels(1, "Col1", "Col2, Col3");
 m.print();
 ```
 
-To inspect the internal structure of a matrix use the function info() to print all internal values:
+To print the internal structure of a matrix use the function info() to print all internal values:
 
 ```C++
 m.info();
 ```
 
-The JSON representation of atrsing can be obtained by the json() function:
+The JSON representation of a string can be obtained by the json() function:
 
 ```C++
 std::string s = m.json();
