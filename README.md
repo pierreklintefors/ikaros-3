@@ -41,7 +41,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Editing           |<div style="color:#e00">🔴 Pending |  |
 | Sockets           |<div style="color:green">🟢 OK |  |
 | UtilityModules    |<div style="color:#c60">🟡 Partial | 4 modules |
-| Named Dimensions  |<div style="color:#c60">🟡 Partial | only in matrices |
+| Named Dimensions  |<div style="color:green">🟢 OK |  |
 
 
 # Timing
