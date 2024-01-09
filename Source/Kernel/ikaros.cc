@@ -616,6 +616,19 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     info_(kernel().current_component_info),
     path_(kernel().current_component_path)
 {
+          // FIXME: None of this should be necessary when dictionary is fixed
+
+        if(info_["inputs"].is_null())
+            info_["inputs"] = list();
+
+      if(info_["outputs"].is_null())
+            info_["outputs"] = list();
+
+        if(info_["parameters"].is_null())
+            info_["parameters"] = list();
+
+        // FIXME: End
+
     for(auto p: info_["parameters"])
         AddParameter(p);
 
@@ -634,6 +647,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
   Module::Module()
     {
+  
     }
 
 
@@ -1318,9 +1332,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Kernel::Save()
+    void Kernel::Save() // Simple save function in preset file
     {
+        std::string data = xml();
 
+        std::ofstream file;
+        file.open ("example.ikg");
+        file << data;
+        file.close();
     }
 
 
@@ -1896,7 +1915,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::AddWidget(std::string uri, std::string args)
     {
-        std::cout << "AddWidget: " << args << std::endl;
+        std::cout << "AddWidget: " << uri << std::endl << std::endl;
+
+        std::string s = tail(uri, "/addwidget/");
+        std::string p = head(s, "#");
+
+        dictionary d;
+        d.parse_url(args);
+
+        // Find dictionary for path in p // FIXME: Need to walk down for longer path ****
+
+        dictionary g = info_[p];
+        g["views"][s].push_back(d);    // // New widget to view
 
         DoSendData(uri, args);
     }
@@ -2007,7 +2037,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     std::string args = tail(uri, "?");
 
-    // std::cout << uri << " " << args << std::endl;
+    //std::cout << uri << " " << args << std::endl;
 
     if(uri == "/update")
         DoUpdate(uri, args);
@@ -2041,14 +2071,12 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         DoCommand(uri, args);
     else if(starts_with(uri, "/control/"))
         DoControl(uri, args);
-
     else if(starts_with(uri, "/addwidget"))
         AddWidget(uri, args);
     else if(starts_with(uri, "/delwidget"))
         DeleteWidget(uri, args);
     else if(starts_with(uri, "/setwidgetparam"))
         SetWidgetParameter(uri, args);
-
     else 
         DoSendFile(uri);
     }

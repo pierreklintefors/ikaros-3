@@ -10,6 +10,7 @@
 // To allow compilation directly from editor
 #include "xml.cc"
 #include "dictionary.cc"
+#include "utilities.cc"
 
 
 using namespace ikaros;
@@ -17,6 +18,11 @@ using namespace ikaros;
 int
 main()
 {
+        dictionary xx;
+        xx.parse_url("a=123&b=XXX&xxx=oiuy");
+        std::cout << xx.json() << std::endl;
+
+
 
     dictionary d;
     dictionary e = d;
@@ -138,6 +144,7 @@ std::cout << xmldict.xml("group") << std::endl;
 
         std::cout << p << std::endl;
 */
+
     return 0;
 }
 

@@ -1188,7 +1188,14 @@ interaction = {
         interaction.curnewpos += 20;
         interaction.currentView.widgets.push(w.widget.parameters);
         interaction.selectObject(w);
-        controller.get("addwidget?data="+encodeURIComponent(interaction.currentViewName), controller.update);
+
+        let s = "?";
+        let sep = "";
+        for (const [key, value] of Object.entries(w.widget.parameters)) {
+            s += sep+key+"="+value;
+            sep ="&";
+          }
+        controller.get("addwidget"+encodeURIComponent(interaction.currentViewName+s), controller.update);
     },
     addWidget(w)
     {
@@ -1730,7 +1737,8 @@ controller = {
     },
 
     save: function () {
-        alert("Save not implemented yet");
+        //alert("Save not implemented yet");
+        controller.get("save", controller.update);
     },
 
     saveas: function () {

@@ -217,6 +217,16 @@ dictionary::dictionary(XMLElement * xml_node):
     }
 
 
+    void 
+    dictionary::parse_url(std::string s)
+    {
+        for(auto p : split(s, "&"))
+        {   
+            std::string a = head(p,"=");
+            (*this)[a] = p;
+        }
+    }
+
         std::ostream& operator<<(std::ostream& os, const dictionary & v)
         {
             os << std::string(v);

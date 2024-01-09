@@ -49,6 +49,8 @@ namespace ikaros
         dictionary(std::string filename);
         //dictionary(const dictionary & d);
     
+
+
         value & operator[](std::string s);
         bool contains(std::string s);
         size_t count(std::string s);
@@ -58,6 +60,8 @@ namespace ikaros
         std::string xml(std::string name, int depth=0);
         friend std::ostream& operator<<(std::ostream& os, const dictionary & v);
         //void print();
+
+        void parse_url(std::string s);
     };
 
 
