@@ -26,7 +26,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Expressions       |<div style="color:green">🟢 OK |  |
 | XML               |<div style="color:green">🟢 OK | some std::string functions missing |
 | Kernel            |<div style="color:#c60">🟡 Partial |  |
-| Shared Dict        |<div style="color:#e00">🔴 Pending |  |
+| Shared Dict       |<div style="color:green">🟢  OK |  |
 | Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
 | SetSizes    |     <div style="color:green">🟢 OK |
 | Input resizing    |<div style="color:green">🟢 OK |     |  |
