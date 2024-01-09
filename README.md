@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - November, 2023
+## Ikaros 3 Status - January, 2024
 
 | Component | State | Comments |
 | ----|----|----| 
@@ -33,12 +33,12 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Delays            |<div style="color:#green">🟢 OK | copy not completed |
 | Task Sorting      |<div style="color:#e00">🔴 Pending |  |
 | Real Time         |<div style="color:green">🟢 OK |  |
-| WebUI             |<div style="color:#c60">🟢 OK | no image types |
+| WebUI             |<div style="color:green">🟢 OK |  |
 | BrainStudio       |<div style="color:#e00">🔴 Pending | templates & editing |
 | Message queue     |<div style="color:#c60">🟡 Partial |  |
 | Log               |<div style="color:#c60">🟡 Partial |  |
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
-| Editing           |<div style="color:#e00">🔴 Pending |  |
+| Editing           |<div style="color:#c60">🟡 Minimal |
 | Sockets           |<div style="color:green">🟢 OK |  |
 | UtilityModules    |<div style="color:#c60">🟡 Partial | 4 modules |
 | Named Dimensions  |<div style="color:green">🟢 OK |  |
