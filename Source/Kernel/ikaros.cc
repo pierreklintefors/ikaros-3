@@ -616,7 +616,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     info_(kernel().current_component_info),
     path_(kernel().current_component_path)
 {
-          // FIXME: None of this should be necessary when dictionary is fixed
+          // FIXME: Make sure there are empty lists. None of this should be necessary when dictionary is fixed
 
         if(info_["inputs"].is_null())
             info_["inputs"] = list();
@@ -627,6 +627,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         if(info_["parameters"].is_null())
             info_["parameters"] = list();
 
+        if(info_["groups"].is_null())
+            info_["groups"] = list();
+
+            if(info_["modules"].is_null())
+            info_["modules"] = list();
         // FIXME: End
 
     for(auto p: info_["parameters"])
@@ -809,7 +814,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         int outputs_with_size = 0;
         for(auto & d : info_["outputs"])
         {
-            std::string n = d["name"];
+            std::string n = d["name"];  // FIXME: Throw if not set
             std::string s = d["size"];
             std::vector<int> shape = EvaluateSize(s);
             matrix o;
@@ -1912,8 +1917,24 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
 
+        list
+        Kernel::GetView(std::string component, std::string view_name)
+    {
+        Component * c = components.at(component);
+        dictionary cd = c->info_;
+        list vs = cd["views"];
+        dictionary v;
+
+        for(auto u : vs) // Find view
+            if(std::string(u["name"]) == view_name)
+                return list(u["widgets"]);
+
+        return list();
+    }
+
+
     void
-    Kernel::AddWidget(std::string uri, std::string args)
+    Kernel::AddWidget(std::string uri, std::string args) // FIXME: Local exception handling
     {
         std::cout << "AddWidget: " << uri << std::endl << std::endl;
 
@@ -1923,10 +1944,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         dictionary d;
         d.parse_url(args);
 
-        // Find dictionary for path in p // FIXME: Need to walk down for longer path ****
-
-        dictionary g = info_[p];
-        g["views"][s].push_back(d);    // // New widget to view
+        list u = GetView(p, s);
+        u.push_back(d);
 
         DoSendData(uri, args);
     }
@@ -1940,9 +1959,23 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-    Kernel::SetWidgetParameter(std::string uri, std::string args)
+    Kernel::SetWidgetParameters(std::string uri, std::string args)
     {
-      std::cout << "SetWidgetParameter: " << args << std::endl;
+      std::cout << "SetWidgetParameters: " << args << std::endl;
+
+        std::string s = tail(uri, "/setwidgetparams/");
+        std::string p = head(s, "#");
+        int widget_id = 0;
+
+        dictionary d;
+        d.parse_url(args);
+
+        int index = std::stoi(d["_index_"]);
+        list u = GetView(p, s);
+        u[index] = d;
+
+        std::cout << info_.json() << std::endl;
+        DoSendData(uri, args);
     }
 
 
@@ -2075,8 +2108,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         AddWidget(uri, args);
     else if(starts_with(uri, "/delwidget"))
         DeleteWidget(uri, args);
-    else if(starts_with(uri, "/setwidgetparam"))
-        SetWidgetParameter(uri, args);
+    else if(starts_with(uri, "/setwidgetparams"))
+        SetWidgetParameters(uri, args);
     else 
         DoSendFile(uri);
     }

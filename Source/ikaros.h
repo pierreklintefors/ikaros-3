@@ -363,9 +363,10 @@ public:
     void DoCommand(std::string uri, std::string args);
     void DoControl(std::string uri, std::string args);
     
+    list GetView(std::string component, std::string view_name);
     void AddWidget(std::string uri, std::string args);
     void DeleteWidget(std::string uri, std::string args);
-    void SetWidgetParameter(std::string uri, std::string args);
+    void SetWidgetParameters(std::string uri, std::string args);
 
 
     void DoSendNetwork(std::string uri, std::string args);
