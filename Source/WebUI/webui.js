@@ -1197,6 +1197,17 @@ interaction = {
           }
         controller.get("addwidget"+encodeURIComponent(interaction.currentViewName+s), controller.update);
     },
+    setWidgetParameter(p) // in kernel
+    {
+        let w = interaction.selectedObject;
+        let s = "?";
+        let sep = "";
+        for (const [key, value] of Object.entries(w.widget.parameters)) {
+            s += sep+key+"="+value;
+            sep ="&";
+          }
+        controller.get("setwidgetparams"+encodeURIComponent(interaction.currentViewName+s), controller.update);
+    },
     addWidget(w)
     {
         let newObject = document.createElement("div");
@@ -1555,6 +1566,8 @@ interaction = {
         // Update view data
         interaction.selectedObject.widget.parameters['x'] = newLeft;
         interaction.selectedObject.widget.parameters['y'] = newTop;
+
+        interaction.selectedObject.widget.parameterChangeNotification();
     },
     setSize: function (dx, dy) {
         let newWidth = interaction.grid_spacing*Math.round((interaction.startX + dx)/interaction.grid_spacing)+1;
@@ -1567,6 +1580,8 @@ interaction = {
         interaction.selectedObject.widget.parameters['height'] = newHeight;
         
         interaction.selectedObject.widget.updateAll();
+
+        interaction.selectedObject.widget.parameterChangeNotification();
     },
 
     changeStylesheet: function() {

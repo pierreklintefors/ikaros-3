@@ -22,7 +22,7 @@ namespace ikaros
     }
 
     std::string 
-    null::xml(std::string name, int depth)
+    null::xml(std::string name, int depth, std::string exclude)
     {
         return tab(depth)+"<null/>\n";
     }
@@ -37,11 +37,16 @@ namespace ikaros
 
     // list
 
+    list::list():
+        list_(std::make_shared<std::vector<value>>())
+    {
+    }
+
     list::operator std::string () const
     {
         std::string s = "[";
         std::string sep = "";
-        for(auto & v : list_)
+        for(auto & v : *list_)
         {
             s += sep + std::string(v);
             sep = ", ";
@@ -56,7 +61,7 @@ namespace ikaros
     {
         std::string s = "[";
         std::string sep = "";
-        for(auto & v : list_)
+        for(auto & v : *list_)
         {
             s += sep + v.json();
             sep = ", ";
@@ -70,9 +75,9 @@ namespace ikaros
        value & 
        list::operator[] (int i)
         {
-            if(list_.size() < i+1)
-                list_.resize(i+1);
-            return list_.at(i);
+            if( list_->size() < i+1)
+                 list_->resize(i+1);
+            return  list_->at(i);
         }
 
         std::ostream& 
@@ -156,10 +161,10 @@ namespace ikaros
     // XML
 
     std::string 
-    list::xml(std::string name, int depth)
+    list::xml(std::string name, int depth, std::string exclude)
     {
         std::string s;
-        for(auto & v : list_)
+        for(auto & v : *list_)
         {
             s += v.xml(name, depth+1);
         }
@@ -167,16 +172,17 @@ namespace ikaros
     }
 
     std::string  
-    dictionary::xml(std::string name, int depth)
+    dictionary::xml(std::string name, int depth, std::string exclude)
     {
         std::string s = tab(depth)+"<"+name;
         for(auto & a : *dict_)
             if(!a.second.is_list())
+                if(!a.second.is_null()) // DO not include null attributes - but include empty strings
             s += " "+a.first + "=\"" +std::string(a.second)+"\"";
 
         std::string sep = ">\n";
         for(auto & e : *dict_)
-            if(e.second.is_list()) 
+            if(e.second.is_list()) //  && e.first!="inputs" && e.first!="outputs" && e.first!="parameters"
             {
                 s += sep + e.second.xml(e.first.substr(0, e.first.size()-1), depth);
                 sep = "";
@@ -188,15 +194,7 @@ namespace ikaros
         return s;
     }
 
-/*
-    void dictionary::print()
-    {
-        for(auto & v : *dict_)
-        {
-            std::cout << std::string(*this) << std::endl;
-        }
-    }
-*/
+
 dictionary::dictionary(XMLElement * xml_node):
     dictionary()
 {
@@ -259,7 +257,7 @@ dictionary::dictionary(XMLElement * xml_node):
         {
             if(!std::holds_alternative<list>(value_))
                 value_ = list();
-                std::get<list>(value_).list_.push_back(v);
+                std::get<list>(value_). list_->push_back(v);
                 return *this;
         }
 
@@ -267,7 +265,7 @@ dictionary::dictionary(XMLElement * xml_node):
         value::size()
         {
             if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).list_.size();
+                return std::get<list>(value_). list_->size();
             else if(std::holds_alternative<dictionary>(value_))
                 return std::get<dictionary>(value_).dict_->size();
             else if(std::holds_alternative<null>(value_))
@@ -280,7 +278,7 @@ dictionary::dictionary(XMLElement * xml_node):
         std::vector<value>::iterator value::begin()
         {
             if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).list_.begin();
+                return std::get<list>(value_). list_->begin();
             else
                 return empty.begin();
         }
@@ -289,7 +287,7 @@ dictionary::dictionary(XMLElement * xml_node):
         std::vector<value>::iterator value::end()
         {
             if(std::holds_alternative<list>(value_))
-                return std::get<list>(value_).list_.end();
+                return std::get<list>(value_). list_->end();
             else
                 return empty.end();
         }
@@ -300,9 +298,9 @@ dictionary::dictionary(XMLElement * xml_node):
         {
             if(!std::holds_alternative<list>(value_))
                 value_ = list();
-            if(std::get<list>(value_).list_.size() < i+1)
-                std::get<list>(value_).list_.resize(i+1);
-            return std::get<list>(value_).list_.at(i);
+            if(std::get<list>(value_). list_->size() < i+1)
+                std::get<list>(value_). list_->resize(i+1);
+            return std::get<list>(value_). list_->at(i);
         }
 
         value::operator std::string () const
@@ -341,7 +339,7 @@ dictionary::dictionary(XMLElement * xml_node):
         }
 
         std::string  
-        value::xml(std::string name, int depth)
+        value::xml(std::string name, int depth, std::string exclude)
         {
             if(std::holds_alternative<std::string>(value_))
                 return tab(depth)+"<string>"+std::get<std::string>(value_)+"</string>\n"; // FIXME: <'type' value="v" />    ???

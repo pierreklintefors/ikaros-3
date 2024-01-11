@@ -25,6 +25,7 @@ namespace ikaros
 
     using valueVariant = std::variant<bool, int, float, null, std::string, list, dictionary>;
     using mapPtr = std::shared_ptr<std::map<std::string, value>>;
+    using listPtr = std::shared_ptr<std::vector<value>>;
 
     static std::vector<value> empty;
 
@@ -32,7 +33,7 @@ namespace ikaros
     {
         operator std::string () const;
         std::string json();
-        std::string xml(std::string name, int depth=0);
+        std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const null & v);
     };
 
@@ -57,7 +58,7 @@ namespace ikaros
         void merge(const dictionary & source, bool overwrite=false); // shallow merge: copy from source to this
         operator std::string () const;
         std::string json();
-        std::string xml(std::string name, int depth=0);
+        std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const dictionary & v);
         //void print();
 
@@ -67,17 +68,19 @@ namespace ikaros
 
     struct list
     {
-        std::vector<value> list_;
+        listPtr list_;
 
-        std::vector<value>::iterator begin() { return list_.begin(); };
-        std::vector<value>::iterator end()   { return list_.end(); };
+        list();
+    
+        std::vector<value>::iterator begin() { return list_->begin(); };
+        std::vector<value>::iterator end()   { return list_->end(); };
 
         value & operator[] (int i);
-        int size() { return list_.size(); };
-        list & push_back(const value & v) { list_.push_back(v); return *this; };
+        int size() { return list_->size(); };
+        list & push_back(const value & v) { list_->push_back(v); return *this; };
         operator std::string ()  const;
         std::string json();
-        std::string xml(std::string name, int depth=0);
+        std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const list & v);
     };
 
@@ -126,7 +129,7 @@ namespace ikaros
         operator std::string () const;
         std::string json();
 
-        std::string xml(std::string name, int depth=0);
+        std::string xml(std::string name, int depth=0, std::string exclude = "");
 
         operator double ();                                        // FIXME: Add other types - both from and to
         operator list ();
