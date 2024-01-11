@@ -1300,6 +1300,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                     for(auto & x : opts.d)
                         d[x.first] = x.second;
 
+                        if(opts.filenames.size() > 0)
+                        d["filename"] = opts.filenames[0];
+
                         if(d.contains("webui_port"))
                             port = d["webui_port"];
 
@@ -1342,7 +1345,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::string data = xml();
 
         std::ofstream file;
-        file.open ("example.ikg");
+        std::string filename = info_["filename"];
+        file.open (filename);
         file << data;
         file.close();
     }
