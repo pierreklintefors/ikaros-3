@@ -1921,7 +1921,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
 
-        list
+        dictionary
         Kernel::GetView(std::string component, std::string view_name)
     {
         Component * c = components.at(component);
@@ -1931,9 +1931,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         for(auto u : vs) // Find view
             if(std::string(u["name"]) == view_name)
-                return list(u["widgets"]);
+                return u;
 
-        return list();
+        return dictionary();
     }
 
 
@@ -1948,7 +1948,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         dictionary d;
         d.parse_url(args);
 
-        list u = GetView(p, s);
+        list u = list(GetView(p, s)["widgets"]);
         u.push_back(d);
 
         DoSendData(uri, args);
@@ -1958,7 +1958,22 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DeleteWidget(std::string uri, std::string args)
     {
-      std::cout << "DeleteWidget: " << args << std::endl;
+        std::cout << "DeleteWidget: " << args << " : " << uri << std::endl;
+
+        std::string s = tail(uri, "/delwidget/");
+        std::string group_name = head(s, "#");
+        std::string view_name = head(s, "/");
+        int index = stoi(s);
+
+        list view = list(GetView(group_name, view_name)["widgets"]);
+
+        view.erase(index);
+
+        int i=0;
+        for(auto & w : view)
+            w["_index_"] = i++;
+    
+        DoSendData(uri, args);
     }
 
 
@@ -1975,13 +1990,29 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         d.parse_url(args);
 
         int index = std::stoi(d["_index_"]);
-        list u = GetView(p, s);
+        list u = list(GetView(p, s)["widgets"]);
         u[index] = d;
 
-        std::cout << info_.json() << std::endl;
         DoSendData(uri, args);
     }
 
+
+    void
+    Kernel::RenameView(std::string uri, std::string args)
+    {
+      std::cout << "RenameView: " << args << std::endl;
+
+        std::string s = tail(uri, "/renameview/");
+        std::string p = head(s, "#");
+        int widget_id = 0;
+
+
+        std::string new_name = tail(s,"/");
+        dictionary u = GetView(p, s);
+        u["name"] = new_name;
+
+        DoSendData(uri, args);
+    }
 
     void
     Kernel::DoUpdate(std::string uri, std::string args)
@@ -2074,7 +2105,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     std::string args = tail(uri, "?");
 
-    //std::cout << uri << " " << args << std::endl;
+    std::cout << uri << " " << args << std::endl;
 
     if(uri == "/update")
         DoUpdate(uri, args);
@@ -2112,8 +2143,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         AddWidget(uri, args);
     else if(starts_with(uri, "/delwidget"))
         DeleteWidget(uri, args);
-    else if(starts_with(uri, "/setwidgetparams"))
+    else if(starts_with(uri, "/setwidgetparams")) 
         SetWidgetParameters(uri, args);
+    else if(starts_with(uri, "/renameview")) 
+        RenameView(uri, args);
     else 
         DoSendFile(uri);
     }

@@ -746,10 +746,10 @@ group_inspector = {
             group_inspector.addHeader("GROUP");
             group_inspector.addRow("name", m.name);
             group_inspector.addRow("log level", m.log_level);
-            group_inspector.addRow("inputs", m.inputs.length);
-            group_inspector.addRow("outputs", m.outputs.length);
-            group_inspector.addRow("parameters", m.parameters.length);
-            group_inspector.addRow("views", m.views.length); 
+            group_inspector.addRow("inputs", m.inputs.length || 0);
+            group_inspector.addRow("outputs", m.outputs.length || 0);
+            group_inspector.addRow("parameters", m.parameters.length || 0);
+            group_inspector.addRow("views", m.views.length || 0); 
 
             for(let p in m.parameters)
             {
@@ -759,8 +759,8 @@ group_inspector = {
             }
 
             group_inspector.addHeader("SUBGROUPS");
-            group_inspector.addRow("modules", m.groups.length);
-            group_inspector.addRow("connections", m.connections.length);
+            group_inspector.addRow("modules", m.groups.length || 0);
+            group_inspector.addRow("connections", m.connections.length || 0);
             group_inspector.addSelectionList(['A','B','C'], function () {interaction.addModule()});
             //group_inspector.addButton("", "Add module", function () {interaction.addModule()});
             group_inspector.addButton("", "Copy as XML", function () {alert("Not implemented yet")});
@@ -864,6 +864,36 @@ interaction = {
         interaction.group_inspector = document.querySelector('#group_inspector');
         main.dataset.mode = "run";
         window.addEventListener("resize", interaction.windowResize);
+
+        // Move to view edit later
+
+        let vn = document.querySelector('#view_name');
+        if(vn)
+        {
+            vn.addEventListener("keypress", function(evt) {
+            if(evt.keyCode == 13)
+            {
+                evt.target.blur();
+                evt.preventDefault();
+
+                let new_view_name = document.querySelector('#view_name').innerText;
+                let n = interaction.currentViewName;
+                controller.get("renameview"+encodeURIComponent(interaction.currentViewName+"/"+new_view_name), controller.update);
+                controller.views[interaction.currentViewName].name = new_view_name;
+                let new_full_name = interaction.currentViewName.split("#")[0]+"/"+new_view_name;
+                controller.views[new_full_name] = controller.views[interaction.currentViewName];
+                delete controller.views[interaction.currentViewName];
+                interaction.currentViewName = new_full_name;
+
+                nav.populate(nav.navigator);
+
+                controller.selectView(interaction.currentViewName);
+
+                
+                return;
+            }
+        });
+        }
     },
     getClasses() {
         fetch('/classes')
@@ -997,11 +1027,11 @@ interaction = {
     },
     removeAllObjects() {
         let main = document.querySelector('main');
-        let nodes = document.querySelectorAll(".frame");
+        let nodes = main.querySelectorAll(".frame");
         for (var i = 0; i < nodes.length; i++)
             main.removeChild(nodes[i]);
 
-        nodes = document.querySelectorAll(".module");
+        nodes = main.querySelectorAll(".module");
         for (var i = 0; i < nodes.length; i++)
             main.removeChild(nodes[i]);
     },
@@ -1147,18 +1177,21 @@ interaction = {
     deleteWidget()
     {
         let w = interaction.selectedObject;
+        let index = w.widget.parameters["_index_"];
         interaction.deselectObject();
         interaction.removeAllObjects();
-        interaction.currentView.objects = interaction.currentView.objects.filter(e => e!==w.widget.parameters); // delete from view
+        interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
         interaction.addView(interaction.currentViewName);
+
+        controller.get("delwidget"+encodeURIComponent(interaction.currentViewName+"/"+index), controller.update);
     },
     widgetToFront()
     {
         let w = interaction.selectedObject;
         interaction.deselectObject();
         interaction.removeAllObjects();
-        interaction.currentView.objects = interaction.currentView.objects.filter(e => e!==w.widget.parameters); // delete from view
-        interaction.currentView.objects.push(w.widget.parameters);
+        interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
+        interaction.currentView.widgets.push(w.widget.parameters);
         interaction.addView(interaction.currentViewName);
     },
     widgetToBack()
@@ -1166,8 +1199,8 @@ interaction = {
         let w = interaction.selectedObject;
         interaction.deselectObject();
         interaction.removeAllObjects();
-        interaction.currentView.objects = interaction.currentView.objects.filter(e => e!==w.widget.parameters); // delete from view
-        interaction.currentView.objects.unshift(w.widget.parameters);
+        interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
+        interaction.currentView.widgets.unshift(w.widget.parameters);
         interaction.addView(interaction.currentViewName);
     },
     duplicateWidget()
@@ -1177,8 +1210,16 @@ interaction = {
         dup_parameters.x = parseInt(dup_parameters.x) + 20;
         dup_parameters.y = parseInt(dup_parameters.y) + 20;
         let dup = interaction.addWidget(dup_parameters);
-        interaction.currentView.objects.push(dup.widget.parameters);
+        interaction.currentView.widgets.push(dup.widget.parameters);
         interaction.selectObject(dup);
+
+        let s = "?";
+        let sep = "";
+        for (const [key, value] of Object.entries(dup.widget.parameters)) {
+            s += sep+key+"="+value;
+            sep ="&";
+          }
+        controller.get("addwidget"+encodeURIComponent(interaction.currentViewName+s), controller.update);
     },
     addNewWidget()
     {
@@ -1443,6 +1484,8 @@ interaction = {
         
         interaction.deselectObject();
         interaction.currentViewName = viewName;
+        let view_name = document.querySelector("#view_name");
+        view_name.innerText = viewName.split('#')[1];
         interaction.currentView = controller.views[viewName];
         interaction.removeAllObjects();
 
@@ -2143,6 +2186,4 @@ controller = {
         download("network.ikg", '<?xml version="1.0" encoding="UTF-8"?>\n'+controller.groupToXML(controller.network));
     }
 }
-
-
 
