@@ -56,6 +56,12 @@ namespace ikaros
     }
 
 
+        list & 
+        list::erase(int index)  
+        {
+                list_->erase(list_->begin()+index); return *this;
+        }
+
     std::string 
     list::json()
     {
