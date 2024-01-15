@@ -1920,7 +1920,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-
         dictionary
         Kernel::GetView(std::string component, std::string view_name)
     {
@@ -1938,6 +1937,24 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
+    Kernel::AddView(std::string uri, std::string args) // FIXME: Local exception handling
+    {
+        std::cout << "AddView: " << uri << std::endl << std::endl;
+
+        std::string s = tail(uri, "/addview/");
+        std::string p = head(s, "#");
+
+        Component * c = components.at(p);
+
+        dictionary d;
+        d["name"] = s;
+        d["widgets"] = list();
+        c->info_["views"].push_back(d);
+
+        DoSendData(uri, args);
+    }
+
+    void
     Kernel::AddWidget(std::string uri, std::string args) // FIXME: Local exception handling
     {
         std::cout << "AddWidget: " << uri << std::endl << std::endl;
@@ -1947,6 +1964,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         dictionary d;
         d.parse_url(args);
+
+        if(GetView(p, s)["widgets"].is_null())
+            GetView(p, s)["widgets"] = list();
 
         list u = list(GetView(p, s)["widgets"]);
         u.push_back(d);
@@ -2145,6 +2165,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         DeleteWidget(uri, args);
     else if(starts_with(uri, "/setwidgetparams")) 
         SetWidgetParameters(uri, args);
+    else if(starts_with(uri, "/addview"))
+        AddView(uri, args);
     else if(starts_with(uri, "/renameview")) 
         RenameView(uri, args);
     else 

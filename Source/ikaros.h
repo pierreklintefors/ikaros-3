@@ -364,6 +364,8 @@ public:
     void DoControl(std::string uri, std::string args);
     
     dictionary GetView(std::string component, std::string view_name);
+
+    void AddView(std::string uri, std::string args);
     void AddWidget(std::string uri, std::string args);
     void DeleteWidget(std::string uri, std::string args);
     void SetWidgetParameters(std::string uri, std::string args);

@@ -548,6 +548,7 @@ module_inspector = {
             module_inspector.addHeader("MODULE");
             module_inspector.addRow("name", m.parameters.name);
             module_inspector.addRow("class", m.parameters.class);
+            module_inspector.addRow("loglevel", "-");
 
             if(m.parameters.parameters)
             for(let p of m.parameters.parameters)
@@ -741,7 +742,7 @@ group_inspector = {
         // Add header info
 
         let m = group_inspector.module;
-        if(m.groups.length > 0) // add group
+        if(m.groups && m.groups.length > 0) // add group
         {
             group_inspector.addHeader("GROUP");
             group_inspector.addRow("name", m.name);
@@ -759,11 +760,17 @@ group_inspector = {
             }
 
             group_inspector.addHeader("SUBGROUPS");
-            group_inspector.addRow("modules", m.groups.length || 0);
-            group_inspector.addRow("connections", m.connections.length || 0);
+
+            if(m.groups) {
+                group_inspector.addRow("modules", m.groups.length || 0);
+            }
+            if(m.connections)
+            {
+                group_inspector.addRow("connections", m.connections.length || 0);
+            }
             group_inspector.addSelectionList(['A','B','C'], function () {interaction.addModule()});
             //group_inspector.addButton("", "Add module", function () {interaction.addModule()});
-            group_inspector.addButton("", "Copy as XML", function () {alert("Not implemented yet")});
+            //group_inspector.addButton("", "Copy as XML", function () {alert("Not implemented yet")});
 
             group_inspector.addHeader("APPEARANCE");
             group_inspector.addRow("x", m._x);
@@ -1174,6 +1181,33 @@ interaction = {
             }
         }
     },
+
+    addNewView()
+    {
+        let vkeys = Object.keys(controller.views);
+        let c = vkeys.length;
+
+        let new_view_name = "Untitled "+c;
+        let g = controller.getGroup(interaction.currentViewName);
+
+        g.views[new_view_name] = {"name": new_view_name, "widgets": []};
+
+        nav.init(controller.network);
+
+        controller.views = {};
+        controller.buildViewDictionary(controller.network, "");
+  /*      
+        let v = getCookie('current_view');
+        if(Object.keys(controller.views).includes(v))
+            controller.selectView(v);
+        else
+            controller.selectView(Object.keys(controller.views)[0]);
+*/
+        interaction.currentViewName = interaction.currentViewName+"#"+new_view_name;
+        interaction.addView(interaction.currentViewName);
+
+        controller.get("addview"+encodeURIComponent(interaction.currentViewName), controller.update);
+    },
     deleteWidget()
     {
         let w = interaction.selectedObject;
@@ -1227,6 +1261,8 @@ interaction = {
         let widget_class = widget_select.options[widget_select.selectedIndex].value;
         let w = interaction.addWidget({'class': widget_class, 'x': interaction.curnewpos, 'y': interaction.curnewpos, 'height': 200, 'width': 200});
         interaction.curnewpos += 20;
+        if(!interaction.currentView.widgets)
+        interaction.currentView.widgets = [];
         interaction.currentView.widgets.push(w.widget.parameters);
         interaction.selectObject(w);
 
@@ -1495,7 +1531,9 @@ interaction = {
         let main = document.querySelector('main');
         
         // Build widget view
-        
+        if(!interaction.currentView.widgets)
+            interaction.currentView.widgets = [];
+
         let v = interaction.currentView.widgets;
         if(v)
         {
@@ -1511,7 +1549,7 @@ interaction = {
             return;
         }
 
-        // Build group view - experimental
+        // Build group view
 
         interaction.view_mode = false;
         this.buildGroupView();
@@ -1795,7 +1833,6 @@ controller = {
     },
 
     save: function () {
-        //alert("Save not implemented yet");
         controller.get("save", controller.update);
     },
 
@@ -1827,7 +1864,30 @@ controller = {
     start: function () {
         controller.play();  // FIXME: possibly start selected mode play/fast-forward/realtime
     },
-    
+
+    getGroup(path)
+    {
+        let p = path.split("/");
+        let g = [controller.network];
+        for(let i in p)
+        {
+            // Find group named p[i]
+
+            for(let gi in g)
+            {
+                if(g[gi].name == p[i])
+                {
+                    g = g[gi];
+                }
+
+                if(i == p.length-1)
+                {
+                    return g;
+                }
+            }
+        }
+        return null;
+    },
     buildViewDictionary: function(group, name) {
         controller.views[name+"/"+group.name] = group;
 
