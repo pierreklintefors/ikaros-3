@@ -38,14 +38,14 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Message queue     |<div style="color:#c60">🟡 Partial |  |
 | Log               |<div style="color:#c60">🟡 Log types missing |  |
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
-| Editing           |<div style="color:#c60">🟡 Minimal |
+| Editing           |<div style="color:#c60">🟡 Only for views |
 | Sockets           |<div style="color:green">🟢 OK |  |
 | UtilityModules    |<div style="color:#c60">🟡 Partial | 4 modules |
 | Named Dimensions  |<div style="color:green">🟢 OK |  |
 
 ## Basic Start-up Parameters
 
-    usage: ikaros [options] [variable=value] [filenames]
+    usage: ikaros [options] [variable=value] [filename]
 
         Command line options:
 
@@ -57,9 +57,9 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
         -w (webui_port): port for ikaros WebUI [8000]
 
 
-        filename(s) :   ikg-file to load
+        filename :   ikg-file to load
 
-All parameters have can be set in the top element of the ikg-file as well.
+All parameters can be set in the top element of the ikg-file as well.
 
 ## Timing
 
