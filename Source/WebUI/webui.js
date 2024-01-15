@@ -1253,7 +1253,11 @@ interaction = {
             s += sep+key+"="+value;
             sep ="&";
           }
-        controller.get("addwidget"+encodeURIComponent(interaction.currentViewName+s), controller.update);
+
+        let path = interaction.currentViewName;
+        path = path.substr(1, path.length - 1);
+        path = path.replaceAll("/",".")+s;
+        controller.get("addwidget/"+encodeURIComponent(path), controller.update);
     },
     addNewWidget()
     {
@@ -1272,7 +1276,10 @@ interaction = {
             s += sep+key+"="+value;
             sep ="&";
           }
-        controller.get("addwidget"+encodeURIComponent(interaction.currentViewName+s), controller.update);
+          let path = interaction.currentViewName;
+          path = path.replaceAll("/",".")+s;
+          path = path.substr(1, path.length - 1);
+          controller.get("addwidget/"+encodeURIComponent(path), controller.update);
     },
     setWidgetParameter(p) // in kernel
     {
@@ -1283,7 +1290,10 @@ interaction = {
             s += sep+key+"="+value;
             sep ="&";
           }
-        controller.get("setwidgetparams"+encodeURIComponent(interaction.currentViewName+s), controller.update);
+          let path = interaction.currentViewName;
+          path = path.substr(1, path.length - 1);
+          path = path.replaceAll("/",".")+s;
+        controller.get("setwidgetparams/"+encodeURIComponent(path), controller.update);
     },
     addWidget(w)
     {

@@ -9,9 +9,9 @@ class WebUIWidgetButton extends WebUIWidgetControl
             {'name':'label', 'default':"Button", 'type':'string', 'control': 'textedit'},
 
             {'name': "STYLE", 'control':'header'},
-            {'name':'color', '':"", 'type':'string', 'control': 'textedit'},
-            {'name':'background', '':"", 'type':'string', 'control': 'textedit'},
-            {'name':'icon', '':"", 'type':'string', 'control': 'textedit'},
+            {'name':'color', 'default':"", 'type':'string', 'control': 'textedit'},
+            {'name':'background', 'default':"", 'type':'string', 'control': 'textedit'},
+            {'name':'icon', 'default':"", 'type':'string', 'control': 'textedit'},
 
             {'name': "CONTROL", 'control':'header'},
 
