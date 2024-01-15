@@ -369,6 +369,8 @@ public:
     void AddWidget(std::string uri, std::string args);
     void DeleteWidget(std::string uri, std::string args);
     void SetWidgetParameters(std::string uri, std::string args);
+    void WidgetToFront(std::string uri, std::string args);
+    void WidgetToBack(std::string uri, std::string args);
     void RenameView(std::string uri, std::string args);
 
     void DoSendNetwork(std::string uri, std::string args);

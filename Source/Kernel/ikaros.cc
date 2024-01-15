@@ -2018,6 +2018,21 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
+    Kernel::WidgetToFront(std::string uri, std::string args)
+    {
+     std::cout << "SetWidgetToFront: " << args << std::endl;
+    }
+
+
+
+    void
+    Kernel::WidgetToBack(std::string uri, std::string args)
+    {
+     std::cout << "SetWidgetToBack: " << args << std::endl;
+    }
+
+        
+    void
     Kernel::RenameView(std::string uri, std::string args)
     {
       std::cout << "RenameView: " << args << std::endl;
@@ -2165,6 +2180,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         DeleteWidget(uri, args);
     else if(starts_with(uri, "/setwidgetparams")) 
         SetWidgetParameters(uri, args);
+    else if(starts_with(uri, "/widgettofront")) 
+        WidgetToFront(uri, args);
+    else if(starts_with(uri, "/widgettoback")) 
+        WidgetToBack(uri, args);
     else if(starts_with(uri, "/addview"))
         AddView(uri, args);
     else if(starts_with(uri, "/renameview")) 

@@ -1206,7 +1206,10 @@ interaction = {
         interaction.currentViewName = interaction.currentViewName+"#"+new_view_name;
         interaction.addView(interaction.currentViewName);
 
-        controller.get("addview"+encodeURIComponent(interaction.currentViewName), controller.update);
+        let path = interaction.currentViewName;
+        path = path.substr(1, path.length - 1);
+        path = path.replaceAll("/",".");
+        controller.get("addview"+encodeURIComponent(path), controller.update);
     },
     deleteWidget()
     {
@@ -1217,7 +1220,11 @@ interaction = {
         interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
         interaction.addView(interaction.currentViewName);
 
-        controller.get("delwidget"+encodeURIComponent(interaction.currentViewName+"/"+index), controller.update);
+
+        let path = interaction.currentViewName;
+        path = path.substr(1, path.length - 1);
+        path = path.replaceAll("/",".");
+        controller.get("delwidget"+encodeURIComponent(path+"/"+index), controller.update);
     },
     widgetToFront()
     {
@@ -1227,6 +1234,11 @@ interaction = {
         interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
         interaction.currentView.widgets.push(w.widget.parameters);
         interaction.addView(interaction.currentViewName);
+
+        let path = interaction.currentViewName;
+        path = path.substr(1, path.length - 1);
+        path = path.replaceAll("/",".");
+        controller.get("widgettofront"+encodeURIComponent(path+"/"+index), controller.update);
     },
     widgetToBack()
     {
@@ -1236,6 +1248,11 @@ interaction = {
         interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
         interaction.currentView.widgets.unshift(w.widget.parameters);
         interaction.addView(interaction.currentViewName);
+
+        let path = interaction.currentViewName;
+        path = path.substr(1, path.length - 1);
+        path = path.replaceAll("/",".");
+        controller.get("widgettoback"+encodeURIComponent(path+"/"+index), controller.update);
     },
     duplicateWidget()
     {
