@@ -1229,6 +1229,7 @@ interaction = {
     widgetToFront()
     {
         let w = interaction.selectedObject;
+        let index = w.widget.parameters["_index_"];
         interaction.deselectObject();
         interaction.removeAllObjects();
         interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
@@ -1238,11 +1239,12 @@ interaction = {
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
         path = path.replaceAll("/",".");
-        controller.get("widgettofront"+encodeURIComponent(path+"/"+index), controller.update);
+        controller.get("widgettofront/"+encodeURIComponent(path+"/"+index), controller.update);
     },
     widgetToBack()
     {
         let w = interaction.selectedObject;
+        let index = w.widget.parameters["_index_"];
         interaction.deselectObject();
         interaction.removeAllObjects();
         interaction.currentView.widgets = interaction.currentView.widgets.filter(e => e!==w.widget.parameters);
@@ -1252,7 +1254,7 @@ interaction = {
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
         path = path.replaceAll("/",".");
-        controller.get("widgettoback"+encodeURIComponent(path+"/"+index), controller.update);
+        controller.get("widgettoback/"+encodeURIComponent(path+"/"+index), controller.update);
     },
     duplicateWidget()
     {

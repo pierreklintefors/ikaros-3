@@ -2020,22 +2020,56 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::WidgetToFront(std::string uri, std::string args)
     {
-     std::cout << "SetWidgetToFront: " << args << std::endl;
-    }
+        std::cout << "SetWidgetToFront: " << args << std::endl;
+
+        std::string s = tail(uri, "/widgettofront/");
+        std::string group_name = head(s, "#");
+        std::string view_name = head(s, "/");
+        int index = stoi(s);
+
+        list u = list(GetView(group_name, view_name)["widgets"]);
+
+        dictionary d = u[index];
+        u.erase(index);
+        u.push_back(d);
+    
+        int i=0;
+        for(auto & item : u)
+            item["_index_"] = i++;
+
+    DoSendData(uri, args);
+     }
 
 
 
     void
     Kernel::WidgetToBack(std::string uri, std::string args)
     {
-     std::cout << "SetWidgetToBack: " << args << std::endl;
+        std::cout << "SetWidgetToBack: " << args << std::endl;
+
+            std::string s = tail(uri, "/widgettoback/");
+        std::string group_name = head(s, "#");
+        std::string view_name = head(s, "/");
+        int index = stoi(s);
+
+        list u = list(GetView(group_name, view_name)["widgets"]);
+
+        dictionary d = u[index];
+        u.erase(index);
+        u.insert_front(d);
+
+        int i=0;
+        for(auto & item : u)
+            item["_index_"] = i++;
+
+    DoSendData(uri, args);
     }
 
-        
+
     void
     Kernel::RenameView(std::string uri, std::string args)
     {
-      std::cout << "RenameView: " << args << std::endl;
+        std::cout << "RenameView: " << args << std::endl;
 
         std::string s = tail(uri, "/renameview/");
         std::string p = head(s, "#");
@@ -2140,7 +2174,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     std::string args = tail(uri, "?");
 
-    std::cout << uri << " " << args << std::endl;
+    // std::cout << uri << " " << args << std::endl;
 
     if(uri == "/update")
         DoUpdate(uri, args);

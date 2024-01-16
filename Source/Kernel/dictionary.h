@@ -78,6 +78,7 @@ namespace ikaros
         value & operator[] (int i);
         int size() { return list_->size(); };
         list & push_back(const value & v) { list_->push_back(v); return *this; };
+        list & insert_front(const value & v) { list_->insert(list_->begin(), v);  return *this; }
         list & erase(int index);
         operator std::string ()  const;
         std::string json();
