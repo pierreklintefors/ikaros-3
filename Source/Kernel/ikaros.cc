@@ -1939,7 +1939,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::AddView(std::string uri, std::string args) // FIXME: Local exception handling
     {
-        std::cout << "AddView: " << uri << std::endl << std::endl;
+        //std::cout << "AddView: " << uri << std::endl << std::endl;
 
         std::string s = tail(uri, "/addview/");
         std::string p = head(s, "#");
@@ -1957,7 +1957,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::AddWidget(std::string uri, std::string args) // FIXME: Local exception handling
     {
-        std::cout << "AddWidget: " << uri << std::endl << std::endl;
+        //std::cout << "AddWidget: " << uri << std::endl << std::endl;
 
         std::string s = tail(uri, "/addwidget/");
         std::string p = head(s, "#");
@@ -1978,7 +1978,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DeleteWidget(std::string uri, std::string args)
     {
-        std::cout << "DeleteWidget: " << args << " : " << uri << std::endl;
+        //std::cout << "DeleteWidget: " << args << " : " << uri << std::endl;
 
         std::string s = tail(uri, "/delwidget/");
         std::string group_name = head(s, "#");
@@ -2000,7 +2000,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::SetWidgetParameters(std::string uri, std::string args)
     {
-      std::cout << "SetWidgetParameters: " << args << std::endl;
+      //std::cout << "SetWidgetParameters: " << args << std::endl;
 
         std::string s = tail(uri, "/setwidgetparams/");
         std::string p = head(s, "#");
@@ -2020,7 +2020,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::WidgetToFront(std::string uri, std::string args)
     {
-        std::cout << "SetWidgetToFront: " << args << std::endl;
+        //std::cout << "SetWidgetToFront: " << args << std::endl;
 
         std::string s = tail(uri, "/widgettofront/");
         std::string group_name = head(s, "#");
@@ -2045,7 +2045,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::WidgetToBack(std::string uri, std::string args)
     {
-        std::cout << "SetWidgetToBack: " << args << std::endl;
+        //std::cout << "SetWidgetToBack: " << args << std::endl;
 
             std::string s = tail(uri, "/widgettoback/");
         std::string group_name = head(s, "#");
@@ -2069,7 +2069,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::RenameView(std::string uri, std::string args)
     {
-        std::cout << "RenameView: " << args << std::endl;
+        //std::cout << "RenameView: " << args << std::endl;
 
         std::string s = tail(uri, "/renameview/");
         std::string p = head(s, "#");

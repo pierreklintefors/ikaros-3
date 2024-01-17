@@ -1866,7 +1866,7 @@ controller = {
     },
 
     saveas: function () {
-        alert("SAVE AS comming soon");
+        alert("SAVE AS coming soon");
     },
 
     stop: function () {
