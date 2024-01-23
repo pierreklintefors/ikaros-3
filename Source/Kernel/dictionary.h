@@ -55,8 +55,13 @@ namespace ikaros
         value & operator[](std::string s);
         bool contains(std::string s);
         size_t count(std::string s);
+        bool empty() { return dict_->empty(); }
         void merge(const dictionary & source, bool overwrite=false); // shallow merge: copy from source to this
+
         operator std::string () const;
+        
+        int get_int(std::string s);
+
         std::string json();
         std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const dictionary & v);
@@ -114,6 +119,7 @@ namespace ikaros
         bool is_list()          { return std::holds_alternative<list>(value_); }
         bool is_null()          { return std::holds_alternative<null>(value_); }
 
+        int as_int()            { return double(*this); };
 
         value & operator[] (const char * s); // Captures literals as argument
         value & operator[] (const std::string & s);
@@ -130,7 +136,6 @@ namespace ikaros
 
         operator std::string () const;
         std::string json();
-
         std::string xml(std::string name, int depth=0, std::string exclude = "");
 
         operator double ();                                        // FIXME: Add other types - both from and to

@@ -102,6 +102,12 @@ namespace ikaros
         return (*dict_)[s];
     }
 
+    int 
+    dictionary::get_int(std::string s)
+    {
+        return (*dict_)[s].as_int();
+    }
+
     bool 
     dictionary::contains(std::string s)
         {
@@ -224,6 +230,9 @@ dictionary::dictionary(XMLElement * xml_node):
     void 
     dictionary::parse_url(std::string s)
     {
+        if(s.empty())
+            return;
+
         for(auto p : split(s, "&"))
         {   
             std::string a = head(p,"=");
