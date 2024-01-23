@@ -2194,18 +2194,18 @@ controller = {
             {}
 
         let group_path = interaction.currentViewName.split('#')[0].split('/').toSpliced(0,1).join('.');
-        let data_string = group_path+"#"; // should be added to names to support multiple clients
+        let data_string = ""; // should be added to names to support multiple clients
         let sep = "";
         for(s of data_set)
         {
             data_string += (sep + s);
-            sep = "#"
+            sep = ","
          }
 
         
          while(controller.commandQueue.length>0)
-            controller.get(controller.commandQueue.shift()+"?data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
-        controller.queueCommand('update');
+            controller.get(controller.commandQueue.shift()+group_path+"?data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
+        controller.queueCommand('update/');
     },
 
     copyView: function() // TODO: Remove default parameters
