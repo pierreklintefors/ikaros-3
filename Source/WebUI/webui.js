@@ -899,7 +899,8 @@ interaction = {
 
                 let new_view_name = document.querySelector('#view_name').innerText;
                 let n = interaction.currentViewName;
-                controller.get("renameview"+encodeURIComponent(interaction.currentViewName+"/"+new_view_name), controller.update);
+                let path = interaction.currentViewName.replaceAll("#","/");
+                controller.get("renameview"+encodeURIComponent(path+"?name="+new_view_name), controller.update);
                 controller.views[interaction.currentViewName].name = new_view_name;
                 let new_full_name = interaction.currentViewName.split("#")[0]+"/"+new_view_name;
                 controller.views[new_full_name] = controller.views[interaction.currentViewName];
@@ -910,7 +911,6 @@ interaction = {
 
                 controller.selectView(interaction.currentViewName);
 
-                
                 return;
             }
         });

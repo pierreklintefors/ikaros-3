@@ -2086,7 +2086,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::cout << "RenameView: " << std::endl;
 
         dictionary u = GetView(request);
-        u["name"] = request.parameters["new_name"];
+        u["name"] = request.parameters["name"];
 
         DoSendData(request);
     }
@@ -2229,7 +2229,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         Request request(socket->header.Get("URI"));
 
-    std::cout << request.command << std::endl;
+    std::cout << request.url << std::endl;
 
     if(request == "update")
         DoUpdate(request);
