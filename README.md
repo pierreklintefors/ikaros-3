@@ -34,6 +34,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Input resizing    |<div style="color:green">🟢 OK |     |  |
 | Delays            |<div style="color:#green">🟢 OK | copy not completed |
 | WebUI             |<div style="color:green">🟢 OK |  |
+| API               |<div style="color:#c60">🟡 Partial |  |
 | BrainStudio       |<div style="color:#e00">🔴 Pending | templates & editing |
 | Message queue     |<div style="color:#c60">🟡 Partial |  |
 | Log               |<div style="color:#c60">🟡 Log types missing |  |
