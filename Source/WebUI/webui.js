@@ -22,6 +22,20 @@ String.prototype.rsplit = function(sep, maxsplit) {
     return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;
 }
 
+function toURLParams(obj)
+{
+    s = "";
+    sep = "";
+    const keys = Object.keys(obj)
+    keys.forEach((key) => {
+        s+= sep+`${key}=${obj[key]}`;
+        sep="&";
+    });
+
+    return encodeURIComponent(s);
+}
+
+
 
 function setType(x, t)
 {
@@ -213,7 +227,7 @@ dialog = {
         let sel = document.getElementById('openDialogItems');
         sel.innerHTML = '';
         if(file_list)
-            for(i of file_list.split(","))
+            for(i of file_list) // FIXME: TEST was .split(",")
             {
                 var opt = document.createElement('option');
                 opt.value = i;
@@ -861,7 +875,7 @@ interaction = {
 
     init: function () {
         interaction.getClasses();
-        interaction.getFileList();
+        interaction.getFiles();
         interaction.main = document.querySelector('main');
         interaction.widget_inspector = document.querySelector('#widget_inspector');
         interaction.system_inspector = document.querySelector('#system_inspector');
@@ -903,7 +917,7 @@ interaction = {
         }
     },
     getClasses() {
-        fetch('/classes')
+        fetch('/classes', {method: 'GET', headers: {"Client-Id": controller.client_id}})
         .then(response => {
             if (!response.ok) {
                 throw new Error("HTTP error " + response.status);
@@ -917,8 +931,8 @@ interaction = {
             console.log("Could not get class list from server.");
         })
     },
-    getFileList() {
-        fetch('/filelist')
+    getFiles() {
+        fetch('/files', {method: 'GET', headers: {"Client-Id": controller.client_id}})
         .then(response => {
             if (!response.ok) {
                 throw new Error("HTTP error " + response.status);
@@ -926,7 +940,7 @@ interaction = {
             return response.json();
         })
         .then(json => {
-            interaction.filelist = json.filelist;
+            interaction.filelist = json.files || [];
         })
         .catch(function () {
             console.log("Could not get file list from server.");
@@ -1203,13 +1217,14 @@ interaction = {
         else
             controller.selectView(Object.keys(controller.views)[0]);
 */
+        let uri = g.name+"?name="+new_view_name;
         interaction.currentViewName = interaction.currentViewName+"#"+new_view_name;
         interaction.addView(interaction.currentViewName);
 
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
         path = path.replaceAll("/",".");
-        controller.get("addview"+encodeURIComponent(path), controller.update);
+        controller.get("addview/"+encodeURIComponent(uri), controller.update);
     },
     deleteWidget()
     {
@@ -1224,7 +1239,7 @@ interaction = {
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
         path = path.replaceAll("/",".");
-        controller.get("delwidget"+encodeURIComponent(path+"/"+index), controller.update);
+        controller.get("delwidget/"+encodeURIComponent(path+"?index="+index), controller.update);
     },
     widgetToFront()
     {
@@ -1312,6 +1327,7 @@ interaction = {
           let path = interaction.currentViewName;
           path = path.substr(1, path.length - 1);
           path = path.replaceAll("/",".")+s;
+          path = path.replaceAll("#","/");
         controller.get("setwidgetparams/"+encodeURIComponent(path), controller.update);
     },
     addWidget(w)
@@ -1814,7 +1830,7 @@ controller = {
         xhr = new XMLHttpRequest();
         //console.log("<<< controller.get: \""+url+"\"");
         xhr.open("GET", url, true);
-
+        xhr.setRequestHeader("Client-Id", controller.client_id);
         xhr.onload = function(evt)
         {
             if(!xhr.response)   // empty response is ignored
@@ -2048,6 +2064,9 @@ controller = {
 
         if(package_type == "network")
         {
+            document.querySelector("header").style.display="block"; // Show page when network is loaded
+            document.querySelector("#load").style.display="none";
+
             //console.log(">>> controller.update: network received");
             controller.session_id = session_id;
             controller.tick = response.iteration;
@@ -2185,7 +2204,7 @@ controller = {
 
         
          while(controller.commandQueue.length>0)
-            controller.get(controller.commandQueue.shift()+"?id="+controller.client_id+"&data="+encodeURIComponent(data_string), controller.update);
+            controller.get(controller.commandQueue.shift()+"?data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
         controller.queueCommand('update');
     },
 

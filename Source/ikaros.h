@@ -233,6 +233,25 @@ public:
     void print();
 };
 
+
+//
+// REQUEST
+//
+
+struct Request
+    {
+        long       session_id;
+        dictionary parameters;
+        std::string url;
+        std::string command; 
+        std::string view_name; 
+        std::string component_path;
+
+        Request(std::string  uri);
+    };
+
+    bool operator==(Request & r, const std::string s);
+
 //
 // KERNEL
 //
@@ -349,40 +368,49 @@ public:
 
     void Pause();
 
-    void DoNew(std::string uri, std::string args);
-    void DoOpen(std::string uri, std::string args);
-    void DoSave(std::string uri, std::string args);
-    void DoSaveAs(std::string uri, std::string args);
+    void DoNew(Request & request);
+    void DoOpen(Request & request);
+    void DoSave(Request & request);
+    void DoSaveAs(Request & request);
 
-    void DoStop(std::string uri, std::string args);
-    void DoPause(std::string uri, std::string args);
-    void DoStep(std::string uri, std::string args);
-    void DoPlay(std::string uri, std::string args);
-    void DoRealtime(std::string uri, std::string args);
+    void DoStop(Request & request);
+    void DoPause(Request & request);
+    void DoStep(Request & request);
+    void DoPlay(Request & request);
+    void DoRealtime(Request & request);
     
-    void DoCommand(std::string uri, std::string args);
-    void DoControl(std::string uri, std::string args);
+    void DoCommand(Request & request);
+    void DoControl(Request & request);
     
     dictionary GetView(std::string component, std::string view_name);
+    dictionary GetView(Request & request);
 
-    void AddView(std::string uri, std::string args);
-    void AddWidget(std::string uri, std::string args);
-    void DeleteWidget(std::string uri, std::string args);
-    void SetWidgetParameters(std::string uri, std::string args);
-    void WidgetToFront(std::string uri, std::string args);
-    void WidgetToBack(std::string uri, std::string args);
-    void RenameView(std::string uri, std::string args);
+    void AddView(Request & request);
+    void AddWidget(Request & request);
+    void DeleteWidget(Request & request);
+    void SetWidgetParameters(Request & request);
+    void WidgetToFront(Request & request);
+    void WidgetToBack(Request & request);
+    void RenameView(Request & request);
 
-    void DoSendNetwork(std::string uri, std::string args);
+    void DoAddGroup(Request & request);
+    void DoAddModule(Request & request);
+    void DoSetAttribute(Request & request);
+    void DoAddConnection(Request & request);
+    void DoSetRange(Request & request);
+
+    void DoSendNetwork(Request & request);
 
     void DoSendDataHeader();
     void DoSendDataStatus();
-    void DoSendData(std::string uri, std::string args);
-    void DoUpdate(std::string uri, std::string args);
-    void DoNetwork(std::string uri, std::string args);
-    void DoSendLog(std::string uri, std::string args);
-    void DoSendClasses(std::string uri, std::string args);
-    void DoSendFileList(std::string uri, std::string args);
+
+    void DoSendData(Request & request);
+    void DoUpdate(Request & request);
+
+    void DoNetwork(Request & request);
+    void DoSendLog(Request & request);
+    void DoSendClasses(Request & request);
+    void DoSendFileList(Request & request);
     void DoSendFile(std::string file);
     void DoSendError();
     void SendImage(matrix & image, std::string & format);

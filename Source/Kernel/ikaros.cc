@@ -865,6 +865,24 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             std::cout << name << ": " << path  << '\n';
         }
 
+    // Request
+
+        Request::Request(std::string  uri)
+        {
+            url = uri;
+            uri.erase(0, 1);
+            std::string params = tail(uri, "?");
+            command = head(uri, "/"); 
+            view_name = tail(uri, "/"); 
+            component_path = uri;
+            parameters.parse_url(params);
+        }
+
+    bool operator==(Request & r, const std::string s)
+    {
+        return r.command == s;
+    }
+    
     // Kernel
 
         void
@@ -1559,6 +1577,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     // WebUI
     //
 
+
     void
     Kernel::SendImage(matrix & image, std::string & format) // Compress image to jpg and send from memory after base64 encoding
     {
@@ -1600,7 +1619,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-
+/*
     long
     get_session_id(std::string args)
     {
@@ -1616,7 +1635,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         return 0;
     }
     }
-
+*/
 
      void
     Kernel::DoSendDataHeader()
@@ -1666,7 +1685,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-     Kernel::DoSendLog(std::string uri, std::string args)
+     Kernel::DoSendLog(Request & request)
      {
         socket->Send(",\n\"log\": [");
         std::string sep;
@@ -1679,7 +1698,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
      }
 
     void
-    Kernel::DoSendData(std::string uri, std::string args)
+    Kernel::DoSendData(Request & request)
     {    
         sending_ui_data = true; // must be set while main thread is still running
         while(tick_is_running)
@@ -1693,8 +1712,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         socket->Send("\t\"data\":\n\t{\n");
     
-        std::string root = tail(args, "data=");
-        std::string data = tail(root, "#");
+        //std::string root = tail(args, "data=");
+
+        std::string data = request.parameters["data"];  // FIXME: Check that it exists ******** or rerturn ""
+
         std::string sep = "";
         bool sent = false;
 
@@ -1702,7 +1723,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         {
             std::string source = head(data, "#");
             std::string format = rtail(source, ":");
-            std::string source_with_root = root+"."+source;
+            std::string source_with_root = request.component_path +"."+source;
 
             if(buffers.count(source_with_root))
             {
@@ -1730,7 +1751,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         }
 
         socket->Send("\n\t}");
-        DoSendLog(uri, args);
+        DoSendLog(request);
         socket->Send(",\n\t\"has_data\": "+std::to_string(!tick_is_running)+"\n"); // new tick has started during sending; there may be data but it cannot be trusted
         socket->Send("}\n");
 
@@ -1739,19 +1760,20 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-    Kernel::DoNew(std::string uri, std::string args)
+    Kernel::DoNew(Request & request)
     {
         Pause();
         run_mode = run_mode_stop;
         Clear();    // Remove all things
-        DoUpdate(uri, args);
+        DoUpdate(request);
     }
 
 
     void
-    Kernel::DoOpen(std::string uri, std::string args)
+    Kernel::DoOpen(Request & request)
     {
-        std::string file = peek_tail(args,"=");
+        std::string file = request.parameters["file"];
+
         //std::cout << "Open: " << file << std::endl;
         Pause();
         run_mode = run_mode_stop;
@@ -1760,30 +1782,30 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::vector<std::string> files_;
         files_.push_back(files.at(file));
         LoadFiles(files_, o);
-        DoUpdate(uri, args);
+        DoUpdate(request);
     }
 
 
     void
-    Kernel::DoSave(std::string uri, std::string args)
+    Kernel::DoSave(Request & request)
     {
         Save();
     }
 
 
     void
-    Kernel::DoSaveAs(std::string uri, std::string args)
+    Kernel::DoSaveAs(Request & request)
     {
     }
 
 
     void
-    Kernel::DoStop(std::string uri, std::string args)
+    Kernel::DoStop(Request & request)
     {
         log.push_back("stop");
         Pause();
         run_mode = run_mode_stop;
-        DoUpdate(uri, args);
+        DoUpdate(request);
     }
 
 
@@ -1812,7 +1834,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-    Kernel::DoSendNetwork(std::string uri, std::string args)
+    Kernel::DoSendNetwork(Request & request)
     {
         std::string s = json(); 
         Dictionary rtheader;
@@ -1826,53 +1848,53 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-    Kernel::DoPause(std::string uri, std::string args)
+    Kernel::DoPause(Request & request)
     {
     log.push_back("pause");
     Pause();
     run_mode = run_mode_pause;
-    master_id = get_session_id(args);
-    DoSendData(uri, args);
+    master_id = request.session_id;
+    DoSendData(request);
     }
 
 
     void
-    Kernel::DoStep(std::string uri, std::string args)
+    Kernel::DoStep(Request & request)
     {
     log.push_back("step");
     Pause();
     run_mode = run_mode_pause;
-    master_id = get_session_id(args);
+    master_id = request.session_id;
     Tick();
-    DoSendData(uri, args);
+    DoSendData(request);
     }
 
 
     void
-    Kernel::DoPlay(std::string uri, std::string args)
+    Kernel::DoPlay(Request & request)
     {
     log.push_back("play");
     Pause();
     run_mode = run_mode_play;
-    master_id = get_session_id(args);
+    master_id = request.session_id;
     Tick();
-    DoSendData(uri, args);
+    DoSendData(request);
     }
 
 
     void
-    Kernel::DoRealtime(std::string uri, std::string args)
+    Kernel::DoRealtime(Request & request)
     {
     log.push_back("realtime");
     run_mode = run_mode_realtime;
-    master_id = get_session_id(args);
+    master_id = request.session_id;
     is_running = true;
-    DoSendData(uri, args);
+    DoSendData(request);
     }
 
 
     void
-    Kernel::DoCommand(std::string uri, std::string args)
+    Kernel::DoCommand(Request & request)// FIXME: Not implemented **************
     {
     /*
     float x, y;
@@ -1883,13 +1905,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         SendCommand(command, x, y, value);
 
         */
-    DoSendData(uri, args);
+    DoSendData(request);
     }
 
 
     void
-    Kernel::DoControl(std::string uri, std::string args)
+    Kernel::DoControl(Request & request) // FIXME: No indices right now ************** NOT IMPLEMENTED
     {
+        /*
         try
         {
             auto cmd = split(uri, "/");
@@ -1910,18 +1933,19 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                     p = value;
                 }
             }
-            DoSendData(uri, args);
+            DoSendData(request);
         }
         catch(const std::exception& e)
         {
             std::cerr << e.what() << '\n';
-            DoSendData(uri, args);
+            DoSendData(request);
         }
+        */
     }
 
 
-        dictionary
-        Kernel::GetView(std::string component, std::string view_name)
+    dictionary
+    Kernel::GetView(std::string component, std::string view_name)   // FIXME: Remove later on
     {
         Component * c = components.at(component);
         dictionary cd = c->info_;
@@ -1936,98 +1960,91 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void
-    Kernel::AddView(std::string uri, std::string args) // FIXME: Local exception handling
+    dictionary 
+    Kernel::GetView(Request & request)
     {
-        //std::cout << "AddView: " << uri << std::endl << std::endl;
+        Component * c = components.at(request.component_path);
+        dictionary cd = c->info_;
+        list vs = cd["views"];
+        dictionary v;
 
-        std::string s = tail(uri, "/addview/");
-        std::string p = head(s, "#");
+        for(auto u : vs) // Find view
+            if(std::string(u["name"]) == request.view_name)
+                return u;
 
-        Component * c = components.at(p);
+        return dictionary();
+    }
+
+
+    void
+    Kernel::AddView(Request & request) // FIXME: Local exception handling
+    {
+        std::cout << "AddView: " << std::endl;
+
+        Component * c = components.at(request.component_path);
 
         dictionary d;
-        d["name"] = s;
+        d["name"] = request.parameters["name"];
         d["widgets"] = list();
         c->info_["views"].push_back(d);
 
-        DoSendData(uri, args);
+        DoSendData(request);
     }
 
     void
-    Kernel::AddWidget(std::string uri, std::string args) // FIXME: Local exception handling
+    Kernel::AddWidget(Request & request) // FIXME: Local exception handling
     {
-        //std::cout << "AddWidget: " << uri << std::endl << std::endl;
+        std::cout << "AddWidget: " << std::endl;
 
-        std::string s = tail(uri, "/addwidget/");
-        std::string p = head(s, "#");
+        auto view = GetView(request);
+        if(view["widgets"].is_null())
+            view["widgets"] = list();
 
-        dictionary d;
-        d.parse_url(args);
+        list u = list(view["widgets"]);
+        u.push_back(request.parameters);
 
-        if(GetView(p, s)["widgets"].is_null())
-            GetView(p, s)["widgets"] = list();
-
-        list u = list(GetView(p, s)["widgets"]);
-        u.push_back(d);
-
-        DoSendData(uri, args);
+        DoSendData(request);
     }
 
 
     void
-    Kernel::DeleteWidget(std::string uri, std::string args)
+    Kernel::DeleteWidget(Request & request)
     {
-        //std::cout << "DeleteWidget: " << args << " : " << uri << std::endl;
+        std::cout << "DeleteWidget: "  << std::endl;
 
-        std::string s = tail(uri, "/delwidget/");
-        std::string group_name = head(s, "#");
-        std::string view_name = head(s, "/");
-        int index = stoi(s);
-
-        list view = list(GetView(group_name, view_name)["widgets"]);
-
+        int index = std::stoi(request.parameters["index"]);
+        list view = list(GetView(request)["widgets"]);
         view.erase(index);
 
         int i=0;
         for(auto & w : view)
             w["_index_"] = i++;
     
-        DoSendData(uri, args);
+        DoSendData(request);
     }
 
 
     void
-    Kernel::SetWidgetParameters(std::string uri, std::string args)
+    Kernel::SetWidgetParameters(Request & request)
     {
-      //std::cout << "SetWidgetParameters: " << args << std::endl;
+        std::cout << "SetWidgetParameters: " << std::endl;
 
-        std::string s = tail(uri, "/setwidgetparams/");
-        std::string p = head(s, "#");
-        int widget_id = 0;
+        int index = request.parameters.get_int("_index_");
+        list u = list(GetView(request)["widgets"]);
+        u[index] = request.parameters;
 
-        dictionary d;
-        d.parse_url(args);
-
-        int index = std::stoi(d["_index_"]);
-        list u = list(GetView(p, s)["widgets"]);
-        u[index] = d;
-
-        DoSendData(uri, args);
+        DoSendData(request);
     }
 
 
     void
-    Kernel::WidgetToFront(std::string uri, std::string args)
+    Kernel::WidgetToFront(Request & request)
     {
-        //std::cout << "SetWidgetToFront: " << args << std::endl;
+        std::cout << "SetWidgetToFront: " << std::endl;
 
-        std::string s = tail(uri, "/widgettofront/");
-        std::string group_name = head(s, "#");
-        std::string view_name = head(s, "/");
-        int index = stoi(s);
+        int index = request.parameters.get_int("_index_");
 
-        list u = list(GetView(group_name, view_name)["widgets"]);
+        list u = list(GetView(request)["widgets"]);
 
         dictionary d = u[index];
         u.erase(index);
@@ -2037,22 +2054,19 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         for(auto & item : u)
             item["_index_"] = i++;
 
-    DoSendData(uri, args);
+        DoSendData(request);
      }
 
 
 
     void
-    Kernel::WidgetToBack(std::string uri, std::string args)
+    Kernel::WidgetToBack(Request & request)
     {
-        //std::cout << "SetWidgetToBack: " << args << std::endl;
+        std::cout << "SetWidgetToBack: " << std::endl;
 
-            std::string s = tail(uri, "/widgettoback/");
-        std::string group_name = head(s, "#");
-        std::string view_name = head(s, "/");
-        int index = stoi(s);
+        int index = request.parameters.get_int("_index_");
 
-        list u = list(GetView(group_name, view_name)["widgets"]);
+        list u = list(GetView(request)["widgets"]);
 
         dictionary d = u[index];
         u.erase(index);
@@ -2062,56 +2076,104 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         for(auto & item : u)
             item["_index_"] = i++;
 
-    DoSendData(uri, args);
+        DoSendData(request);
     }
 
 
     void
-    Kernel::RenameView(std::string uri, std::string args)
+    Kernel::RenameView(Request & request)
     {
-        //std::cout << "RenameView: " << args << std::endl;
+        std::cout << "RenameView: " << std::endl;
 
-        std::string s = tail(uri, "/renameview/");
-        std::string p = head(s, "#");
-        int widget_id = 0;
+        dictionary u = GetView(request);
+        u["name"] = request.parameters["new_name"];
 
-
-        std::string new_name = tail(s,"/");
-        dictionary u = GetView(p, s);
-        u["name"] = new_name;
-
-        DoSendData(uri, args);
+        DoSendData(request);
     }
 
+
     void
-    Kernel::DoUpdate(std::string uri, std::string args)
+    Kernel::DoAddGroup(Request & request)
     {
-        if(args.empty() || first_request) // not a data request - send view data
+        std::cout << "DoAddGroup: *** " << std::endl;
+
+        DoSendData(request);
+    }
+
+
+    void
+    Kernel::DoAddModule(Request & request)
+    {
+        std::cout << "DoAddModule: *** " << std::endl;
+
+        DoSendData(request);
+    }
+
+
+    
+
+    void
+    Kernel::DoSetAttribute(Request & request)
+    {
+        std::cout << "DoSetAttribute: " << std::endl;
+
+        DoSendData(request);
+    }
+
+
+    
+
+    void
+    Kernel::DoAddConnection(Request & request)
+    {
+        std::cout << "DoAddConnection: " << std::endl;
+
+        DoSendData(request);
+    }
+
+
+    
+
+    void
+    Kernel::DoSetRange(Request & request)
+    {
+        std::cout << "DoSetRange: " << std::endl;
+
+        DoSendData(request);
+    }
+
+
+
+
+    void
+    Kernel::DoUpdate(Request & request)
+    {
+        if(request.parameters.empty() || first_request) // not a data request - send view data
         {
             first_request = false;
-            DoSendNetwork(uri, args);
+            DoSendNetwork(request);
         }
-        else if(run_mode == run_mode_play && master_id == get_session_id(args))
+        else if(run_mode == run_mode_play && master_id == request.session_id)
         {
             Pause();
             Tick();
-            DoSendData(uri, args);
+            DoSendData(request);
         }
         else 
-            DoSendData(uri, args);
+            DoSendData(request);
     }
 
 
     void
-    Kernel::DoNetwork(std::string uri, std::string args)
+    Kernel::DoNetwork(Request & request)
     {
         first_request = false;
-        DoSendNetwork(uri, args);
+        DoSendNetwork(request);
     }
 
 
     void
-    Kernel::DoSendClasses(std::string uri, std::string args)
+    Kernel::DoSendClasses(Request & request)
     {
     Dictionary header;
     header.Set("Content-Type", "text/json");
@@ -2132,7 +2194,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-    Kernel::DoSendFileList(std::string uri, std::string args)
+    Kernel::DoSendFileList(Request & request)
     {
         Dictionary header;
         header.Set("Content-Type", "text/json");
@@ -2141,14 +2203,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         header.Set("Pragma", "no-cache");
         socket->SendHTTPHeader(&header);
         std::string sep;
-        socket->Send("{\"filelist\":\"");
+    socket->Send("{\"files\":[\n\t\"");
         for(auto & f: files)
         {
             socket->Send(sep);
             socket->Send(f.first);
-            sep = ",";
+            sep = "\",\n\t\"";
         }
-        socket->Send("\"}");
+    socket->Send("\"\n]\n}\n");
     }
 
 
@@ -2165,66 +2227,88 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::HandleHTTPRequest()
     {
-    std::string uri = socket->header.Get("URI");
-    if(uri.empty())
-    {
-        log.push_back("No URI"); // warning
-        return;
-    }
+        Request request(socket->header.Get("URI"));
 
-    std::string args = tail(uri, "?");
+    std::cout << request.command << std::endl;
 
-    // std::cout << uri << " " << args << std::endl;
+    if(request == "update")
+        DoUpdate(request);
+    else if(request == "network")
+        DoNetwork(request);
 
-    if(uri == "/update")
-        DoUpdate(uri, args);
-    else if(uri == "/network")
-        DoNetwork(uri, args);
-    else if(uri == "/pause")
-        DoPause(uri, args);
-    else if(uri == "/step")
-        DoStep(uri, args);
-    else if(uri == "/play")
-        DoPlay(uri, args);
-    else if(uri == "/realtime")
-        DoRealtime(uri, args);
-    else if(uri == "/new")
-        DoNew(uri, args);
-    else if(uri == "/open")
-        DoOpen(uri, args);
-    else if(uri == "/save")
-        DoSave(uri, args);
-    else if(uri == "/saveas")
-        DoSaveAs(uri, args);
-    else if(uri == "/stop")
-        DoStop(uri, args);
-    else if(uri == "/classes") 
-        DoSendClasses(uri, args);
-    else if(uri == "/filelist") 
-        DoSendFileList(uri, args);
-    else if(uri == "/")
+    // Run mode commands
+
+    else if(request == "pause")
+        DoPause(request);
+    else if(request == "step")
+        DoStep(request);
+    else if(request == "play")
+        DoPlay(request);
+    else if(request == "realtime")
+        DoRealtime(request);
+
+    // File handling commands
+
+    else if(request == "new")
+        DoNew(request);
+    else if(request == "open")
+        DoOpen(request);
+    else if(request == "save")
+        DoSave(request);
+    else if(request == "saveas")
+        DoSaveAs(request);
+    else if(request == "stop")
+        DoStop(request);
+
+    // Start up commands
+
+    else if(request == "classes") 
+        DoSendClasses(request);
+    else if(request == "files") 
+        DoSendFileList(request);
+    else if(request == "")
         DoSendFile("index.html");
-    else if(starts_with(uri, "/command/"))
-        DoCommand(uri, args);
-    else if(starts_with(uri, "/control/"))
-        DoControl(uri, args);
-    else if(starts_with(uri, "/addwidget"))
-        AddWidget(uri, args);
-    else if(starts_with(uri, "/delwidget"))
-        DeleteWidget(uri, args);
-    else if(starts_with(uri, "/setwidgetparams")) 
-        SetWidgetParameters(uri, args);
-    else if(starts_with(uri, "/widgettofront")) 
-        WidgetToFront(uri, args);
-    else if(starts_with(uri, "/widgettoback")) 
-        WidgetToBack(uri, args);
-    else if(starts_with(uri, "/addview"))
-        AddView(uri, args);
-    else if(starts_with(uri, "/renameview")) 
-        RenameView(uri, args);
+
+    // Control commands
+
+    else if(request == "command")
+        DoCommand(request);
+    else if(request == "control")
+        DoControl(request);
+
+    // View editing
+
+    else if(request == "addview")
+        AddView(request);
+    else if(request == "renameview")
+        RenameView(request);
+    else if(request == "addwidget")
+        AddWidget(request);
+    else if(request == "delwidget")
+        DeleteWidget(request);
+    else if(request == "setwidgetparams")
+        SetWidgetParameters(request);
+    else if(request == "widgettofront")
+        WidgetToFront(request);
+    else if(request == "widgettoback")
+        WidgetToBack(request);
+
+    // Network editing
+
+    else if(request == "addgroup")
+        DoAddGroup(request);
+    else if(request == "addmodule")
+        DoAddModule(request);
+    else if(request == "setattribute")
+        DoSetAttribute(request);
+    else if(request == "addconnection")
+        DoAddConnection(request);
+    else if(request == "setrange")
+        DoSetRange(request);
     else 
-        DoSendFile(uri);
+        DoSendFile(request.url);
     }
+
 
 
     void
