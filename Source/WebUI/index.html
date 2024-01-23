@@ -3,6 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="preload" href="images/logo.png" as="image"> 
 <link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="defaults.css">
 <link rel="stylesheet" type="text/css" href="widget_style.css">
@@ -11,40 +12,43 @@
 <link href='https://fonts.googleapis.com/css?family=Didact Gothic' rel='stylesheet'>
 
 <title>BrainStudio</title>
-<script src="webui.js"></script>
-<script src="color_tables.js"></script>
-<script src="WebUIWidget.js"></script>
-<script src="WebUIWidgetControl.js"></script>
-<script src="WebUIWidgetCanvas.js"></script>
-<script src="WebUIWidgetGraph.js"></script>
-<script src="WebUIWidgetImage.js"></script>
-<script src="WebUIWidgetBarGraph.js"></script>
-<script src="WebUIWidgetPlot.js"></script>
-<script src="WebUIWidgetPath.js"></script>
-<script src="WebUIWidgetMarker.js"></script>
-<script src="WebUIWidgetGrid.js"></script>
-<script src="WebUIWidgetText.js"></script>
-<script src="WebUIWidgetRectangle.js"></script>
-<script src="WebUIWidgetTable.js"></script>
-<script src="WebUIWidgetButton.js"></script>
-<script src="WebUIWidgetSwitch.js"></script>
-<script src="WebUIWidgetSliderHorizontal.js"></script>
-<script src="WebUIWidgetSliderVertical.js"></script>
-<script src="WebUIWidgetDropDownMenu.js"></script>
-<script src="WebUIWidgetCanvas3D.js"></script>
-<script src="WebUIWidgetKeyPoints.js"></script>
-<script src="WebUIWidgetEpiHead.js"></script>
 
 <!-- three.js -->
-<script src="js/three.min.js"></script>
-<script src="js/controls/OrbitControls.js"></script>
-<script src="js/loaders/GLTFLoader.js"></script>
-<script src="js/libs/stats.min.js"></script>
+<script src="js/three.min.js" defer ></script>
+<script src="js/controls/OrbitControls.js" defer ></script>
+<script src="js/loaders/GLTFLoader.js" defer ></script>
+<script src="js/libs/stats.min.js" defer ></script>
 
 </head>
 <body>
+    <div id="load"><img src="images/logo.png" style="height:120px; width: 120px"><br /><span class="loader"></span><br />BrainStudio</div>
 
-    <dialog id="openDialog">
+    <script src="webui.js" ></script>
+    <script src="color_tables.js" defer ></script>
+    <script src="WebUIWidget.js" defer ></script>
+    <script src="WebUIWidgetControl.js" defer ></script>
+    <script src="WebUIWidgetCanvas.js" defer ></script>
+    <script src="WebUIWidgetGraph.js" defer ></script>
+    <script src="WebUIWidgetImage.js" defer ></script>
+    <script src="WebUIWidgetBarGraph.js" defer ></script>
+    <script src="WebUIWidgetPlot.js" defer ></script>
+    <script src="WebUIWidgetPath.js" defer ></script>
+    <script src="WebUIWidgetMarker.js" defer ></script>
+    <script src="WebUIWidgetGrid.js" defer ></script>
+    <script src="WebUIWidgetText.js" defer ></script>
+    <script src="WebUIWidgetRectangle.js" defer ></script>
+    <script src="WebUIWidgetTable.js" defer ></script>
+    <script src="WebUIWidgetButton.js" defer ></script>
+    <script src="WebUIWidgetSwitch.js" defer ></script>
+    <script src="WebUIWidgetSliderHorizontal.js" defer ></script>
+    <script src="WebUIWidgetSliderVertical.js" defer ></script>
+    <script src="WebUIWidgetDropDownMenu.js" defer ></script>
+    <script src="WebUIWidgetCanvas3D.js" defer ></script>
+    <script src="WebUIWidgetKeyPoints.js" defer ></script>
+    <script src="WebUIWidgetEpiHead.js" defer ></script>
+
+
+     <dialog id="openDialog">
         <p id="openDialogTitle"></p>
         <select size="14" id="openDialogItems" style="width:100%">
             </select>
@@ -59,8 +63,8 @@
         </div>
       </div>
 
-      
-	<header>
+    
+	<header style="display:none">
         <div  class="breadcrumbs">
 
             <div class="button" onclick="toggleNav()" id="nav">&#8801;</div>
@@ -85,7 +89,7 @@
 	</header>
 
 	<section>
-		<main id="main">
+		<main id="main" style=""display:none">
             <div id="grid"></div>
             <canvas id="maincanvas" width="3000" height="2000">
             </canvas>
@@ -340,7 +344,6 @@
     interaction.generateGrid(20);
     interaction.initDraggables();
     controller.init();
-
 </script>
 </body>
 </html>
