@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - January, 2024
+## Ikaros 3 Status - 24 January, 2024
 
 | Component | State | Comments |
 | ----|----|----|
@@ -26,22 +26,22 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Expressions       |<div style="color:green">🟢 OK |  |
 | XML               |<div style="color:green">🟢 OK | |
 | Kernel            |<div style="color:green">🟢 OK |
-| Shared Dict       |<div style="color:green">🟢  OK |  |
+| Shared dict       |<div style="color:green">🟢  OK |  |
 | Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
-| Task Sorting      |<div style="color:#e00">🔴 Pending |  |
-| Real Time         |<div style="color:green">🟢 OK |  |
+| Task sorting      |<div style="color:#e00">🔴 Pending |  |
+| Real time         |<div style="color:green">🟢 OK |  |
 | SetSizes    |     <div style="color:green">🟢 OK |
 | Input resizing    |<div style="color:green">🟢 OK |     |  |
 | Delays            |<div style="color:#green">🟢 OK | copy not completed |
-| WebUI             |<div style="color:green">🟢 OK |  |
-| API               |<div style="color:#c60">🟡 Partial |  |
-| BrainStudio       |<div style="color:#e00">🔴 Pending | templates & editing |
+| WebUI             |<div style="color:green">🟢 OK | inconsistent modes |
+| API               |<div style="color:#c60">🟡 Partial | command & control missing |
+| BrainStudio       |<div style="color:#e00">🟡 Partial | templates & editing |
 | Message queue     |<div style="color:#c60">🟡 Partial |  |
-| Log               |<div style="color:#c60">🟡 Log types missing |  |
+| Log               |<div style="color:#c60">🟡 Partial |Log types missing |  |
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
-| Editing           |<div style="color:#c60">🟡 Only for views |
+| Editing           |<div style="color:#c60">🟡 Partial |Only for views |
 | Sockets           |<div style="color:green">🟢 OK |  |
-| UtilityModules    |<div style="color:#c60">🟡 Partial | 4 modules |
+| UtilityModules    |<div style="color:#c60">🟡 Partial | 9 modules |
 | Named Dimensions  |<div style="color:green">🟢 OK |  |
 
 ## Basic Start-up Parameters
