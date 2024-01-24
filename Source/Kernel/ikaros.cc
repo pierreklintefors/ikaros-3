@@ -2042,7 +2042,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         std::cout << "SetWidgetToFront: " << std::endl;
 
-        int index = request.parameters.get_int("_index_");
+        int index = request.parameters.get_int("index");
 
         list u = list(GetView(request)["widgets"]);
 
@@ -2064,7 +2064,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         std::cout << "SetWidgetToBack: " << std::endl;
 
-        int index = request.parameters.get_int("_index_");
+        int index = request.parameters.get_int("index");
 
         list u = list(GetView(request)["widgets"]);
 

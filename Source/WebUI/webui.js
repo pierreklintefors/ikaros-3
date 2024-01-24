@@ -1239,6 +1239,7 @@ interaction = {
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
         path = path.replaceAll("/",".");
+        path = path.replaceAll("#","/");
         controller.get("delwidget/"+encodeURIComponent(path+"?index="+index), controller.update);
     },
     widgetToFront()
@@ -1254,7 +1255,8 @@ interaction = {
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
         path = path.replaceAll("/",".");
-        controller.get("widgettofront/"+encodeURIComponent(path+"/"+index), controller.update);
+        path = path.replaceAll("#","/");
+        controller.get("widgettofront/"+encodeURIComponent(path+"?index="+index), controller.update);
     },
     widgetToBack()
     {
@@ -1269,7 +1271,8 @@ interaction = {
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
         path = path.replaceAll("/",".");
-        controller.get("widgettoback/"+encodeURIComponent(path+"/"+index), controller.update);
+        path = path.replaceAll("#","/");
+        controller.get("widgettoback/"+encodeURIComponent(path+"?index="+index), controller.update);
     },
     duplicateWidget()
     {
@@ -1290,7 +1293,8 @@ interaction = {
 
         let path = interaction.currentViewName;
         path = path.substr(1, path.length - 1);
-        path = path.replaceAll("/",".")+s;
+        path = path.replaceAll("/",".");
+        path = path.replaceAll("#","/")+s;
         controller.get("addwidget/"+encodeURIComponent(path), controller.update);
     },
     addNewWidget()
@@ -1311,7 +1315,8 @@ interaction = {
             sep ="&";
           }
           let path = interaction.currentViewName;
-          path = path.replaceAll("/",".")+s;
+          path = path.replaceAll("/",".");
+          path = path.replaceAll("#","/")+s;
           path = path.substr(1, path.length - 1);
           controller.get("addwidget/"+encodeURIComponent(path), controller.update);
     },
@@ -1326,8 +1331,8 @@ interaction = {
           }
           let path = interaction.currentViewName;
           path = path.substr(1, path.length - 1);
-          path = path.replaceAll("/",".")+s;
-          path = path.replaceAll("#","/");
+          path = path.replaceAll("/",".");
+          path = path.replaceAll("#","/")+s;
         controller.get("setwidgetparams/"+encodeURIComponent(path), controller.update);
     },
     addWidget(w)
