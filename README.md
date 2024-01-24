@@ -35,7 +35,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Delays            |<div style="color:#green">🟢 OK | copy not completed |
 | WebUI             |<div style="color:green">🟢 OK | inconsistent modes |
 | API               |<div style="color:#c60">🟡 Partial | command & control missing |
-| BrainStudio       |<div style="color:#e00">🟡 Partial | templates & editing |
+| BrainStudio       |<div style="color:#c60">🟡 Partial | templates & editing |
 | Message queue     |<div style="color:#c60">🟡 Partial |  |
 | Log               |<div style="color:#c60">🟡 Partial |Log types missing |  |
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
@@ -60,7 +60,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 
         filename :   ikg-file to load
 
-All parameters can be set in the top element of the ikg-file as well.
+All parameters can be set in the root element of the ikg-file as well.
 
 ## Timing
 
@@ -78,6 +78,6 @@ The following functions should be used for all timing calculations and work both
 | GetTickDuration() | double  | tickduration | tickduration
 | GetTime() | double  | GetRealtime() | tick * tickduration
 | GetRealTime() | double  | timer.GetTime() | tick * tickduration
-| GetLag()  | double  | tick * tickduration - timer.GetTime() | 0   
+| GetLag()  | double  | tick * tickduration - timer.GetTime() | 0
 
 GetLag() resturns the lag at the time of calling and can be used to adjust for jitter within a module. It is not necessarily the same as the *lag* value in the kernel.
