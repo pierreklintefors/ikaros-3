@@ -10,6 +10,12 @@ API requests have the following syntax:
 
     host:port/command[/path[/view]][?(attribute=value)*]
 
+_Path_ is the path to the current component - a group or a module.
+
+_View_ is the name of the current view if selected.
+
+    The _attribute-value_ pairs are converted to a dictionary that is used as an argument to the handlers in the kernel.
+
 The possible commands are listed below. The path is the dotted path to a
 component (a group or a module).  The view part is optional and used to set values in views. There
 can be zero or  multiple attribute value-pairs depedning on the command.
