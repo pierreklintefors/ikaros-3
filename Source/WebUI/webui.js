@@ -170,9 +170,9 @@ function displayAside(d)
 
 function toggleInspector()
 {
-    displayAside('widget_inspector');
+    displayAside('widget_inspector_edit');
     return;
-    var x = document.getElementById('widget_inspector');
+    var x = document.getElementById('widget_inspector_edit');
     var s = window.getComputedStyle(x, null);
     if (s.display === 'none') {
         x.style.display = 'block';
@@ -346,7 +346,7 @@ inspector = {
     webui_object: null,
     
     init: function () {
-        inspector.inspector = document.getElementById('widget_inspector');
+        inspector.inspector = document.getElementById('widget_inspector_edit');
         inspector.table = document.getElementById('i_table');
     },
     remove: function () {
@@ -594,22 +594,22 @@ module_inspector = {
 }
 
 
-module_edit_inspector = {
+module_inspector_edit = {
     inspector: null,
     table: null,
     list: null,
     webui_object: null,
     
     init: function () {
-        module_edit_inspector.inspector = document.getElementById('module_edit_inspector');
-        module_edit_inspector.table = document.getElementById('mei_table');
+        module_inspector_edit.inspector = document.getElementById('module_inspector_edit');
+        module_inspector_edit.table = document.getElementById('mei_table');
     },
     remove: function () {
-        while(module_edit_inspector.table.rows.length)
-            module_edit_inspector.table.deleteRow(-1);
+        while(module_inspector_edit.table.rows.length)
+            module_inspector_edit.table.deleteRow(-1);
     },
     addHeader(title) {
-        row = module_edit_inspector.table.insertRow(-1);
+        row = module_inspector_edit.table.insertRow(-1);
         cell = row.insertCell(0);
         cell.innerText = title;
         cell.setAttribute("colspan", 2);
@@ -617,7 +617,7 @@ module_edit_inspector = {
     },
     addRow(attribute, value) {
         value = value!=undefined ? value : "";
-        row = module_edit_inspector.table.insertRow(-1);
+        row = module_inspector_edit.table.insertRow(-1);
         cell1 = row.insertCell(0);
         cell2 = row.insertCell(1);
         cell1.innerText = attribute;
@@ -627,60 +627,60 @@ module_edit_inspector = {
     //    let widget = webui_object.widget;
     //    let parameters = widget.parameters;
 
-        module_edit_inspector.module = module;
-   //     module_edit_inspector.parameter_template = widget.parameter_template;
+        module_inspector_edit.module = module;
+   //     module_inspector_edit.parameter_template = widget.parameter_template;
 
         // Add header info
 
-        let m = module_edit_inspector.module;
+        let m = module_inspector_edit.module;
         
         if(m.parameters.class == undefined) // add group
         {
-            module_edit_inspector.addHeader("GROUP");
-            module_edit_inspector.addRow("name", m.parameters.name);
+            module_inspector_edit.addHeader("GROUP");
+            module_inspector_edit.addRow("name", m.parameters.name);
             for(let p in m.parameters.parameters)
                 if(p != "parameters" && p != "views" && p!= "groups" && p!= "connections" && p!= "name" && p[0] != "_")
                 {
-                    let row = module_edit_inspector.table.insertRow(-1);
+                    let row = module_inspector_edit.table.insertRow(-1);
                     let value = m.parameters[p];
-                    module_edit_inspector.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]);
+                    module_inspector_edit.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]);
                 }
 
-            module_edit_inspector.addHeader("SUBGROUPS");
-            module_edit_inspector.addRow("modules", m.parameters.groups.length);
-            module_edit_inspector.addRow("connections", m.parameters.connections.length);
+            module_inspector_edit.addHeader("SUBGROUPS");
+            module_inspector_edit.addRow("modules", m.parameters.groups.length);
+            module_inspector_edit.addRow("connections", m.parameters.connections.length);
 
-            module_edit_inspector.addHeader("APPEARANCE");
-            module_edit_inspector.addRow("x", m.parameters._x);
-            module_edit_inspector.addRow("y", m.parameters._y);
-            module_edit_inspector.addRow("color", m.parameters._color);
-            module_edit_inspector.addRow("text_color", m.parameters._text_color);
-            module_edit_inspector.addRow("shape", m.parameters._shape);
+            module_inspector_edit.addHeader("APPEARANCE");
+            module_inspector_edit.addRow("x", m.parameters._x);
+            module_inspector_edit.addRow("y", m.parameters._y);
+            module_inspector_edit.addRow("color", m.parameters._color);
+            module_inspector_edit.addRow("text_color", m.parameters._text_color);
+            module_inspector_edit.addRow("shape", m.parameters._shape);
         }
         
         else // add module
         {
-            module_edit_inspector.addHeader("MODULE (edit, not live)");
-            module_edit_inspector.addRow("name", m.parameters.name);
-            module_edit_inspector.addRow("class", m.parameters.class);
+            module_inspector_edit.addHeader("MODULE (edit, not live)");
+            module_inspector_edit.addRow("name", m.parameters.name);
+            module_inspector_edit.addRow("class", m.parameters.class);
 
             for(let p of m.parameters.parameters)
-                module_edit_inspector.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]);
+                module_inspector_edit.addRow(p.name, m.parameters[p.name] ? m.parameters[p.name].toString() : p["default"]);
 
-            module_edit_inspector.addRow("description", m.parameters.description);
+            module_inspector_edit.addRow("description", m.parameters.description);
 
-            module_edit_inspector.addHeader("APPEARANCE");
-            module_edit_inspector.addRow("x", m.parameters._x);
-            module_edit_inspector.addRow("y", m.parameters._y);
-            module_edit_inspector.addRow("color", m.parameters._color);
-            module_edit_inspector.addRow("text_color", m.parameters._text_color);
-            module_edit_inspector.addRow("shape", m.parameters._shape);
+            module_inspector_edit.addHeader("APPEARANCE");
+            module_inspector_edit.addRow("x", m.parameters._x);
+            module_inspector_edit.addRow("y", m.parameters._y);
+            module_inspector_edit.addRow("color", m.parameters._color);
+            module_inspector_edit.addRow("text_color", m.parameters._text_color);
+            module_inspector_edit.addRow("shape", m.parameters._shape);
         }
     },
     select: function (obj)
     {
-        module_edit_inspector.remove();
-        module_edit_inspector.add(obj);
+        module_inspector_edit.remove();
+        module_inspector_edit.add(obj);
     },
     update: function (attr_value)
     {
@@ -838,7 +838,6 @@ webui_widgets = {
     }
 };
 
-
 /*
  *
  * Interaction scripts for Main Area
@@ -859,16 +858,22 @@ interaction = {
     view_mode: false, // view or groups
 
     group_inspector: undefined,
+    group_inspector_edit: undefined,
+
     module_inspector: undefined,
-    module_edit_inspector: undefined,
-    view_inspector: undefined,
-    widget_inspector: undefined,
+    module_inspector_edit: undefined,
+
+    view_inspector_edit: undefined,
+
+    widget_inspector_edit: undefined,
+
     system_inspector: undefined,
 
     main: undefined,
     currentView: undefined,
     currentViewName: undefined,
     currentViewRoot: undefined,
+
     currentInspector: undefined,
 
     io_pos: {},
@@ -877,12 +882,13 @@ interaction = {
         interaction.getClasses();
         interaction.getFiles();
         interaction.main = document.querySelector('main');
-        interaction.widget_inspector = document.querySelector('#widget_inspector');
+        interaction.widget_inspector_edit = document.querySelector('#widget_inspector_edit');
         interaction.system_inspector = document.querySelector('#system_inspector');
-        interaction.view_inspector = document.querySelector('#view_inspector');
+        interaction.view_inspector_edit = document.querySelector('#view_inspector_edit');
         interaction.module_inspector = document.querySelector('#module_inspector');
-        interaction.module_edit_inspector = document.querySelector('#module_edit_inspector');
+        interaction.module_inspector_edit = document.querySelector('#module_inspector_edit');
         interaction.group_inspector = document.querySelector('#group_inspector');
+        interaction.group_inspector_view = document.querySelector('#group_inspector_view');
         main.dataset.mode = "run";
         window.addEventListener("resize", interaction.windowResize);
 
@@ -971,7 +977,7 @@ interaction = {
                 interaction.deselectObject();
                 let main = document.querySelector('main');
                 main.dataset.mode = "edit";
-                displayAside('view_inspector');
+                displayAside('view_inspector_edit');
                 interaction.main.addEventListener('mousemove', interaction.stopEvents, true);
                 interaction.main.addEventListener('mouseout', interaction.stopEvents, true);
                 interaction.main.addEventListener('mouseover', interaction.stopEvents, true);
@@ -1040,7 +1046,7 @@ interaction = {
     backgroundClick() {
         interaction.deselectObject();
         if(interaction.edit_mode && interaction.view_mode)
-            displayAside('view_inspector')
+            displayAside('view_inspector_edit')
         else if(interaction.edit_mode && !interaction.view_mode)
             displayAside('group_inspector')
         else
@@ -1593,7 +1599,7 @@ interaction = {
                 interaction.addWidget(v[i]);
             }
             if(interaction.edit_mode)
-                displayAside('view_inspector');
+                displayAside('view_inspector_edit');
             else
                 hideAside();
             return;
@@ -1617,7 +1623,7 @@ interaction = {
             interaction.selectedObject.className = interaction.selectedObject.className.replace(/resized/,'');
             interaction.releaseElement();
             interaction.selectedObject = null;
-            displayAside('widget_inspector');
+            displayAside('widget_inspector_edit');
         }
     },
     releaseElement: function(evt) {
@@ -1638,7 +1644,7 @@ interaction = {
         //document.querySelector('#selected').innerText = interaction.selectedObject.dataset.name;
         
         inspector.select(obj);
-        displayAside('widget_inspector');
+        displayAside('widget_inspector_edit');
     },
     startDrag: function (evt) {
         // do nothing in run mode
@@ -1768,8 +1774,8 @@ interaction = {
         interaction.selectedObject.className += ' selected';
         if(interaction.edit_mode)
         {
-            module_edit_inspector.select(obj);
-            displayAside('module_edit_inspector');
+            module_inspector_edit.select(obj);
+            displayAside('module_inspector_edit');
         }
         else
         {
@@ -2211,92 +2217,6 @@ controller = {
          while(controller.commandQueue.length>0)
             controller.get(controller.commandQueue.shift()+group_path+"?data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
         controller.queueCommand('update/');
-    },
-
-    copyView: function() // TODO: Remove default parameters
-    {
-        copyToClipboard(controller.viewToXML(interaction.currentView));
-    },
-
-    connectionToXML: function(connection, indent="")
-    {
-        let text = indent+"<connection "
-        for(let p in connection)
-            text += p+' = "'+connection[p]+'" ';
-        text += "/>\n";
-        return text;
-    },
-
-    viewToXML: function(view, indent="")
-    {
-        let text = indent + '<view name="'+view.name+'"';
-        for(let a in view)
-            if(!['name', 'objects'].includes(a))
-                text += ' ' + a + '="'+view[a]+'"';
-        text += ' >\n';
-        
-        for(let w in view.widgets)
-        {
-            text += '\t'+indent + '<'+view.widgets[w].class+' ';
-
-            for(let a in view.widgets[w])
-                if(!['class'].includes(a))
-                    text += ' '+ a + '="'+view.widgets[w][a]+'"';
-
-            text += '/>\n';
-        }
-        text += indent + '</view>\n';
-        return text;
-    },
-
-    moduleToXML: function(module, indent="")
-    {
-        let text = indent + '<module\n';
-        for(let a in module)
-            text += indent + '\t' + a + '="'+module[a]+'"\n';
-        text += indent+'>\n';
-
-         for(let v in module.views)
-            text += controller.viewToXML(module.views[v], indent+"\t");
-
-        text += indent + '</module>\n';
-        return text;
-    },
-
-    groupToXML: function(group, indent="")
-    {
-        let text = indent + '<group\n';
-        for(let a in group)
-            text += indent + '\t' + a + ' = "'+group[a]+'"\n';
-        text += indent+'>\n';
-
-        for(let g in group.groups)
-            if(group.groups[g].is_group)
-                text += controller.groupToXML(group.groups[g], indent+"\t");
-            else
-                text += controller.moduleToXML(group.groups[g], indent+"\t");
-
-        for(let c in group.connections)
-            text += controller.connectionToXML(group.connections[c], indent+"\t");
-         for(let v in group.views)
-            text += controller.viewToXML(group.views[v], indent+"\t");
-        text += indent + '</group>\n';
-        return text;
-    },
-
-    saveNetwork: function()
-    {
-        function download(filename, text) {
-            var element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-            element.setAttribute('download', filename);
-            element.style.display = 'none';
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-        }
-
-        download("network.ikg", '<?xml version="1.0" encoding="UTF-8"?>\n'+controller.groupToXML(controller.network));
     }
 }
 
