@@ -51,5 +51,4 @@ Inspector for selected item:
     - table (i_table)
         - atribute-value
         - filled from dict
-        
 
