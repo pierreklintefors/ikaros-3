@@ -2,7 +2,7 @@
 
 using namespace ikaros;
 
-class Add: public Module
+class Multiply: public Module
 {
     matrix      input1;
     matrix      input2;
@@ -22,10 +22,10 @@ class Add: public Module
         input1.print();
         input2.print();
 
-        output.add(input1, input2);
+        output.multiply(input1, input2);
     }
 };
 
 
-INSTALL_CLASS(Add)
+INSTALL_CLASS(Multiply)
 
