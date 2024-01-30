@@ -522,7 +522,7 @@ namespace ikaros
         }
 
         float
-        dot(matrix A)
+        dot(matrix A) // FIXME: Change to function of two matrices: fot(A,B) and use apply.
         {
             float s = 0;
             if(empty())
@@ -542,7 +542,7 @@ namespace ikaros
         matrix & 
         copy(matrix m)  // asign matrix or submatrix - copy data
         {
-            if(rank()==0)   // Allow copy to empty matrix aftare reallocation - //TODO: Check if this is always appropriate
+            if(rank()==0)   // Allow copy to empty matrix after reallocation - //TODO: Check if this is always appropriate
                 realloc(m.shape());
 
             #ifndef NO_MATRIX_CHECKS
@@ -985,11 +985,15 @@ namespace ikaros
 
         // Math Functions
 
-        float sum();
-        float average();
+        // Reduce functions
 
+        float sum();
+        float product() { throw std::logic_error("product(). Not implemented."); return 0; }
         float min() { throw std::logic_error("min(). Not implemented."); return 0; }
         float max() { throw std::logic_error("max(). Not implemented."); return 0; }
+        float average();
+        float median() { throw std::logic_error("median(). Not implemented."); return 0; }
+
 
         float matrank() { throw std::logic_error("matrank(). Not implemented."); return 0; }
         float trace() { throw std::logic_error("Not implemented."); return 0; }

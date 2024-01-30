@@ -6,7 +6,7 @@
 namespace ikaros {
 
 float
-matrix::sum()
+matrix::sum() // FIXME: May not work for submatrices ***** use apply instead
 {
     if(empty())
         return 0;
