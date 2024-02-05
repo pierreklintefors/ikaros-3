@@ -18,7 +18,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # ARM64 flag #
   if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64") # This will gice a binary with both x86 and arm64. 
-    set(CMAKE_OSX_ARCHITECTURES "arm64") # Forcing the arcitecture to be arm64. 
+    set(CMAKE_OSX_ARCHITECTURES "x86_64") # Forcing the arcitecture to be arm64. 
   endif()
 
 
