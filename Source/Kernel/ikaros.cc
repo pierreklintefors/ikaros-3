@@ -867,9 +867,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     // Request
 
-        Request::Request(std::string  uri)
+        Request::Request(std::string  uri, long sid)
         {
             url = uri;
+            session_id = sid;
             uri.erase(0, 1);
             std::string params = tail(uri, "?");
             command = head(uri, "/"); 
@@ -949,7 +950,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 classes[name] = Class(name, p.path());
             }
     }
-
 
 
     void Kernel::ScanFiles(std::string path)
@@ -1147,8 +1147,12 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         idle_time(0),
         stop_after(-1),
         tick_duration(0.01), // 10 ms
+        first_request(true),
+        session_id(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()),
         webui_dir("Source/WebUI/") // FIXME: get from somewhere else
     {
+
+        std::cout << std::filesystem::current_path() << std::endl;
 
             ScanClasses("Source/Modules");
             ScanFiles("Source/Modules");
@@ -1836,6 +1840,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendNetwork(Request & request)
     {
+        // std::cout << "DoSendNetwork" << std::endl;
+    
         std::string s = json(); 
         Dictionary rtheader;
         rtheader.Set("Session-Id", std::to_string(session_id).c_str());
@@ -1853,7 +1859,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     log.push_back("pause");
     Pause();
     run_mode = run_mode_pause;
-    master_id = request.session_id;
     DoSendData(request);
     }
 
@@ -1864,7 +1869,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     log.push_back("step");
     Pause();
     run_mode = run_mode_pause;
-    master_id = request.session_id;
     Tick();
     DoSendData(request);
     }
@@ -1876,7 +1880,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     log.push_back("play");
     Pause();
     run_mode = run_mode_play;
-    master_id = request.session_id;
     Tick();
     DoSendData(request);
     }
@@ -1887,7 +1890,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
     log.push_back("realtime");
     run_mode = run_mode_realtime;
-    master_id = request.session_id;
     is_running = true;
     DoSendData(request);
     }
@@ -2143,17 +2145,15 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-
-
     void
     Kernel::DoUpdate(Request & request)
     {
-        if(request.parameters.empty() || first_request) // not a data request - send view data
+        if(request.parameters.empty() || first_request || request.session_id != session_id) // not a data request - send network
         {
             first_request = false;
             DoSendNetwork(request);
         }
-        else if(run_mode == run_mode_play && master_id == request.session_id)
+        else if(run_mode == run_mode_play && session_id == request.session_id)
         {
             Pause();
             Tick();
@@ -2227,14 +2227,20 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::HandleHTTPRequest()
     {
-        Request request(socket->header.Get("URI"));
+        long sid = 0;
+        const char * sids = socket->header.Get("Session-Id");
+        if(sids)
+            sid = atol(sids);
+
+        Request request(socket->header.Get("URI"), sid);
 
     std::cout << request.url << std::endl;
 
-    if(request == "update")
-        DoUpdate(request);
-    else if(request == "network")
+if(request == "network")
         DoNetwork(request);
+
+    else if(request == "update")
+        DoUpdate(request);
 
     // Run mode commands
 

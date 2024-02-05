@@ -1839,7 +1839,6 @@ controller = {
         controller.send_stamp = Date.now();
         var last_request = url;
         xhr = new XMLHttpRequest();
-        //console.log("<<< controller.get: \""+url+"\"");
         xhr.open("GET", url, true);
         xhr.setRequestHeader("Client-Id", controller.client_id);
         xhr.onload = function(evt)

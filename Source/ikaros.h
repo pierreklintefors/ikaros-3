@@ -247,7 +247,7 @@ struct Request
         std::string view_name; 
         std::string component_path;
 
-        Request(std::string  uri);
+        Request(std::string  uri, long sid=0);  // Add client id later
     };
 
     bool operator==(Request & r, const std::string s);
@@ -270,8 +270,8 @@ public:
     std::map<std::string, CircularBuffer>   circular_buffers;       // Circular circular_buffers for delayed buffers
     std::map<std::string, parameter>        parameters;
 
-    bool                                    first_request;
-    long                                    master_id;
+    bool                                    first_request;  // FIXME: Remove
+    long                                    session_id;
     bool                                    is_running;
     std::atomic<bool>                       tick_is_running;
     std::atomic<bool>                       sending_ui_data;
@@ -303,7 +303,6 @@ public:
     double                                  lag_sum;        // Sum |lag|
 
     ServerSocket *                          socket;
-    long                                    session_id;
     std::vector<std::string>                log;
     std::thread *                           httpThread;
 
