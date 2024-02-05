@@ -388,17 +388,20 @@ controller = {
             //console.log(">>> controller.update: network received");
             controller.session_id = session_id;
             controller.tick = response.iteration;
-            nav.init(response);
+            //nav.init(response);
             controller.network = response;
-            controller.views = {};
-            controller.buildViewDictionary(response, "");
+            //controller.views = {};
+            //controller.buildViewDictionary(response, "");
             
             let v = getCookie('current_view');
+
+            /*
             if(Object.keys(controller.views).includes(v))
                 controller.selectView(v);
             else
                 controller.selectView(Object.keys(controller.views)[0]);
-        }
+            */
+       }
 
         else if(controller.session_id != session_id) // new session
         {
@@ -508,11 +511,38 @@ controller = {
     }
 }
 
+inspector = {
+    init()
+    {
+        inspector.system = document.querySelector('#system_inspector');
+    },
+
+    showInspector(i)
+    {
+        for (const s of document.querySelectorAll('aside'))
+            if(s === i)
+                s.style.display = 'block';
+            else
+                s.style.display = 'none';
+    },
+
+    toggleSystem()
+    {
+        if (window.getComputedStyle(inspector.system, null).display === 'none')
+            inspector.showInspector(inspector.system);
+        else
+            inspector.showInspector(null);
+    }
+}
+
+
+
 brainstudio = {
 
     init()
     {
         controller.init();
+        inspector.init();
     }
 }
 
