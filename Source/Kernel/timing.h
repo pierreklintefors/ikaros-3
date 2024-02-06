@@ -47,8 +47,6 @@ public:
     double      WaitUntil(double time); // Suspend execution until time; return timing lag
 
     Timer();
-
-
 };
 
 #endif

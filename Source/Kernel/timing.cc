@@ -62,7 +62,7 @@ Sleep(double time)
 long
 GetTimeStamp()
 {
-    return std::chrono::system_clock::now().time_since_epoch().count();
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 
 
@@ -89,8 +89,7 @@ Timer::Restart()
 double
 Timer::GetTime()
 {
-    auto now = steady_clock::now();
-    return duration_cast<milliseconds>(now - start_time).count();
+    return 0.001 * std::chrono::duration_cast<milliseconds>(steady_clock::now() - start_time).count();
 
 }
 

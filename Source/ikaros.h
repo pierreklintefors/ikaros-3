@@ -281,14 +281,15 @@ public:
     dictionary                              current_component_info; // Implivit parameters to create Component
     std::string                             current_component_path;
 
-    float                                   idle_time;              // TODO: change to duration<float>             
-    float                                   time_usage;             // TODO: change to duration<float>
+    double                                  idle_time;            
+    double                                  time_usage;
 
     int                                     cpu_cores;
     double                                  cpu_usage;
     double                                  last_cpu;
     float                                   last_cpu_time;
 
+    Timer                                   uptime_timer;   // Measues kernel uptime
     Timer                                   timer;          // Main timer
     bool                                    start;          // Start automatically                   
 
