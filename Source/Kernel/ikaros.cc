@@ -1657,15 +1657,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-
     void
-     Kernel::DoSendDataStatus()
+    Kernel::DoSendDataStatus()
     {
         socket->Send("\t\"state\": %d,\n", run_mode);
         if(stop_after != -1)
         {
-            socket->Send("\t\"tick\": \"%d / %d\",\n", GetTick(), stop_after);
-            socket->Send("\t\"progress\": %f,\n", float(tick)/float(stop_after));
+            socket->Send("\t\"tick\": \"%d / %d\",\n", tick, stop_after);
+            socket->Send("\t\"progress\": %f,\n", double(tick)/double(stop_after));
         }
         else
         {
@@ -1675,13 +1674,15 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         // Timing information
 
-        float total_time = timer.GetTime()/1000.0; // in seconds // FIXME: GetTime should return double ***
+        double uptime = timer.GetTime();
+        double total_time = GetTime();
 
-        socket->Send("\t\"timestamp\": %ld,\n", duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
-        socket->Send("\t\"total_time\": %.2f,\n", total_time);
-        socket->Send("\t\"ticks_per_s\": %.2f,\n", 1); // FIXME: float(tick)/total_time
-        socket->Send("\t\"tick_duration\": %d,\n", tick_duration);
-        socket->Send("\t\"actual_duration\": %.0f,\n", tick > 0 ? 1000*float(total_time)/float(tick) : 0); // FIXME
+        socket->Send("\t\"timestamp\": %ld,\n", GetTimeStamp()); // duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()
+        socket->Send("\t\"time\": %.2f,\n", GetTime());
+        socket->Send("\t\"uptime\": %.2f,\n", uptime);
+        socket->Send("\t\"ticks_per_s\": %.2f,\n", double(tick)/total_time);
+        socket->Send("\t\"tick_duration\": %f,\n", tick_duration);
+        socket->Send("\t\"actual_duration\": %.0f,\n", tick > 0 ? total_time/double(tick) : 0);
         socket->Send("\t\"lag\": %.0f,\n", lag);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
         socket->Send("\t\"time_usage\": %.3f,\n", time_usage);  // TODO: move to kernel from WebUI
@@ -1690,17 +1691,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-     Kernel::DoSendLog(Request & request)
-     {
-        socket->Send(",\n\"log\": [");
-        std::string sep;
-        for(std::string line : log)
-        {
-            socket->Send(sep + "\""+line+"\"");
-        }
-        socket->Send("]");
-        log.clear();
-     }
+    Kernel::DoSendLog(Request & request)
+    {
+    socket->Send(",\n\"log\": [");
+    std::string sep;
+    for(std::string line : log)
+    {
+        socket->Send(sep + "\""+line+"\"");
+    }
+    socket->Send("]");
+    log.clear();
+    }
+
 
     void
     Kernel::DoSendData(Request & request)
@@ -2127,8 +2129,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    
-
     void
     Kernel::DoAddConnection(Request & request)
     {
@@ -2137,8 +2137,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         DoSendData(request);
     }
 
-
-    
 
     void
     Kernel::DoSetRange(Request & request)
