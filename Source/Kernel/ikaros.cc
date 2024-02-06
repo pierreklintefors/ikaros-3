@@ -3,6 +3,7 @@
 #include "ikaros.h"
 
 using namespace ikaros;
+using namespace std::chrono;
 
 namespace ikaros
 {
@@ -1148,10 +1149,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         stop_after(-1),
         tick_duration(0.01), // 10 ms
         first_request(true),
-        session_id(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()),
+        session_id(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()),
         webui_dir("Source/WebUI/") // FIXME: get from somewhere else
     {
-
+        cpu_cores = std::thread::hardware_concurrency();
         std::cout << std::filesystem::current_path() << std::endl;
 
             ScanClasses("Source/Modules");
@@ -1674,13 +1675,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         // Timing information
 
-        float total_time = 0; // timer->GetTime()/1000.0; // in seconds // FIXME: ---------
+        float total_time = timer.GetTime()/1000.0; // in seconds
 
-        socket->Send("\t\"timestamp\": %ld,\n", 0); // Timer::GetRealTime() // FIXME: -----------
+        socket->Send("\t\"timestamp\": %ld,\n", duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
         socket->Send("\t\"total_time\": %.2f,\n", total_time);
         socket->Send("\t\"ticks_per_s\": %.2f,\n", 1); // FIXME: float(tick)/total_time
-        socket->Send("\t\"timebase\": %d,\n", tick_duration);
-        socket->Send("\t\"timebase_actual\": %.0f,\n", tick > 0 ? 1000*float(total_time)/float(tick) : 0);
+        socket->Send("\t\"tick_duration\": %d,\n", tick_duration);
+        socket->Send("\t\"actual_duration\": %.0f,\n", tick > 0 ? 1000*float(total_time)/float(tick) : 0); // FIXME
         socket->Send("\t\"lag\": %.0f,\n", lag);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
         socket->Send("\t\"time_usage\": %.3f,\n", time_usage);  // TODO: move to kernel from WebUI

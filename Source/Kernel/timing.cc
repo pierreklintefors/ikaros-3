@@ -29,6 +29,8 @@
 #include <ctime>
 #include <sstream>
 
+using namespace std::chrono;
+
 std::string TimeString(double time)
 {
     int days = time / 86400;
@@ -87,9 +89,8 @@ Timer::Restart()
 double
 Timer::GetTime()
 {
-    auto now = std::chrono::steady_clock::now();
-    std::chrono::duration<double> diff = now - start_time;
-    return diff.count();
+    auto now = steady_clock::now();
+    return duration_cast<milliseconds>(now - start_time).count();
 
 }
 
