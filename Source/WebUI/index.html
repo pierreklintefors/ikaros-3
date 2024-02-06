@@ -13,11 +13,7 @@
 
 <title>BrainStudio</title>
 
-<!-- three.js -->
-<script src="js/three.min.js" defer ></script>
-<script src="js/controls/OrbitControls.js" defer ></script>
-<script src="js/loaders/GLTFLoader.js" defer ></script>
-<script src="js/libs/stats.min.js" defer ></script>
+
 
 </head>
 <body>
@@ -54,7 +50,11 @@
     <script src="WebUIWidgetKeyPoints.js" defer ></script>
     <script src="WebUIWidgetEpiHead.js" defer ></script>
 
-
+<!-- three.js -->
+<script src="js/three.min.js" defer></script>
+<script src="js/controls/OrbitControls.js" defer></script>
+<script src="js/loaders/GLTFLoader.js" defer></script>
+<script src="js/libs/stats.min.js" defer></script>
      <dialog id="openDialog">
         <p id="openDialogTitle"></p>
         <select size="14" id="openDialogItems" style="width:100%">
@@ -361,7 +361,9 @@
     </script>
 
     <script>
-        brainstudio.init();
+        document.addEventListener("DOMContentLoaded", (event) => {
+            setTimeout("brainstudio.init()", 500);
+        });
     </script>
 
 </body>

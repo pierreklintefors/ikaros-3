@@ -2,6 +2,8 @@
 
 #include "ikaros.h"
 
+#include <iostream> 
+
 using namespace ikaros;
 using namespace std::chrono;
 
@@ -906,7 +908,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
            // AddGroup("Untitled");     // FIXME: RESORE LATER
 
-            first_request = true;
             session_id = std::time(nullptr);
         }
 
@@ -1148,7 +1149,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         idle_time(0),
         stop_after(-1),
         tick_duration(0.01), // 10 ms
-        first_request(true),
         session_id(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()),
         webui_dir("Source/WebUI/") // FIXME: get from somewhere else
     {
@@ -1675,7 +1675,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         // Timing information
 
-        float total_time = timer.GetTime()/1000.0; // in seconds
+        float total_time = timer.GetTime()/1000.0; // in seconds // FIXME: GetTime should return double ***
 
         socket->Send("\t\"timestamp\": %ld,\n", duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
         socket->Send("\t\"total_time\": %.2f,\n", total_time);
@@ -1817,6 +1817,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendFile(std::string file)
     {
+        //std::this_thread::sleep_for(milliseconds(200));
+        //std::cin.get(); 
+
         if(file[0] == '/')
             file = file.erase(0,1); // Remove initial slash
 
@@ -2149,9 +2152,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoUpdate(Request & request)
     {
-        if(request.parameters.empty() || first_request || request.session_id != session_id) // not a data request - send network
+        if(request.parameters.empty() || request.session_id != session_id) // not a data request - send network
         {
-            first_request = false;
             DoSendNetwork(request);
         }
         else if(run_mode == run_mode_play && session_id == request.session_id)
@@ -2168,7 +2170,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoNetwork(Request & request)
     {
-        first_request = false;
         DoSendNetwork(request);
     }
 

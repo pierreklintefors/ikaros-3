@@ -541,8 +541,8 @@ brainstudio = {
 
     init()
     {
-        controller.init();
         inspector.init();
+        controller.init();
     }
 }
 

@@ -270,7 +270,6 @@ public:
     std::map<std::string, CircularBuffer>   circular_buffers;       // Circular circular_buffers for delayed buffers
     std::map<std::string, parameter>        parameters;
 
-    bool                                    first_request;  // FIXME: Remove
     long                                    session_id;
     bool                                    is_running;
     std::atomic<bool>                       tick_is_running;
