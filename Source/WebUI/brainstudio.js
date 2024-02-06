@@ -333,11 +333,12 @@ controller = {
         {
             document.querySelector("#tick").innerText = response.tick;
             document.querySelector("#state").innerText = controller.run_mode; // +response.state+" "+" "+response.has_data;
-            document.querySelector("#total_time").innerText = secondsToHMS(response.total_time);
+            document.querySelector("#uptime").innerText = secondsToHMS(response.uptime);
+            document.querySelector("#time").innerText = secondsToHMS(response.time);
             document.querySelector("#ticks_per_s").innerText = response.ticks_per_s;
-            document.querySelector("#tick_duration").innerText = response.tick_duration+" ms";
-            document.querySelector("#actual_duration").innerText = response.actual_duration+" ms";
-            document.querySelector("#lag").innerText = response.lag+" ms";
+            document.querySelector("#tick_duration").innerText = 1000*response.tick_duration+" ms";
+            document.querySelector("#actual_duration").innerText = 1000*response.actual_duration+" ms";
+            document.querySelector("#lag").innerText = 1000*response.lag+" ms";
             document.querySelector("#cpu_cores").innerText = response.cpu_cores;
             document.querySelector("#time_usage").value = response.time_usage;
             document.querySelector("#usage").value = response.cpu_usage;
