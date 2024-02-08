@@ -1618,9 +1618,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::Pause()
     {
-    is_running = false;
-    while(tick_is_running)
-        {}
+        timer.Pause();
+        is_running = false;
+        while(tick_is_running)
+            {}
     }
 
 
@@ -1680,7 +1681,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         socket->Send("\t\"timestamp\": %ld,\n", GetTimeStamp()); // duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()
         socket->Send("\t\"time\": %.2f,\n", GetTime());
         socket->Send("\t\"uptime\": %.2f,\n", uptime);
-        socket->Send("\t\"ticks_per_s\": %.2f,\n", double(tick)/total_time);
+        socket->Send("\t\"ticks_per_s\": %.2f,\n", total_time>0 ? double(tick)/total_time: 0);
         socket->Send("\t\"tick_duration\": %f,\n", tick_duration);
         socket->Send("\t\"actual_duration\": %.0f,\n", tick > 0 ? total_time/double(tick) : 0);
         socket->Send("\t\"lag\": %.0f,\n", lag);
@@ -1876,6 +1877,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Pause();
     run_mode = run_mode_pause;
     Tick();
+    timer.SetPauseTime(GetTime());
     DoSendData(request);
     }
 
@@ -1887,6 +1889,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Pause();
     run_mode = run_mode_play;
     Tick();
+    timer.SetPauseTime(GetTime());
     DoSendData(request);
     }
 
