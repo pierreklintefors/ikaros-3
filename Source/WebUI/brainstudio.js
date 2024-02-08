@@ -328,7 +328,6 @@ controller = {
 
     setSystemInfo(response)
     {
-        // Set system info from package
         try
         {
             document.querySelector("#tick").innerText = response.tick;
