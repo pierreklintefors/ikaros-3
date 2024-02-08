@@ -40,8 +40,15 @@ class Timer
 {
 private:
     std::chrono::time_point<std::chrono::steady_clock> start_time;
-public:
-    void		Restart();					// Start the timer
+    std::chrono::time_point<std::chrono::steady_clock> pause_time;   
+    bool paused;
+public: 
+    void        Pause();                    // Pause the timer
+    void        Continue();                 // Start the timer at the pause time
+    void        SetPauseTime(double t);     // Change the time wheere the timer start when Continue is called
+
+    void		Restart();					// Start the timer from time 0
+    void        SetTime(double t);          // Set start time of the timer
     double      GetTime();					// Get the time (in seconds) since the timer was created or restarted
     std::string GetTimeString();            // Get time since the timer was started as a formated string
     double      WaitUntil(double time); // Suspend execution until time; return timing lag

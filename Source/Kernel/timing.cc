@@ -77,20 +77,61 @@ std::string GetClockTimeString()
 }
 
 
+void
+Timer::Pause() // FIXME: is it an error to pause an already paused timer?
+{
+    if(!paused)
+    {
+        pause_time = steady_clock::now();
+        paused = true;
+    }
+}
+
+
+void
+Timer::Continue()
+{
+    if(!paused)
+    {
+        start_time = pause_time;
+        paused = false;
+    }
+}
+
+
+void
+Timer::SetPauseTime(double t)
+{
+    if(paused)
+    {
+    auto d = duration<double>(t);
+    pause_time = start_time + duration_cast<steady_clock::duration>(d);
+    }
+}
 
 
 void
 Timer::Restart()
 {
-    start_time = std::chrono::steady_clock::now();
+    start_time = steady_clock::now();
 }
 
 
 double
 Timer::GetTime()
 {
-    return 0.001 * std::chrono::duration_cast<milliseconds>(steady_clock::now() - start_time).count();
+    if(paused)
+        return 0.001 * duration_cast<milliseconds>(pause_time - start_time).count();
+    else
+        return 0.001 * duration_cast<milliseconds>(steady_clock::now() - start_time).count();
+}
 
+
+void 
+Timer::SetTime(double t)
+{
+    auto d = duration<double>(t);
+    start_time = steady_clock::time_point(duration_cast<steady_clock::duration>(d));
 }
 
 
@@ -99,9 +140,9 @@ double
 Timer::WaitUntil(double time)
 {
     float dt;
-	while ((dt = GetTime()-time) < -0.128){ std::this_thread::sleep_for(std::chrono::microseconds(127000)); };
-	while ((dt = GetTime()-time) < -0.004){ std::this_thread::sleep_for(std::chrono::microseconds(3000)); };
-	while ((dt = GetTime()-time) < -0.001){ std::this_thread::sleep_for(std::chrono::microseconds(100)); };
+	while ((dt = GetTime()-time) < -0.128){ std::this_thread::sleep_for(microseconds(127000)); };
+	while ((dt = GetTime()-time) < -0.004){ std::this_thread::sleep_for(microseconds(3000)); };
+	while ((dt = GetTime()-time) < -0.001){ std::this_thread::sleep_for(microseconds(100)); };
     while(GetTime() < time)
     {} // burn some cycles to get this as accurate as possible
     return GetTime() - time;
@@ -121,3 +162,4 @@ Timer::GetTimeString()
 {
     return TimeString(GetTime());
 }
+
