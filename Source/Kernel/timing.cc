@@ -78,7 +78,7 @@ std::string GetClockTimeString()
 
 
 void
-Timer::Pause() // FIXME: is it an error to pause an already paused timer?
+Timer::Pause()
 {
     if(!paused)
     {
@@ -91,9 +91,10 @@ Timer::Pause() // FIXME: is it an error to pause an already paused timer?
 void
 Timer::Continue()
 {
-    if(!paused)
+    if(paused)
     {
-        start_time = pause_time;
+        auto offset = pause_time-steady_clock::now();
+        start_time -= offset;
         paused = false;
     }
 }
@@ -128,7 +129,7 @@ Timer::GetTime()
 
 
 void 
-Timer::SetTime(double t)
+Timer::SetTime(double t) // FIXME: WRONG
 {
     auto d = duration<double>(t);
     start_time = steady_clock::time_point(duration_cast<steady_clock::duration>(d));

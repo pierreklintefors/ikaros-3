@@ -1675,7 +1675,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         // Timing information
 
-        double uptime = timer.GetTime();
+        double uptime = uptime_timer.GetTime();
         double total_time = GetTime();
 
         socket->Send("\t\"timestamp\": %ld,\n", GetTimeStamp()); // duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()
@@ -1899,6 +1899,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
     log.push_back("realtime");
     run_mode = run_mode_realtime;
+    timer.Continue();
     is_running = true;
     DoSendData(request);
     }
