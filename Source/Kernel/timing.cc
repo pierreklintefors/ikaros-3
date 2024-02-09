@@ -145,7 +145,7 @@ Timer::WaitUntil(double time)
 	while ((dt = GetTime()-time) < -0.004){ std::this_thread::sleep_for(microseconds(3000)); };
 	while ((dt = GetTime()-time) < -0.001){ std::this_thread::sleep_for(microseconds(100)); };
     while(GetTime() < time)
-    {} // burn some cycles to get this as accurate as possible
+        {} // burn some cycles to get this as accurate as possible
     return GetTime() - time;
 }
 

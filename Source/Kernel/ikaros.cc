@@ -915,6 +915,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::Tick()
     {
+        tick++;
+        std::cout << "Tick Start: " << tick << std::endl;
         for(auto & m : components)
             try
             {
@@ -931,8 +933,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         RotateBuffers();
         Propagate();
-
-        tick++;
     }
 
 
@@ -1473,73 +1473,73 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::Run(std::vector<std::string> files, options & opts)
     {
-    LoadFiles(files, opts); // INIT
+        LoadFiles(files, opts); // INIT
 
-    InitSocket();
-    SetUp();
+        InitSocket();
+        SetUp();
 
-    ListInputs();
-    // Run loop
-    // chdir(ikc_dir);
+        ListInputs();
+        // Run loop
+        // chdir(ikc_dir);
 
-    timer.Restart();
-    tick = 0;
-    is_running = start;
+        timer.Restart();
+        tick = -1; // To make first tick 0 after increment
+        is_running = start;
 
-        httpThread = new std::thread(Kernel::StartHTTPThread, this);
+            httpThread = new std::thread(Kernel::StartHTTPThread, this);
 
-    while (!Terminate())
-    {
-        //std::cout << GetTick() << std::endl;
-
-        if (!is_running)
+        while (!Terminate())
         {
-            // std::cout << "Idle: " << run_mode << std::endl;
-            Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
+            //std::cout << GetTick() << std::endl;
+
+            if (!is_running)
+            {
+                Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
+            }
+
+            while(sending_ui_data)
+                {}
+            while(handling_request)
+                {}
+
+                if (run_mode == run_mode_realtime)
+                {
+                    lag = timer.WaitUntil(static_cast<double>(tick+1)*tick_duration);
+                    if(lag > lag_max)
+                        lag_max = lag;
+
+                    if(lag < lag_min)
+                        lag_min = lag;
+
+                    //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
+                }
+
+            if (is_running)
+            {
+                tick_is_running = true; // Flag that state changes are not allowed
+                Tick(); // FIXME: Check activation status
+                tick_is_running = false;
+                
+                // Calculate idle_time
+                
+                if(run_mode == run_mode_realtime)
+                {
+                    idle_time = (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
+                    time_usage = 1 - idle_time;
+                }
+
+
+        /*            
+                else if (run_mode == run_mode_realtime)
+                {
+                    while(sending_ui_data)
+                        {}
+                    while(handling_request)
+                        {}
+                }
+        */
+            }
         }
-
-        while(sending_ui_data)
-            {}
-        while(handling_request)
-            {}
-
-        if (is_running)
-        {
-            tick_is_running = true; // Flag that state changes are not allowed
-            Tick(); // FIXME: Check activation status
-            tick_is_running = false;
-            
-            // Calculate idle_time
-            
-            if(run_mode == run_mode_realtime)
-            {
-                idle_time = (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
-                time_usage = 1 - idle_time;
-            }
-
-            if (run_mode == run_mode_realtime)
-            {
-                lag = timer.WaitUntil(static_cast<double>(tick)*tick_duration);
-
-                if(lag > lag_max)
-                    lag_max = lag;
-
-                if(lag < lag_min)
-                    lag_min = lag;
-
-                //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
-            }
-    /*            
-            else if (run_mode == run_mode_realtime)
-            {
-                while(sending_ui_data)
-                    {}
-                while(handling_request)
-                    {}
-            }
-    */
-        }
-    }
     }
 
     //
@@ -1620,30 +1620,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         timer.Pause();
         is_running = false;
+        timer.SetPauseTime(GetTime());
         while(tick_is_running)
             {}
     }
 
 
-/*
-    long
-    get_session_id(std::string args)
-    {
-    std::string id_string =  ::head(args, "&");
-    std::string id_number = tail(id_string, "id=");
 
-    try
-    {
-        return stol(id_number);
-    }
-    catch(const std::invalid_argument)
-    {
-        return 0;
-    }
-    }
-*/
-
-     void
+    void
     Kernel::DoSendDataHeader()
     {
         Dictionary header;
@@ -1864,8 +1848,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::DoPause(Request & request)
     {
     log.push_back("pause");
-    Pause();
     run_mode = run_mode_pause;
+    Pause();
     DoSendData(request);
     }
 
@@ -2238,7 +2222,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         Request request(socket->header.Get("URI"), sid);
 
-    std::cout << request.url << std::endl;
+    // std::cout << request.url << std::endl;
 
 if(request == "network")
         DoNetwork(request);

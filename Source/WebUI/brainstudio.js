@@ -337,7 +337,12 @@ controller = {
             document.querySelector("#ticks_per_s").innerText = response.ticks_per_s;
             document.querySelector("#tick_duration").innerText = 1000*response.tick_duration+" ms";
             document.querySelector("#actual_duration").innerText = 1000*response.actual_duration+" ms";
-            document.querySelector("#lag").innerText = 1000*response.lag+" ms";
+
+            if(response.lag < 0.001)
+                document.querySelector("#lag").innerHTML = 1000000*response.lag+" &micro;s";
+            else
+                document.querySelector("#lag").innerText = 1000000*response.lag+" ms";
+
             document.querySelector("#cpu_cores").innerText = response.cpu_cores;
             document.querySelector("#time_usage").value = response.time_usage;
             document.querySelector("#usage").value = response.cpu_usage;
