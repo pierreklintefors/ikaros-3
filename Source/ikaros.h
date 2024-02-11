@@ -281,13 +281,10 @@ public:
     dictionary                              current_component_info; // Implivit parameters to create Component
     std::string                             current_component_path;
 
-    double                                  idle_time;            
-    //double                                  time_usage;
-
+    double                                  idle_time;         
     int                                     cpu_cores;
     double                                  cpu_usage;
     double                                  last_cpu;
-    float                                   last_cpu_time;
 
     Timer                                   uptime_timer;   // Measues kernel uptime
     Timer                                   timer;          // Main timer
@@ -319,6 +316,7 @@ public:
     double GetTime() { return (run_mode == run_mode_realtime) ? GetRealTime() : static_cast<double>(tick)*tick_duration; }   // Time since start (in real time or simulated (tick) time dending on mode)
     double GetRealTime() { return (run_mode == run_mode_realtime) ? timer.GetTime() : static_cast<double>(tick)*tick_duration; } 
     double GetLag() { return (run_mode == run_mode_realtime) ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
+    void CalculateCPUUsage();
 
     bool Terminate();
     void ScanClasses(std::string path);

@@ -934,6 +934,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         RotateBuffers();
         Propagate();
+
+    CalculateCPUUsage();
     }
 
 
@@ -1504,7 +1506,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                 if (run_mode == run_mode_realtime)
                 {
-                    lag = timer.WaitUntil(static_cast<double>(tick+1)*tick_duration);
+                    lag = timer.WaitUntil(double(tick+1)*tick_duration);
                     actual_tick_duration = inter_tick_timer.GetTime();
                     inter_tick_timer.Restart();
                     //std::cout << lag << std::endl;
@@ -1675,7 +1677,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         socket->Send("\t\"lag\": %f,\n", lag);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
         socket->Send("\t\"time_usage\": %f,\n", actual_tick_duration> 0 ? tick_time_usage/actual_tick_duration : 0);
-        socket->Send("\t\"cpu_usage\": %.3f,\n", cpu_usage);
+        socket->Send("\t\"cpu_usage\": %f,\n", cpu_usage);
     }
 
 
@@ -2307,6 +2309,18 @@ if(request == "network")
         DoSendFile(request.url);
     }
 
+
+void
+Kernel::CalculateCPUUsage() // In percent
+{
+    double cpu = 0;
+    struct rusage rusage;
+    if(getrusage(RUSAGE_SELF, &rusage) != -1)
+        cpu = double(rusage.ru_utime.tv_sec) + double(rusage.ru_utime.tv_usec) / 1000000.0;
+    if(actual_tick_duration > 0)
+        cpu_usage = (cpu-last_cpu)/double(cpu_cores)*actual_tick_duration;
+    last_cpu = cpu;
+}
 
 
     void
