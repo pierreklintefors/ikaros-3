@@ -903,7 +903,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             tick = 0;
             is_running = false;
             tick_is_running = false;
-            time_usage = 0;
+            tick_time_usage = 0;
+            actual_tick_duration = tick_duration;
             idle_time = 0;
 
            // AddGroup("Untitled");     // FIXME: RESORE LATER
@@ -916,7 +917,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::Tick()
     {
         tick++;
-        std::cout << "Tick Start: " << tick << std::endl;
+        //std::cout << "Tick Start: " << tick << std::endl;
         for(auto & m : components)
             try
             {
@@ -1145,7 +1146,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         tick(0),
         is_running(false),
         tick_is_running(false),
-        time_usage(0),
+        tick_time_usage(0),
+        actual_tick_duration(0), // FIME: Use desired tick duration here
         idle_time(0),
         stop_after(-1),
         tick_duration(0.01), // 10 ms
@@ -1492,10 +1494,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         {
             //std::cout << GetTick() << std::endl;
 
-            if (!is_running)
-            {
+            if(!is_running)
                 Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
-            }
 
             while(sending_ui_data)
                 {}
@@ -1505,12 +1505,16 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 if (run_mode == run_mode_realtime)
                 {
                     lag = timer.WaitUntil(static_cast<double>(tick+1)*tick_duration);
+                    actual_tick_duration = inter_tick_timer.GetTime();
+                    inter_tick_timer.Restart();
+                    //std::cout << lag << std::endl;
+                    /*
                     if(lag > lag_max)
                         lag_max = lag;
 
                     if(lag < lag_min)
                         lag_min = lag;
-
+                    */
                     //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
                 }
 
@@ -1519,13 +1523,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 tick_is_running = true; // Flag that state changes are not allowed
                 Tick(); // FIXME: Check activation status
                 tick_is_running = false;
-                
+                tick_time_usage = inter_tick_timer.GetTime();
                 // Calculate idle_time
                 
                 if(run_mode == run_mode_realtime)
                 {
-                    idle_time = (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
-                    time_usage = 1 - idle_time;
+                    idle_time = tick_duration - tick_time_usage; // FIXME: May need filtering. // OLD VERSION: (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
+                    //time_usage = 1 - idle_time;
                 }
 
 
@@ -1667,10 +1671,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         socket->Send("\t\"uptime\": %.2f,\n", uptime);
         socket->Send("\t\"ticks_per_s\": %.2f,\n", total_time>0 ? double(tick)/total_time: 0);
         socket->Send("\t\"tick_duration\": %f,\n", tick_duration);
-        socket->Send("\t\"actual_duration\": %.0f,\n", tick > 0 ? total_time/double(tick) : 0);
-        socket->Send("\t\"lag\": %.0f,\n", lag);
+        socket->Send("\t\"actual_duration\": %f,\n", actual_tick_duration);
+        socket->Send("\t\"lag\": %f,\n", lag);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
-        socket->Send("\t\"time_usage\": %.3f,\n", time_usage);  // TODO: move to kernel from WebUI
+        socket->Send("\t\"time_usage\": %.3f,\n", tick_time_usage);  // TODO: move to kernel from WebUI
         socket->Send("\t\"cpu_usage\": %.3f,\n", cpu_usage);
     }
 

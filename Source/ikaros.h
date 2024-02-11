@@ -282,7 +282,7 @@ public:
     std::string                             current_component_path;
 
     double                                  idle_time;            
-    double                                  time_usage;
+    //double                                  time_usage;
 
     int                                     cpu_cores;
     double                                  cpu_usage;
@@ -291,10 +291,13 @@ public:
 
     Timer                                   uptime_timer;   // Measues kernel uptime
     Timer                                   timer;          // Main timer
+    Timer                                   inter_tick_timer;
     bool                                    start;          // Start automatically                   
 
     // Timing parameters and functions
     double                                  tick_duration;  // Desired actual or simulated duration for each tick
+    double                                  actual_tick_duration;   // actual time between ticks in real time
+    double                                  tick_time_usage;        // Time used to execute each tick in real time
     tick_count                              tick;
     tick_count                              stop_after;
     double                                  lag;            // Lag of a tick in real-time mode
