@@ -1,0 +1,4 @@
+<group name="Idle">
+	<module class = "Idle" name = "Idle" duration="0.09" />	
+</group>
+

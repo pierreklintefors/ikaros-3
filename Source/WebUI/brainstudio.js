@@ -341,7 +341,7 @@ controller = {
             if(response.lag < 0.001)
                 document.querySelector("#lag").innerHTML = 1000000*response.lag+" &micro;s";
             else
-                document.querySelector("#lag").innerText = 1000000*response.lag+" ms";
+                document.querySelector("#lag").innerText = 1000*response.lag+" ms";
 
             document.querySelector("#cpu_cores").innerText = response.cpu_cores;
             document.querySelector("#time_usage").value = response.time_usage;
@@ -541,11 +541,30 @@ inspector = {
 }
 
 
+log = {
+
+    init()
+    {
+
+        log.view = document.querySelector('footer');
+    },
+
+    toggleView()
+    {
+        var s = window.getComputedStyle(log.view, null);
+        if (s.display === 'none')
+            log.view.style.display = 'block';
+        else 
+        log.view.style.display = 'none';
+    }
+}
+
 
 brainstudio = {
 
     init()
     {
+        log.init();
         inspector.init();
         controller.init();
     }
