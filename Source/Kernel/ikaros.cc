@@ -1674,7 +1674,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         socket->Send("\t\"actual_duration\": %f,\n", actual_tick_duration);
         socket->Send("\t\"lag\": %f,\n", lag);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
-        socket->Send("\t\"time_usage\": %.3f,\n", tick_time_usage);  // TODO: move to kernel from WebUI
+        socket->Send("\t\"time_usage\": %f,\n", actual_tick_duration> 0 ? tick_time_usage/actual_tick_duration : 0);
         socket->Send("\t\"cpu_usage\": %.3f,\n", cpu_usage);
     }
 
