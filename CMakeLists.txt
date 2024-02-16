@@ -15,11 +15,27 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    	message( STATUS "Detected APPLE system")
 	add_definitions(-DMAC_OS_X)
 
-  # ARM64 flag #
-  if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64") # This will gice a binary with both x86 and arm64. 
-    set(CMAKE_OSX_ARCHITECTURES "x86_64") # Forcing the arcitecture to be arm64. 
+  # Detect if the system using x86 or arm64 (intel or apple silicon)
+  execute_process(COMMAND uname -m
+  OUTPUT_VARIABLE UNAME_CMAKE_OSX_ARCHITECTURES
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  
+  #message(STATUS ${UNAME_CMAKE_OSX_ARCHITECTURES})
+  
+  if(${UNAME_CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+    message(STATUS "Detected apple silicon")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64")
+
+  else()
+    message(STATUS "Detected intel")
+    # Using default flag
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -x86_64")
   endif()
+
+  # ARM64 flag
+  #if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  #  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64")
+  #endif()
 
 
 
