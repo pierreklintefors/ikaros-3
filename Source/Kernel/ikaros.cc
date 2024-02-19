@@ -919,8 +919,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         {
         tick_is_running = true; // Flag that state changes are not allowed
         tick++;
-        std::cout << "Tick Start: " << tick << std::endl;
-        for(auto & m : components)
+         for(auto & m : components)
             try
             {
                 m.second->Tick();
@@ -1345,7 +1344,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                         if(d.contains("real_time"))
                             if(is_true(d["real_time"]))
+                            {
                                 run_mode = run_mode_realtime;
+                                start = true;
+                            }
 
                     // Build the network
 
@@ -1497,17 +1499,17 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         {
             while (!Terminate() && run_mode != run_mode_stop && run_mode != run_mode_quit)
             {
-                if(run_mode == run_mode_realtime)
-                {
-                    lag = timer.WaitUntil(double(tick+1)*tick_duration);
-                }
-                else
-                    Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
-
                 while(sending_ui_data)
                     {}
                 while(handling_request)
                     {}
+
+                if(run_mode == run_mode_realtime)
+                    lag = timer.WaitUntil(double(tick+1)*tick_duration);
+                else
+                    Sleep(0.01); // Wait 10 ms to avoid wasting cycles if there are no requests
+
+
 
                 // Run_mode may have changed during the delay - needs to be checked again
 
@@ -1606,7 +1608,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             {}
         run_mode = run_mode_pause;
         timer.Pause();
-        timer.SetPauseTime(GetTime());
+        timer.SetPauseTime(GetTime()+tick_duration);
 
     }
 
@@ -1619,7 +1621,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             {}
         run_mode = run_mode_realtime;
         timer.Continue();
-        intra_tick_timer.Restart();
+        //std::cout << "Timer restarted at: " << timer.GetTime() << std::endl;
     }
 
 
@@ -1889,7 +1891,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         Pause();
         run_mode = run_mode_pause;
         Tick();
-        timer.SetPauseTime(GetTime());
+        timer.SetPauseTime(GetTime()+tick_duration);
         DoSendData(request);
     }
 
