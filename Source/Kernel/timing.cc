@@ -80,6 +80,10 @@ std::string GetClockTimeString()
 void
 Timer::Pause()
 {
+    while(locked)
+        {
+        }
+
     if(!paused)
     {
         pause_time = steady_clock::now();
@@ -91,6 +95,9 @@ Timer::Pause()
 void
 Timer::Continue()
 {
+    while(locked)
+        {}
+
     if(paused)
     {
         auto offset = pause_time-steady_clock::now();
@@ -103,6 +110,9 @@ Timer::Continue()
 void
 Timer::SetPauseTime(double t)
 {
+    while(locked)
+        {}
+
     if(paused)
     {
     auto d = duration<double>(t);
@@ -114,6 +124,9 @@ Timer::SetPauseTime(double t)
 void
 Timer::Restart()
 {
+    while(locked)
+        {}
+
     start_time = steady_clock::now();
 }
 
@@ -131,6 +144,9 @@ Timer::GetTime()
 void 
 Timer::SetTime(double t) // FIXME: WRONG
 {
+    while(locked)
+        {}
+
     auto d = duration<double>(t);
     start_time = steady_clock::time_point(duration_cast<steady_clock::duration>(d));
 }
@@ -140,19 +156,24 @@ Timer::SetTime(double t) // FIXME: WRONG
 double
 Timer::WaitUntil(double time)
 {
+    locked = true; // prevent changes while waiting
     float dt;
 	while ((dt = GetTime()-time) < -0.128){ std::this_thread::sleep_for(microseconds(127000)); };
 	while ((dt = GetTime()-time) < -0.004){ std::this_thread::sleep_for(microseconds(3000)); };
 	while ((dt = GetTime()-time) < -0.001){ std::this_thread::sleep_for(microseconds(100)); };
     while(GetTime() < time)
         {} // burn some cycles to get this as accurate as possible
+        locked = false;
     return GetTime() - time;
 }
 
 
 
-Timer::Timer()
+Timer::Timer():
+    locked(false),
+    paused(false)
 {
+
     Restart();
 }
 
