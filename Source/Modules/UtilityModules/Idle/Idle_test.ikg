@@ -1,0 +1,5 @@
+<group filename="/Users/cba/ikaros-3/Source/Modules/UtilityModules/Idle/Examples/Idle_test.ikg" name="Idle">
+   <module class="Idle" description="does nothing for the specified time" duration="0.02" name="Idle">
+      <parameter description="idle time in seconds" name="duration" type="float" value="0.02"/>
+   </module>
+</group>
