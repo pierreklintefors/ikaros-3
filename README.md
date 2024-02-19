@@ -50,11 +50,11 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 
         Command line options:
 
-        -S (start):  start-up automatically without waiting for commands from WebUI
-        -d (tick_duration): duration of each tick
-        -h (help): list command line options [true]
-        -r (real_time): run in real-time mode
-        -s (stop): stop Ikaros after this tick [-1]
+        -S (start):  start-up automatically without waiting for commands from WebUI [false]
+        -d (tick_duration): duration of each tick [1 s]
+        -h (help): list command line options  [false]
+        -r (real_time): run in real-time mode. Implies -S. [false]
+        -s (stop): stop Ikaros after this tick [-1 = never]
         -w (webui_port): port for ikaros WebUI [8000]
 
 
