@@ -1485,9 +1485,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         LoadFiles(files, opts); // INIT
         SetUp();
-
         timer.Restart();
-
         tick = -1; // To make first tick 0 after increment
 
         if(start)
