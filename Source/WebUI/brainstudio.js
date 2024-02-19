@@ -107,7 +107,6 @@ function resetCookies()
 
 
 
-
 network = {
     network: null
 }
@@ -132,10 +131,11 @@ controller = {
     load_count_timeout: null,
     g_data: null,
     send_stamp: 0,
+    tick_duration: 0,
     webui_interval: 0,
-    webui_req_int: 100,
-    timeout: 500,
-    reconnect_interval: 1200,
+    webui_req_int: 100,        
+    timeout: 500,            
+    reconnect_interval: 1200, 
     reconnect_timer: null,
     request_timer: null,
 
@@ -159,19 +159,14 @@ controller = {
     {
         controller.send_stamp = Date.now();
         var last_request = url;
-        xhr = new XMLHttpRequest();
+        let xhr = new XMLHttpRequest();
         //console.log("<<< controller.get: \""+url+"\"");
         xhr.open("GET", url, true);
         xhr.setRequestHeader("Session-Id", controller.session_id);
         xhr.setRequestHeader("Client-Id", controller.client_id);
         xhr.onload = function(evt)
         {
-            if(!xhr.response)   // empty response is ignored
-            {
-                console.log("console.get: onload - empty response - error.")
-                return;
-            }
-            callback(xhr.response, xhr.getResponseHeader("Session-Id"), xhr.getResponseHeader("Package-Type"));
+              callback(xhr.response, xhr.getResponseHeader("Session-Id"), xhr.getResponseHeader("Package-Type"));
         }
         
         xhr.responseType = 'json';
@@ -217,6 +212,11 @@ controller = {
     saveas: function () {
         alert("SAVE AS coming soon");
     },
+
+    quit: function () {
+        controller.run_mode = 'quit';
+        controller.get("quit", controller.update); // do not request data -  stop immediately
+     },
 
     stop: function () {
         controller.run_mode = 'stop';
@@ -330,15 +330,31 @@ controller = {
     {
         try
         {
-            document.querySelector("#tick").innerText = response.tick;
+            if(response.tikc == "-")
+                document.querySelector("#tick").innerText = "-";
+            else if(response.tick >= 0)
+                document.querySelector("#tick").innerText = response.tick;
+
             document.querySelector("#state").innerText = controller.run_mode; // +response.state+" "+" "+response.has_data;
             document.querySelector("#uptime").innerText = secondsToHMS(response.uptime);
-            document.querySelector("#time").innerText = secondsToHMS(response.time);
-            document.querySelector("#ticks_per_s").innerText = response.ticks_per_s;
-            document.querySelector("#tick_duration").innerText = 1000*response.tick_duration+" ms";
-            document.querySelector("#actual_duration").innerText = 1000*response.actual_duration+" ms";
 
-            if(response.lag < 0.001)
+            if(response.time >= 0)
+                document.querySelector("#time").innerText = secondsToHMS(response.time);
+            else
+                document.querySelector("#time").innerText = "-";
+
+            document.querySelector("#ticks_per_s").innerText = response.ticks_per_s;
+
+            document.querySelector("#tick_duration").innerText = 1000*response.tick_duration+" ms";
+
+            if(response.actual_duration == "-")
+                document.querySelector("#actual_duration").innerText = "-";
+            else
+                document.querySelector("#actual_duration").innerText = 1000*response.actual_duration+" ms";
+
+                if(response.lag == "-")
+                document.querySelector("#lag").innerText = "-";
+            else if(response.lag < 0.001)
                 document.querySelector("#lag").innerHTML = 1000000*response.lag+" &micro;s";
             else
                 document.querySelector("#lag").innerText = 1000*response.lag+" ms";
@@ -364,8 +380,8 @@ controller = {
                 p.style.display = "none";
             }
 
-            controller.tick = response.iteration;
-            controller.run_mode = ['stop','pause','step','play','realtime'][response.state];
+            controller.tick = response.tick;
+            controller.run_mode = ['quit', 'stop','pause','realtime'][response.state];
             
         }
         catch(err)
@@ -377,22 +393,23 @@ controller = {
 
     update(response, session_id, package_type)
     {
-        if(isEmpty(response)){
-            console.log("ERROR: empty response");
+        if(isEmpty(response))
+        {
+            console.log("ERROR: empty or malformed response");
             return;
         }
 
         controller.ping = Date.now() - controller.send_stamp;
-        controller.defer_reconnect(); // we are still on line
+        controller.defer_reconnect(); // we are still connected
+
+        // NETWORK
 
         if(package_type == "network")
         {
             document.querySelector("header").style.display="block"; // Show page when network is loaded
             document.querySelector("#load").style.display="none";
-
-            //console.log(">>> controller.update: network received");
             controller.session_id = session_id;
-            controller.tick = response.iteration;
+            controller.tick = response.tick;
             //nav.init(response);
             controller.network = response;
             //controller.views = {};
@@ -408,26 +425,24 @@ controller = {
             */
        }
 
+        // NEW SESSION
+
         else if(controller.session_id != session_id) // new session
         {
-            //console.log(">>> new session");
             session_id = session_id;
             controller.get("network", controller.update);
             return;
         }
 
+        // DATA
+
         else if(package_type == "data")
         {
-            //console.log(">>> controller.update: data received");
             controller.setSystemInfo(response);
+            controller.tick_duration = response.tick_duration || 0;
             if(response.has_data)
                 controller.updateImages(response.data);
         }
-        else
-        {
-            //console.log(">>> controller.update: unkown package type");
-        }
-
 
         if(response.log)
         {
