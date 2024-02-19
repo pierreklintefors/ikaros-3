@@ -29,11 +29,15 @@
 
 namespace ikaros {
 
-const int run_mode_stop = 0;
-const int run_mode_pause = 1;
-const int run_mode_step = 2;    // Not used
-const int run_mode_play = 3;
-const int run_mode_realtime = 4;
+const int run_mode_quit = 0;
+const int run_mode_stop = 1;        // Kernel does not run and accrpts open/save/save_as/pause/realtime
+const int run_mode_pause = 2;       // Kernel is paused and accepts stop/step/realtime
+const int run_mode_realtime = 3;    // Kernel runs in real-time mode
+/*
+const int run_mode_step = 3;        /// Step and play only occurs on WebUI side
+const int run_mode_play = 4;
+*/
+
 
 using tick_count = long long int;
 
@@ -271,12 +275,12 @@ public:
     std::map<std::string, parameter>        parameters;
 
     long                                    session_id;
-    bool                                    is_running;
+    //bool                                    is_running;
     std::atomic<bool>                       tick_is_running;
     std::atomic<bool>                       sending_ui_data;
     std::atomic<bool>                       handling_request;
-    int                                     run_mode;
-    long                                    port;    
+    std::atomic<bool>                       shutdown;
+    int                                     run_mode;   
 
     dictionary                              current_component_info; // Implivit parameters to create Component
     std::string                             current_component_path;
@@ -288,7 +292,7 @@ public:
 
     Timer                                   uptime_timer;   // Measues kernel uptime
     Timer                                   timer;          // Main timer
-    Timer                                   inter_tick_timer;
+    Timer                                   intra_tick_timer;
     bool                                    start;          // Start automatically                   
 
     // Timing parameters and functions
@@ -307,6 +311,7 @@ public:
     std::thread *                           httpThread;
 
     Kernel();
+    ~Kernel();
 
     void Clear();        // Remove all non-persistent data and reset kernel variables - // FIXME: Init???
 
@@ -364,19 +369,20 @@ public:
     std::string json();
     std::string xml();
 
-    void InitSocket();
+    void InitSocket(long port);
 
     void Pause();
+    void Realtime();
 
     void DoNew(Request & request);
     void DoOpen(Request & request);
     void DoSave(Request & request);
     void DoSaveAs(Request & request);
 
+    void DoQuit(Request & request);
     void DoStop(Request & request);
     void DoPause(Request & request);
     void DoStep(Request & request);
-    void DoPlay(Request & request);
     void DoRealtime(Request & request);
     
     void DoCommand(Request & request);

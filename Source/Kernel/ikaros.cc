@@ -901,8 +901,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             parameters.clear();
 
             tick = 0;
-            is_running = false;
-            tick_is_running = false;
+            //is_running = false;
+            run_mode = run_mode_stop;
+            //tick_is_running = false;
             tick_time_usage = 0;
             actual_tick_duration = tick_duration;
             idle_time = 0;
@@ -913,11 +914,12 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         }
 
 
-    void
-    Kernel::Tick()
-    {
+        void
+        Kernel::Tick()
+        {
+        tick_is_running = true; // Flag that state changes are not allowed
         tick++;
-        //std::cout << "Tick Start: " << tick << std::endl;
+        std::cout << "Tick Start: " << tick << std::endl;
         for(auto & m : components)
             try
             {
@@ -935,13 +937,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         RotateBuffers();
         Propagate();
 
-    CalculateCPUUsage();
+        CalculateCPUUsage();
+        tick_is_running = false; // Flag that state changes are allowed again
     }
 
 
     bool Kernel::Terminate()
     {
-        return stop_after!= -1 &&  tick >= stop_after;
+        return (stop_after!= -1 &&  tick >= stop_after);
     }
 
 
@@ -1146,13 +1149,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     Kernel::Kernel():
         tick(0),
-        is_running(false),
+        run_mode(run_mode_stop),
         tick_is_running(false),
         tick_time_usage(0),
         actual_tick_duration(0), // FIME: Use desired tick duration here
         idle_time(0),
         stop_after(-1),
-        tick_duration(0.01), // 10 ms
+        tick_duration(1),
+        shutdown(false),
         session_id(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()),
         webui_dir("Source/WebUI/") // FIXME: get from somewhere else
     {
@@ -1330,9 +1334,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                         if(opts.filenames.size() > 0)
                         d["filename"] = opts.filenames[0];
 
-                        if(d.contains("webui_port"))
-                            port = d["webui_port"];
-
                         if(d.contains("start"))
                             start = is_true(d["start"]);
 
@@ -1436,7 +1437,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Kernel::InitSocket()
+    void Kernel::InitSocket(long port)
     {
         try
         {
@@ -1446,6 +1447,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         {
             throw fatal_error("Ikaros is unable to start a webserver on port "+std::to_string(port)+". Make sure no other ikaros process is running and try again.");
         }
+        httpThread = new std::thread(Kernel::StartHTTPThread, this);
     }
 
 
@@ -1471,82 +1473,58 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         ListParameters();
         PrintLog();
         */
+        ListInputs();
     }
+
 
 
     void
     Kernel::Run(std::vector<std::string> files, options & opts)
     {
         LoadFiles(files, opts); // INIT
-
-        InitSocket();
         SetUp();
 
-        ListInputs();
-        // Run loop
-        // chdir(ikc_dir);
-
         timer.Restart();
+
         tick = -1; // To make first tick 0 after increment
-        is_running = start;
 
-            httpThread = new std::thread(Kernel::StartHTTPThread, this);
+        if(start)
+            Realtime();
+        else
+            Pause();
 
-        while (!Terminate())
+        while(run_mode != run_mode_quit) // Main loop - until quit
         {
-            //std::cout << GetTick() << std::endl;
-
-            if(!is_running)
-                Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
-
-            while(sending_ui_data)
-                {}
-            while(handling_request)
-                {}
-
-                if (run_mode == run_mode_realtime)
-                {
-                    lag = timer.WaitUntil(double(tick+1)*tick_duration);
-                    actual_tick_duration = inter_tick_timer.GetTime();
-                    inter_tick_timer.Restart();
-                    //std::cout << lag << std::endl;
-                    /*
-                    if(lag > lag_max)
-                        lag_max = lag;
-
-                    if(lag < lag_min)
-                        lag_min = lag;
-                    */
-                    //if (lag > 0.1) Notify(msg_warning, "Lagging %.2f ms at tick = %ld\n", lag, tick);
-                }
-
-            if (is_running)
+            while (!Terminate() && run_mode != run_mode_stop && run_mode != run_mode_quit)
             {
-                tick_is_running = true; // Flag that state changes are not allowed
-                Tick(); // FIXME: Check activation status
-                tick_is_running = false;
-                tick_time_usage = inter_tick_timer.GetTime();
-                // Calculate idle_time
-                
                 if(run_mode == run_mode_realtime)
                 {
-                    idle_time = tick_duration - tick_time_usage; // FIXME: May need filtering. // OLD VERSION: (float(tick*tick_duration) - timer.GetTime()) / float(tick_duration);
-                    //time_usage = 1 - idle_time;
+                    lag = timer.WaitUntil(double(tick+1)*tick_duration);
                 }
+                else
+                    Sleep(0.01); // Wait 10ms to avoid wasting cycles if there are no requests
 
+                while(sending_ui_data)
+                    {}
+                while(handling_request)
+                    {}
 
-        /*            
-                else if (run_mode == run_mode_realtime)
+                // Run_mode may have changed during the delay - needs to be checked again
+
+                if(run_mode == run_mode_realtime) 
                 {
-                    while(sending_ui_data)
-                        {}
-                    while(handling_request)
-                        {}
-                }
-        */
+                    actual_tick_duration = intra_tick_timer.GetTime();
+                    intra_tick_timer.Restart();
+                    Tick();
+                    tick_time_usage = intra_tick_timer.GetTime();
+                    idle_time = tick_duration - tick_time_usage;
+                }                    
             }
+            Sleep(0.5);
         }
     }
+
+
 
     //
     //  Serialization
@@ -1624,11 +1602,24 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::Pause()
     {
-        timer.Pause();
-        is_running = false;
-        timer.SetPauseTime(GetTime());
         while(tick_is_running)
             {}
+        run_mode = run_mode_pause;
+        timer.Pause();
+        timer.SetPauseTime(GetTime());
+
+    }
+
+
+
+    void
+    Kernel::Realtime()
+    {
+        while(tick_is_running)
+            {}
+        run_mode = run_mode_realtime;
+        timer.Continue();
+        intra_tick_timer.Restart();
     }
 
 
@@ -1659,7 +1650,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         }
         else
         {
-            socket->Send("\t\"tick\": %lld,\n", GetTick());
             socket->Send("\t\"progress\": 0,\n");
         }
 
@@ -1669,15 +1659,40 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         double total_time = GetTime();
 
         socket->Send("\t\"timestamp\": %ld,\n", GetTimeStamp()); // duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()
-        socket->Send("\t\"time\": %.2f,\n", GetTime());
         socket->Send("\t\"uptime\": %.2f,\n", uptime);
-        socket->Send("\t\"ticks_per_s\": %.2f,\n", total_time>0 ? double(tick)/total_time: 0);
         socket->Send("\t\"tick_duration\": %f,\n", tick_duration);
-        socket->Send("\t\"actual_duration\": %f,\n", actual_tick_duration);
-        socket->Send("\t\"lag\": %f,\n", lag);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
         socket->Send("\t\"time_usage\": %f,\n", actual_tick_duration> 0 ? tick_time_usage/actual_tick_duration : 0);
         socket->Send("\t\"cpu_usage\": %f,\n", cpu_usage);
+    
+        switch(run_mode)
+        {
+            case run_mode_stop:
+                socket->Send("\t\"tick\": \"-\",\n");
+                socket->Send("\t\"time\": \"-\",\n");
+                socket->Send("\t\"ticks_per_s\": \"-\",\n");
+                socket->Send("\t\"actual_duration\": \"-\",\n");
+                socket->Send("\t\"lag\": \"-\",\n");
+                break;
+
+            case run_mode_pause:
+                socket->Send("\t\"tick\": %lld,\n", GetTick());
+                socket->Send("\t\"time\": %.2f,\n", GetTime());
+                socket->Send("\t\"ticks_per_s\": \"-\",\n");
+                socket->Send("\t\"actual_duration\": \"-\",\n");
+                socket->Send("\t\"lag\": \"-\",\n");
+                break;
+
+            case run_mode_realtime:
+            default:
+                socket->Send("\t\"tick\": %lld,\n", GetTick());
+                socket->Send("\t\"time\": %.2f,\n", GetTime());
+                socket->Send("\t\"ticks_per_s\": %.2f,\n", tick>0 ? double(tick)/total_time: 0);
+                socket->Send("\t\"actual_duration\": %f,\n", actual_tick_duration);
+                socket->Send("\t\"lag\": %f,\n", lag);
+                break;
+        }
+
     }
 
 
@@ -1798,6 +1813,16 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
+    Kernel::DoQuit(Request & request)
+    {
+        log.push_back("quit");
+        Pause();
+        run_mode = run_mode_quit;
+        DoUpdate(request);
+    }
+
+
+    void
     Kernel::DoStop(Request & request)
     {
         log.push_back("stop");
@@ -1837,8 +1862,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendNetwork(Request & request)
     {
-        // std::cout << "DoSendNetwork" << std::endl;
-    
         std::string s = json(); 
         Dictionary rtheader;
         rtheader.Set("Session-Id", std::to_string(session_id).c_str());
@@ -1853,61 +1876,46 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoPause(Request & request)
     {
-    log.push_back("pause");
-    run_mode = run_mode_pause;
-    Pause();
-    DoSendData(request);
+        log.push_back("pause");
+        Pause();
+        DoSendData(request);
     }
 
 
     void
     Kernel::DoStep(Request & request)
     {
-    log.push_back("step");
-    Pause();
-    run_mode = run_mode_pause;
-    Tick();
-    timer.SetPauseTime(GetTime());
-    DoSendData(request);
-    }
-
-
-    void
-    Kernel::DoPlay(Request & request)
-    {
-    log.push_back("play");
-    Pause();
-    run_mode = run_mode_play;
-    Tick();
-    timer.SetPauseTime(GetTime());
-    DoSendData(request);
+        log.push_back("step");
+        Pause();
+        run_mode = run_mode_pause;
+        Tick();
+        timer.SetPauseTime(GetTime());
+        DoSendData(request);
     }
 
 
     void
     Kernel::DoRealtime(Request & request)
     {
-    log.push_back("realtime");
-    run_mode = run_mode_realtime;
-    timer.Continue();
-    is_running = true;
-    DoSendData(request);
+        log.push_back("realtime");
+        Realtime();
+        DoSendData(request);
     }
 
 
     void
     Kernel::DoCommand(Request & request)// FIXME: Not implemented **************
     {
-    /*
-    float x, y;
-    char command[255];
-    char value[1024]; // FIXME: no range chacks
-    int c = sscanf(uri.c_str(), "/command/%[^/]/%f/%f/%[^/]", command, &x, &y, value);
-    if(c == 4)
-        SendCommand(command, x, y, value);
+        /*
+        float x, y;
+        char command[255];
+        char value[1024]; // FIXME: no range chacks
+        int c = sscanf(uri.c_str(), "/command/%[^/]/%f/%f/%[^/]", command, &x, &y, value);
+        if(c == 4)
+            SendCommand(command, x, y, value);
 
-        */
-    DoSendData(request);
+            */
+        DoSendData(request);
     }
 
 
@@ -2148,12 +2156,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         {
             DoSendNetwork(request);
         }
+        /*
         else if(run_mode == run_mode_play && session_id == request.session_id)
         {
             Pause();
             Tick();
             DoSendData(request);
         }
+        */
         else 
             DoSendData(request);
     }
@@ -2228,7 +2238,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         Request request(socket->header.Get("URI"), sid);
 
-    // std::cout << request.url << std::endl;
+        //std::cout << request.url << std::endl;
 
 if(request == "network")
         DoNetwork(request);
@@ -2238,12 +2248,14 @@ if(request == "network")
 
     // Run mode commands
 
+    else if(request == "quit")
+        DoQuit(request);
+    else if(request == "stop")
+        DoStop(request);
     else if(request == "pause")
         DoPause(request);
     else if(request == "step")
         DoStep(request);
-    else if(request == "play")
-        DoPlay(request);
     else if(request == "realtime")
         DoRealtime(request);
 
@@ -2257,8 +2269,7 @@ if(request == "network")
         DoSave(request);
     else if(request == "saveas")
         DoSaveAs(request);
-    else if(request == "stop")
-        DoStop(request);
+
 
     // Start up commands
 
@@ -2326,7 +2337,7 @@ Kernel::CalculateCPUUsage() // In percent
     void
     Kernel::HandleHTTPThread()
     {
-        while(!Terminate())
+        while(!shutdown)
         {
             if (socket != nullptr && socket->GetRequest(true))
             {
@@ -2353,3 +2364,16 @@ Kernel::CalculateCPUUsage() // In percent
 
 }; // namespace ikaros
 
+
+
+Kernel::~Kernel()
+{
+    if(socket)
+    {
+        shutdown=true;
+        while(handling_request)
+            {}
+        Sleep(0.1);
+        delete socket; 
+    }
+}

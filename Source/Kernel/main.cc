@@ -34,6 +34,8 @@ main(int argc, char *argv[])
         }
 
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
+
+        k.InitSocket(o.get_long("webui_port"));
         k.Run(o.filenames, o);
         std::cout << "\nIkaros 3.0 Ended" << std::endl;
     }
