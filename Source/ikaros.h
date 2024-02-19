@@ -32,7 +32,8 @@ namespace ikaros {
 const int run_mode_quit = 0;
 const int run_mode_stop = 1;        // Kernel does not run and accrpts open/save/save_as/pause/realtime
 const int run_mode_pause = 2;       // Kernel is paused and accepts stop/step/realtime
-const int run_mode_realtime = 3;    // Kernel runs in real-time mode
+const int run_mode_play = 3;        // Kernel runs as fast as possible
+const int run_mode_realtime = 4;    // Kernel runs in real-time mode
 /*
 const int run_mode_step = 3;        /// Step and play only occurs on WebUI side
 const int run_mode_play = 4;
@@ -383,6 +384,7 @@ public:
     void DoStop(Request & request);
     void DoPause(Request & request);
     void DoStep(Request & request);
+    void DoPlay(Request & request);
     void DoRealtime(Request & request);
     
     void DoCommand(Request & request);

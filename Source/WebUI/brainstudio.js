@@ -381,7 +381,7 @@ controller = {
             }
 
             controller.tick = response.tick;
-            controller.run_mode = ['quit', 'stop','pause','realtime'][response.state];
+            controller.run_mode = ['quit', 'stop','pause','play','realtime'][response.state];
             
         }
         catch(err)

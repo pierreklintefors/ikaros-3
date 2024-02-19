@@ -1511,7 +1511,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                 // Run_mode may have changed during the delay - needs to be checked again
 
-                if(run_mode == run_mode_realtime) 
+                if(run_mode == run_mode_realtime || run_mode == run_mode_play) 
                 {
                     actual_tick_duration = intra_tick_timer.GetTime();
                     intra_tick_timer.Restart();
@@ -1520,10 +1520,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                     idle_time = tick_duration - tick_time_usage;
                 }                    
             }
-            Sleep(0.5);
+            Sleep(0.1);
         }
     }
-
 
 
     //
@@ -1895,6 +1894,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
+    Kernel::DoPlay(Request & request)
+    {
+        log.push_back("play");
+        Pause();
+        run_mode = run_mode_play;
+        timer.SetPauseTime(GetTime()+tick_duration);
+        DoSendData(request);
+    }
+
+
+
+    void
     Kernel::DoRealtime(Request & request)
     {
         log.push_back("realtime");
@@ -2256,6 +2267,8 @@ if(request == "network")
         DoPause(request);
     else if(request == "step")
         DoStep(request);
+    else if(request == "play")
+        DoPlay(request);
     else if(request == "realtime")
         DoRealtime(request);
 
