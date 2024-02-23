@@ -13,6 +13,7 @@ namespace ikaros {
     class options
     {
     public:
+        std::string filename;                   // If only one, or empty string if none
         std::vector<std::string> filenames;
         std::map<std::string, std::string> d;
         std::map<std::string, std::string> full;
@@ -67,6 +68,7 @@ namespace ikaros {
                     if (!std::filesystem::exists(s))
                             throw std::runtime_error("File not found: "+std::string(s));
                     filenames.push_back(s);
+                    filename = s;
                 }
             }
         }
