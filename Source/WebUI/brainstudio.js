@@ -227,7 +227,9 @@ controller = {
         controller.queueCommand('pause');
     },
     
-    step: function () {
+    step: function ()
+    {
+        document.querySelector("#state").innerText = "step";
         controller.queueCommand('step');
     },
     
@@ -330,7 +332,7 @@ controller = {
     {
         try
         {
-            if(response.tikc == "-")
+            if(response.tick == "-" || response.tick == -1)
                 document.querySelector("#tick").innerText = "-";
             else if(response.tick >= 0)
                 document.querySelector("#tick").innerText = response.tick;
@@ -381,7 +383,7 @@ controller = {
             }
 
             controller.tick = response.tick;
-            controller.run_mode = ['quit', 'stop','pause','play','realtime'][response.state];
+            controller.run_mode = ['quit', 'stop','pause','play','realtime','restart'][response.state];
             
         }
         catch(err)
@@ -438,6 +440,11 @@ controller = {
 
         else if(package_type == "data")
         {
+            if(response.state == 3)
+            {
+                console.log("Let's play");
+            }
+
             controller.setSystemInfo(response);
             controller.tick_duration = response.tick_duration || 0;
             if(response.has_data)
