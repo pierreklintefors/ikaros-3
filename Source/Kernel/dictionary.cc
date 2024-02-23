@@ -223,7 +223,6 @@ dictionary::dictionary(XMLElement * xml_node):
     dictionary::dictionary(std::string filename):
         dictionary(XMLDocument(filename.c_str()).xml)
     {
-        // std::cout << json() << std::endl;
     }
 
 
