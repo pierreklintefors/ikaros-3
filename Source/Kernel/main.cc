@@ -35,8 +35,20 @@ main(int argc, char *argv[])
 
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
 
+        k.options_ = o;
         k.InitSocket(o.get_long("webui_port"));
-        k.Run(o.filenames, o);
+
+        while(k.run_mode != run_mode_quit)
+        {
+            k.Run();
+            if(k.request_restart)
+            {
+                k.Save();
+                k.Clear();
+                k.request_restart = false;
+            }
+        }
+
         std::cout << "\nIkaros 3.0 Ended" << std::endl;
     }
     catch(fatal_error & e)

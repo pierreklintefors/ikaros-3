@@ -34,6 +34,7 @@ const int run_mode_stop = 1;        // Kernel does not run and accrpts open/save
 const int run_mode_pause = 2;       // Kernel is paused and accepts stop/step/realtime
 const int run_mode_play = 3;        // Kernel runs as fast as possible
 const int run_mode_realtime = 4;    // Kernel runs in real-time mode
+const int run_mode_restart = 5;     // Kernel is restarting
 /*
 const int run_mode_step = 3;        /// Step and play only occurs on WebUI side
 const int run_mode_play = 4;
@@ -265,6 +266,7 @@ class Kernel
 {
 public:
     dictionary                              info_;
+    options                                 options_;
     std::string                             webui_dir;
     std::map<std::string, Class>            classes;
     std::map<std::string, std::string>      files;                  // ikg-files
@@ -281,7 +283,9 @@ public:
     std::atomic<bool>                       sending_ui_data;
     std::atomic<bool>                       handling_request;
     std::atomic<bool>                       shutdown;
-    int                                     run_mode;   
+    int                                     run_mode;
+    bool                                    request_restart;
+    int                                     requested_restart_mode;
 
     dictionary                              current_component_info; // Implivit parameters to create Component
     std::string                             current_component_path;
@@ -361,7 +365,7 @@ public:
     void InitComponents();
     void SetUp();
 
-    void LoadFiles(std::vector<std::string> files, options & opts);
+    void LoadFile();
     void Save();
 
     void SortNetwork();
@@ -373,7 +377,10 @@ public:
     void InitSocket(long port);
 
     void Pause();
+    void Play();
+    void Stop();
     void Realtime();
+    void Restart(); // Save and reload
 
     void DoNew(Request & request);
     void DoOpen(Request & request);
@@ -426,7 +433,7 @@ public:
     void HandleHTTPRequest();
     void HandleHTTPThread();
     void Tick();
-    void Run(std::vector<std::string> files, options & opts);
+    void Run();
 };
 
 //

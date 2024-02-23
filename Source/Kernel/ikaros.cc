@@ -886,12 +886,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         return r.command == s;
     }
-    
+
     // Kernel
 
         void
         Kernel::Clear()
         {
+            std::cout << "Kernel::Clear" << std::endl;
+
             // FIXME: retain persistent components
             components.clear();
             connections.clear();
@@ -900,17 +902,21 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             circular_buffers.clear();
             parameters.clear();
 
-            tick = 0;
-            //is_running = false;
+            tick = -1;
             run_mode = run_mode_stop;
-            //tick_is_running = false;
+            request_restart = false;
+            // requested_restart_mode = run_mode_stop; // SHOULD EXPLCITLY NOT BE CHANGED
+
+            tick_is_running = false;
             tick_time_usage = 0;
             actual_tick_duration = tick_duration;
             idle_time = 0;
+            stop_after = -1;
+            shutdown = false;
 
-           // AddGroup("Untitled");     // FIXME: RESORE LATER
+           // AddGroup("Untitled");     // FIXME: RESTORE LATER
 
-            session_id = std::time(nullptr);
+            session_id = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         }
 
 
@@ -1056,7 +1062,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             }
         }
 
-        std::cout << "\nDelays:" << std::endl;
+        //std::cout << "\nDelays:" << std::endl;
         for(auto & o : buffers)
             std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
     }
@@ -1064,7 +1070,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     void Kernel::InitCircularBuffers()
     {
-        std::cout << "\nInitCircularBuffers:" << std::endl;
+        //std::cout << "\nInitCircularBuffers:" << std::endl;
         for(auto it : max_delays)
         {
             if(it.second <= 1)
@@ -1149,6 +1155,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::Kernel():
         tick(0),
         run_mode(run_mode_stop),
+        request_restart(false),
+        requested_restart_mode(run_mode_stop),
         tick_is_running(false),
         tick_time_usage(0),
         actual_tick_duration(0), // FIME: Use desired tick duration here
@@ -1285,79 +1293,41 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Kernel::LoadFiles(std::vector<std::string> files, options & opts)
+    void Kernel::LoadFile()
     {
-            if(files.empty())
-            {
-                /*
-                dictionary d;
-                for(auto & x : opts.d)
-                    d[x.first] = x.second;
-                // AddGroup("Untitled", d); // FIXME: RESTORE LATER
-
-                // FIXME: ONLY ONCE!!!!
-
-                if(d.contains("webui_port"))
-                    port = d["webui_port"];
-
-                if(d.contains("start"))
-                    start = is_true(d["start"]);
-
-                if(d.contains("stop"))
-                    stop_after = d["stop"];
-
-                if(d.contains("tick_duration"))
-                    tick_duration = d["tick_duration"];
-
-                if(d.contains("real_time"))
-                    if(is_true(d["real_time"]))
-                        run_mode = run_mode_realtime;
-
-                session_id = std::time(nullptr);
-                */
-                return;
-            }
-
-            // Load files
-
-            for(auto & filename: files)
+            std::cout << "Kernel::LoadFile" << std::endl;
             try
                 {
-                    dictionary d(filename.c_str());
+                    dictionary d;
+                    if(!options_.filename.empty())
+                        d = dictionary(options_.filename);
 
                     // Add command line arguments - will override XML - probably not correct ******************
 
-                    for(auto & x : opts.d)
+                    for(auto & x : options_.d)
                         d[x.first] = x.second;
 
-                        if(opts.filenames.size() > 0)
-                        d["filename"] = opts.filenames[0];
+                    d["filename"] = options_.filename;
 
-                        if(d.contains("start"))
-                            start = is_true(d["start"]);
+                    if(d.contains("start"))
+                        start = is_true(d["start"]);
 
-                        if(d.contains("stop"))
-                            stop_after = d["stop"];
+                    if(d.contains("stop"))
+                        stop_after = d["stop"];
 
-                        if(d.contains("tick_duration"))
-                            tick_duration = d["tick_duration"];
+                    if(d.contains("tick_duration"))
+                        tick_duration = d["tick_duration"];
 
-                        if(d.contains("real_time"))
-                            if(is_true(d["real_time"]))
-                            {
-                                run_mode = run_mode_realtime;
-                                start = true;
-                            }
-
-                    // Build the network
-
+                    if(d.contains("real_time"))
+                        if(is_true(d["real_time"]))
+                        {
+                            run_mode = run_mode_realtime;
+                            start = true;
+                        }
 
                     BuildGroup(d);
 
-
                     info_ = d;
-
-                    return; // Only use one file
                 }
                 catch(const std::exception& e)
                 {
@@ -1370,8 +1340,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-    void Kernel::Save() // Simple save function in preset file
+    void Kernel::Save() // Simple save function in present file
     {
+        std::cout << "Kernel::Save" << std::endl;
         std::string data = xml();
 
         std::ofstream file;
@@ -1475,27 +1446,36 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         ListParameters();
         PrintLog();
         */
-        ListInputs();
+        //ListInputs();
     }
 
 
 
     void
-    Kernel::Run(std::vector<std::string> files, options & opts)
+    Kernel::Run()
     {
-        LoadFiles(files, opts); // INIT
+        LoadFile();
         SetUp();
         timer.Restart();
         tick = -1; // To make first tick 0 after increment
 
-        if(start)
+        // Check if kernel should start or restart
+
+        if(requested_restart_mode == run_mode_pause)
+            Pause();
+        if(requested_restart_mode == run_mode_play)
+            Play();
+        else if(requested_restart_mode == run_mode_realtime)
             Realtime();
-        else
+        else if(requested_restart_mode ==  run_mode_stop && start)
+            Realtime();
+        else if(requested_restart_mode == run_mode_stop)
             Pause();
 
-        while(run_mode != run_mode_quit) // Main loop - until quit
+        // Main loop
+        while(run_mode != run_mode_quit && !request_restart) 
         {
-            while (!Terminate() && run_mode != run_mode_stop && run_mode != run_mode_quit)
+            while (!Terminate() && run_mode != run_mode_stop && run_mode != run_mode_quit && !request_restart)
             {
                 while(sending_ui_data)
                     {}
@@ -1599,16 +1579,58 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
+    Kernel::Stop()
+    {
+        while(tick_is_running)
+            {}
+
+        run_mode = run_mode_stop;
+        tick = -1;
+        timer.Pause();
+        timer.SetPauseTime(0);
+    }
+
+
+
+    void
     Kernel::Pause()
     {
         while(tick_is_running)
             {}
+
+        if(run_mode == run_mode_stop)
+        {
+            run_mode = run_mode_pause;
+            request_restart = true;
+            requested_restart_mode = run_mode_pause;
+            return;
+        }
+
         run_mode = run_mode_pause;
         timer.Pause();
         timer.SetPauseTime(GetTime()+tick_duration);
-
     }
 
+
+
+    void
+    Kernel::Play()
+    {
+        while(tick_is_running)
+            {}
+
+        if(run_mode == run_mode_stop)
+        {
+            run_mode = run_mode_pause;
+            request_restart = true;
+            requested_restart_mode = run_mode_play;
+            return;
+        }
+
+        run_mode = run_mode_play;
+        timer.Pause();
+        timer.SetPauseTime(GetTime()+tick_duration);
+    }
 
 
     void
@@ -1616,9 +1638,19 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         while(tick_is_running)
             {}
+
+        run_mode = run_mode_realtime;
+
+        if(run_mode == run_mode_stop)
+        {
+            run_mode = run_mode_realtime;
+            request_restart = true;
+            requested_restart_mode = run_mode_realtime;
+            return;
+        }
+
         run_mode = run_mode_realtime;
         timer.Continue();
-        //std::cout << "Timer restarted at: " << timer.GetTime() << std::endl;
     }
 
 
@@ -1661,8 +1693,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         socket->Send("\t\"uptime\": %.2f,\n", uptime);
         socket->Send("\t\"tick_duration\": %f,\n", tick_duration);
         socket->Send("\t\"cpu_cores\": %d,\n", cpu_cores);
-        socket->Send("\t\"time_usage\": %f,\n", actual_tick_duration> 0 ? tick_time_usage/actual_tick_duration : 0);
-        socket->Send("\t\"cpu_usage\": %f,\n", cpu_usage);
     
         switch(run_mode)
         {
@@ -1672,6 +1702,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 socket->Send("\t\"ticks_per_s\": \"-\",\n");
                 socket->Send("\t\"actual_duration\": \"-\",\n");
                 socket->Send("\t\"lag\": \"-\",\n");
+                socket->Send("\t\"time_usage\": 0,\n");
+                socket->Send("\t\"cpu_usage\": 0,\n"); 
                 break;
 
             case run_mode_pause:
@@ -1680,6 +1712,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 socket->Send("\t\"ticks_per_s\": \"-\",\n");
                 socket->Send("\t\"actual_duration\": \"-\",\n");
                 socket->Send("\t\"lag\": \"-\",\n");
+                socket->Send("\t\"time_usage\": %f,\n", actual_tick_duration> 0 ? tick_time_usage/actual_tick_duration : 0);
+                socket->Send("\t\"cpu_usage\": %f,\n", cpu_usage);  
                 break;
 
             case run_mode_realtime:
@@ -1689,6 +1723,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 socket->Send("\t\"ticks_per_s\": %.2f,\n", tick>0 ? double(tick)/total_time: 0);
                 socket->Send("\t\"actual_duration\": %f,\n", actual_tick_duration);
                 socket->Send("\t\"lag\": %f,\n", lag);
+                socket->Send("\t\"time_usage\": %f,\n", actual_tick_duration> 0 ? tick_time_usage/actual_tick_duration : 0);
+                socket->Send("\t\"cpu_usage\": %f,\n", cpu_usage);
                 break;
         }
 
@@ -1712,6 +1748,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendData(Request & request)
     {    
+        std::cout << "DoSendData: state = " << run_mode << std::endl;
         sending_ui_data = true; // must be set while main thread is still running
         while(tick_is_running)
             {}
@@ -1772,9 +1809,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-    Kernel::DoNew(Request & request)
+    Kernel::DoNew(Request & request)// FIXME: CHANGE FILENAME AND RESTART ***************
     {
-        Pause();
+        Stop();
         run_mode = run_mode_stop;
         Clear();    // Remove all things
         DoUpdate(request);
@@ -1782,18 +1819,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
     void
-    Kernel::DoOpen(Request & request)
+    Kernel::DoOpen(Request & request) // FIXME: CHANGE FILENAME AND RESTART ***************
     {
         std::string file = request.parameters["file"];
 
         //std::cout << "Open: " << file << std::endl;
-        Pause();
+        Stop();
         run_mode = run_mode_stop;
         Clear();    // Remove all things
-        options o; // FIXME: Use global options in kernel
         std::vector<std::string> files_;
         files_.push_back(files.at(file));
-        LoadFiles(files_, o);
+        options_.filename = file;
+        LoadFile();
         DoUpdate(request);
     }
 
@@ -1815,7 +1852,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::DoQuit(Request & request)
     {
         log.push_back("quit");
-        Pause();
+        Stop();
         run_mode = run_mode_quit;
         DoUpdate(request);
     }
@@ -1825,7 +1862,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::DoStop(Request & request)
     {
         log.push_back("stop");
-        Pause();
+        Stop();
         run_mode = run_mode_stop;
         DoUpdate(request);
     }
@@ -1897,7 +1934,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::DoPlay(Request & request)
     {
         log.push_back("play");
-        Pause();
+        Play();
         run_mode = run_mode_play;
         timer.SetPauseTime(GetTime()+tick_duration);
         DoSendData(request);
@@ -2249,88 +2286,88 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         Request request(socket->header.Get("URI"), sid);
 
-        //std::cout << request.url << std::endl;
+        if(request.url != "/update/?data=")
+            std::cout << request.url << std::endl;
 
-if(request == "network")
-        DoNetwork(request);
+        if(request == "network")
+            DoNetwork(request);
 
-    else if(request == "update")
-        DoUpdate(request);
+        else if(request == "update")
+            DoUpdate(request);
 
-    // Run mode commands
+        // Run mode commands
 
-    else if(request == "quit")
-        DoQuit(request);
-    else if(request == "stop")
-        DoStop(request);
-    else if(request == "pause")
-        DoPause(request);
-    else if(request == "step")
-        DoStep(request);
-    else if(request == "play")
-        DoPlay(request);
-    else if(request == "realtime")
-        DoRealtime(request);
+        else if(request == "quit")
+            DoQuit(request);
+        else if(request == "stop")
+            DoStop(request);
+        else if(request == "pause")
+            DoPause(request);
+        else if(request == "step")
+            DoStep(request);
+        else if(request == "play")
+            DoPlay(request);
+        else if(request == "realtime")
+            DoRealtime(request);
 
-    // File handling commands
+        // File handling commands
 
-    else if(request == "new")
-        DoNew(request);
-    else if(request == "open")
-        DoOpen(request);
-    else if(request == "save")
-        DoSave(request);
-    else if(request == "saveas")
-        DoSaveAs(request);
+        else if(request == "new")
+            DoNew(request);
+        else if(request == "open")
+            DoOpen(request);
+        else if(request == "save")
+            DoSave(request);
+        else if(request == "saveas")
+            DoSaveAs(request);
 
+        // Start up commands
 
-    // Start up commands
+        else if(request == "classes") 
+            DoSendClasses(request);
+        else if(request == "files") 
+            DoSendFileList(request);
+        else if(request == "")
+            DoSendFile("index.html");
 
-    else if(request == "classes") 
-        DoSendClasses(request);
-    else if(request == "files") 
-        DoSendFileList(request);
-    else if(request == "")
-        DoSendFile("index.html");
+        // Control commands
 
-    // Control commands
+        else if(request == "command")
+            DoCommand(request);
+        else if(request == "control")
+            DoControl(request);
 
-    else if(request == "command")
-        DoCommand(request);
-    else if(request == "control")
-        DoControl(request);
+        // View editing
 
-    // View editing
+        else if(request == "addview")
+            AddView(request);
+        else if(request == "renameview")
+            RenameView(request);
+        else if(request == "addwidget")
+            AddWidget(request);
+        else if(request == "delwidget")
+            DeleteWidget(request);
+        else if(request == "setwidgetparams")
+            SetWidgetParameters(request);
+        else if(request == "widgettofront")
+            WidgetToFront(request);
+        else if(request == "widgettoback")
+            WidgetToBack(request);
 
-    else if(request == "addview")
-        AddView(request);
-    else if(request == "renameview")
-        RenameView(request);
-    else if(request == "addwidget")
-        AddWidget(request);
-    else if(request == "delwidget")
-        DeleteWidget(request);
-    else if(request == "setwidgetparams")
-        SetWidgetParameters(request);
-    else if(request == "widgettofront")
-        WidgetToFront(request);
-    else if(request == "widgettoback")
-        WidgetToBack(request);
+        // Network editing
 
-    // Network editing
-
-    else if(request == "addgroup")
-        DoAddGroup(request);
-    else if(request == "addmodule")
-        DoAddModule(request);
-    else if(request == "setattribute")
-        DoSetAttribute(request);
-    else if(request == "addconnection")
-        DoAddConnection(request);
-    else if(request == "setrange")
-        DoSetRange(request);
-    else 
-        DoSendFile(request.url);
+        else if(request == "addgroup")
+            DoAddGroup(request);
+        else if(request == "addmodule")
+            DoAddModule(request);
+        else if(request == "setattribute")
+            DoSetAttribute(request);
+        else if(request == "addconnection")
+            DoAddConnection(request);
+        else if(request == "setrange")
+            DoSetRange(request);
+        else 
+            DoSendFile(request.url);
     }
 
 
