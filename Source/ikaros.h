@@ -29,16 +29,14 @@
 
 namespace ikaros {
 
+const int run_mode_restart_pause = -2;
+const int run_mode_restart_realtime = -4;
 const int run_mode_quit = 0;
 const int run_mode_stop = 1;        // Kernel does not run and accrpts open/save/save_as/pause/realtime
 const int run_mode_pause = 2;       // Kernel is paused and accepts stop/step/realtime
-const int run_mode_play = 3;        // Kernel runs as fast as possible
+//const int run_mode_play = 3;        // Kernel runs as fast as possible
 const int run_mode_realtime = 4;    // Kernel runs in real-time mode
 const int run_mode_restart = 5;     // Kernel is restarting
-/*
-const int run_mode_step = 3;        /// Step and play only occurs on WebUI side
-const int run_mode_play = 4;
-*/
 
 
 using tick_count = long long int;
@@ -284,8 +282,6 @@ public:
     std::atomic<bool>                       handling_request;
     std::atomic<bool>                       shutdown;
     int                                     run_mode;
-    bool                                    request_restart;
-    int                                     requested_restart_mode;
 
     dictionary                              current_component_info; // Implivit parameters to create Component
     std::string                             current_component_path;
@@ -377,7 +373,7 @@ public:
     void InitSocket(long port);
 
     void Pause();
-    void Play();
+  //  void Play();
     void Stop();
     void Realtime();
     void Restart(); // Save and reload
@@ -391,7 +387,7 @@ public:
     void DoStop(Request & request);
     void DoPause(Request & request);
     void DoStep(Request & request);
-    void DoPlay(Request & request);
+   // void DoPlay(Request & request);
     void DoRealtime(Request & request);
     
     void DoCommand(Request & request);

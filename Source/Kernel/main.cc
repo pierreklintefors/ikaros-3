@@ -41,11 +41,10 @@ main(int argc, char *argv[])
         while(k.run_mode != run_mode_quit)
         {
             k.Run();
-            if(k.request_restart)
+            if(k.run_mode < run_mode_quit) // Restart requested
             {
                 k.Save();
                 k.Clear();
-                k.request_restart = false;
             }
         }
 

@@ -903,10 +903,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             parameters.clear();
 
             tick = -1;
-            run_mode = run_mode_stop;
-            request_restart = false;
-            // requested_restart_mode = run_mode_stop; // SHOULD EXPLCITLY NOT BE CHANGED
-
+            //run_mode = run_mode_stop;
             tick_is_running = false;
             tick_time_usage = 0;
             actual_tick_duration = tick_duration;
@@ -1155,8 +1152,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::Kernel():
         tick(0),
         run_mode(run_mode_stop),
-        request_restart(false),
-        requested_restart_mode(run_mode_stop),
         tick_is_running(false),
         tick_time_usage(0),
         actual_tick_duration(0), // FIME: Use desired tick duration here
@@ -1318,12 +1313,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                     if(d.contains("tick_duration"))
                         tick_duration = d["tick_duration"];
 
+/*
                     if(d.contains("real_time"))
                         if(is_true(d["real_time"]))
                         {
-                            run_mode = run_mode_realtime;
+                            run_mode = run_mode_restart_realtime;
                             start = true;
                         }
+*/
 
                     BuildGroup(d);
 
@@ -1459,23 +1456,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         timer.Restart();
         tick = -1; // To make first tick 0 after increment
 
-        // Check if kernel should start or restart
-
-        if(requested_restart_mode == run_mode_pause)
-            Pause();
-        if(requested_restart_mode == run_mode_play)
-            Play();
-        else if(requested_restart_mode == run_mode_realtime)
+        if(run_mode == run_mode_restart_realtime)
+        {
+            Pause(); // FIXME: Why is this needed? Should not Restart-fix this?
             Realtime();
-        else if(requested_restart_mode ==  run_mode_stop && start)
-            Realtime();
-        else if(requested_restart_mode == run_mode_stop)
+        }
+        else
             Pause();
 
         // Main loop
-        while(run_mode != run_mode_quit && !request_restart) 
+        while(run_mode > run_mode_quit)  // Not quit or restart
         {
-            while (!Terminate() && run_mode != run_mode_stop && run_mode != run_mode_quit && !request_restart)
+            while (!Terminate() && run_mode > run_mode_quit)
             {
                 while(sending_ui_data)
                     {}
@@ -1491,7 +1483,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                 // Run_mode may have changed during the delay - needs to be checked again
 
-                if(run_mode == run_mode_realtime || run_mode == run_mode_play) 
+                if(run_mode == run_mode_realtime) 
                 {
                     actual_tick_duration = intra_tick_timer.GetTime();
                     intra_tick_timer.Restart();
@@ -1600,19 +1592,19 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         if(run_mode == run_mode_stop)
         {
-            run_mode = run_mode_pause;
-            request_restart = true;
-            requested_restart_mode = run_mode_pause;
-            return;
+            run_mode = run_mode_restart_pause;
         }
-
-        run_mode = run_mode_pause;
-        timer.Pause();
-        timer.SetPauseTime(GetTime()+tick_duration);
+        else
+        {
+            run_mode = run_mode_pause;
+            timer.Pause();
+            timer.SetPauseTime(GetTime()+tick_duration);
+        }
     }
 
 
 
+/*
     void
     Kernel::Play()
     {
@@ -1631,7 +1623,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         timer.Pause();
         timer.SetPauseTime(GetTime()+tick_duration);
     }
-
+*/
 
     void
     Kernel::Realtime()
@@ -1639,19 +1631,17 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         while(tick_is_running)
             {}
 
-        run_mode = run_mode_realtime;
-
         if(run_mode == run_mode_stop)
         {
-            run_mode = run_mode_realtime;
-            request_restart = true;
-            requested_restart_mode = run_mode_realtime;
-            return;
+            run_mode = run_mode_restart_realtime;
         }
-
-        run_mode = run_mode_realtime;
-        timer.Continue();
+        else
+        {
+            run_mode = run_mode_realtime;
+            timer.Continue();
+        }
     }
+
 
 
 
@@ -1748,7 +1738,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendData(Request & request)
     {    
-        std::cout << "DoSendData: state = " << run_mode << std::endl;
+        //std::cout << "DoSendData: state = " << run_mode << std::endl;
         sending_ui_data = true; // must be set while main thread is still running
         while(tick_is_running)
             {}
@@ -1930,6 +1920,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
+/*
     void
     Kernel::DoPlay(Request & request)
     {
@@ -1939,7 +1930,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         timer.SetPauseTime(GetTime()+tick_duration);
         DoSendData(request);
     }
-
+*/
 
 
     void
@@ -2305,8 +2296,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             DoPause(request);
         else if(request == "step")
             DoStep(request);
-        else if(request == "play")
-            DoPlay(request);
+//        else if(request == "play")
+//            DoPlay(request);
         else if(request == "realtime")
             DoRealtime(request);
 
