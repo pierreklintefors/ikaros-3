@@ -63,12 +63,49 @@ function zeroPad(x)
 
 
 
-function secondsToHMS(d) {
-    d = Number(d);
-    var h = Math.floor(d / 3600);
-    var m = Math.floor(d % 3600 / 60);
-    var s = Math.floor(d % 3600 % 60);
-    return h+":"+zeroPad(m)+":"+zeroPad(s);
+function secondsToHMS(d)
+{
+    try
+    {
+        if(d=="-")
+            return "-";
+
+        d = Number(d);
+        if(isNaN(d) || d < 0)
+            return "-";
+
+        var h = Math.floor(d / 3600);
+        var m = Math.floor(d % 3600 / 60);
+        var s = Math.floor(d % 3600 % 60);
+        return h+":"+zeroPad(m)+":"+zeroPad(s);
+    }
+    catch(err)
+    {
+        return "-";
+    }
+}
+
+
+
+function formatTime(d)
+{
+    try
+    {
+        if(d == "-")
+            return "-";
+        if(d < 0)
+            return "-";
+        else if(d < 0.001)
+            return 1000000*d + " &micro;s";
+        else if(d < 5)
+            return 1000*d + " ms";
+        else
+            return secondsToHMS(d);
+    }
+    catch(e)
+    {
+        return "-";
+    }
 }
 
 // COOKIES FOR PERSISTENT STATE
@@ -356,39 +393,18 @@ controller = {
                 p.style.display = "none";
                 return;
             }
-            if(response.tick == "-" || response.tick == -1)
-                document.querySelector("#tick").innerText = "-";
-            else if(response.tick >= 0)
-                document.querySelector("#tick").innerText = response.tick;
 
-            document.querySelector("#state").innerText = controller.run_mode; // +response.state+" "+" "+response.has_data;
+            document.querySelector("#tick").innerText = (Number.isInteger(response.tick) && response.tick >= 0 ?  response.tick : "-");
+            document.querySelector("#state").innerText = controller.run_mode;
             document.querySelector("#uptime").innerText = secondsToHMS(response.uptime);
-
-            if(response.time >= 0)
-                document.querySelector("#time").innerText = secondsToHMS(response.time);
-            else
-                document.querySelector("#time").innerText = "-";
-
+            document.querySelector("#time").innerText = secondsToHMS(response.time);
             document.querySelector("#ticks_per_s").innerText = response.ticks_per_s;
-
-            document.querySelector("#tick_duration").innerText = 1000*response.tick_duration+" ms";
-
-            if(response.actual_duration == "-")
-                document.querySelector("#actual_duration").innerText = "-";
-            else
-                document.querySelector("#actual_duration").innerText = 1000*response.actual_duration+" ms";
-
-                if(response.lag == "-")
-                document.querySelector("#lag").innerText = "-";
-            else if(response.lag < 0.001)
-                document.querySelector("#lag").innerHTML = 1000000*response.lag+" &micro;s";
-            else
-                document.querySelector("#lag").innerText = 1000*response.lag+" ms";
-
+            document.querySelector("#tick_duration").innerText = formatTime(response.tick_duration);
+            document.querySelector("#actual_duration").innerText = formatTime(response.actual_duration);
+            document.querySelector("#lag").innerHTML = formatTime(response.lag);
             document.querySelector("#cpu_cores").innerText = response.cpu_cores;
             document.querySelector("#time_usage").value = response.time_usage;
             document.querySelector("#usage").value = response.cpu_usage;
-
             document.querySelector("#webui_updates_per_s").innerText = (1000/controller.webui_interval).toFixed(1) + (response.has_data ? "": " (no data)");
             document.querySelector("#webui_interval").innerText = controller.webui_interval+" ms";
             document.querySelector("#webui_req_int").innerText = controller.webui_req_int+" ms";
@@ -402,9 +418,7 @@ controller = {
                 p.style.display = "table-row";
             }
             else
-            {
                 p.style.display = "none";
-            }
 
             controller.tick = response.tick;
             controller.run_mode = ['quit', 'stop','pause','play','realtime','restart'][response.state];
