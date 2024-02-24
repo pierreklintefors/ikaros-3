@@ -128,6 +128,8 @@ Timer::Restart()
         {}
 
     start_time = steady_clock::now();
+    pause_time = start_time;
+    paused = false;
 }
 
 

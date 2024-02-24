@@ -1457,10 +1457,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         tick = -1; // To make first tick 0 after increment
 
         if(run_mode == run_mode_restart_realtime)
-        {
-            Pause(); // FIXME: Why is this needed? Should not Restart-fix this?
             Realtime();
-        }
         else
             Pause();
 
