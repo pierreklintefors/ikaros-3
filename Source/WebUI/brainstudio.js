@@ -142,11 +142,13 @@ controller = {
     reconnect()
     {
         controller.get("update", controller.update);
+        controller.setSystemInfo(null);
         let s = document.querySelector("#state");
         if(s.innerText == "waiting")
-            document.querySelector("#state").innerHTML = "waiting &bull;";
+            s.innerHTML = "waiting &bull;";
         else
-            document.querySelector("#state").innerHTML = "waiting";
+            s.innerHTML = "waiting";
+
     },
 
     defer_reconnect()
@@ -332,6 +334,28 @@ controller = {
     {
         try
         {
+            if(response == null)
+            {
+                document.querySelector("#tick").innerText = "-";
+                document.querySelector("#state").innerText = "-";
+                document.querySelector("#uptime").innerText = "-";
+                document.querySelector("#time").innerText = "-";
+                document.querySelector("#ticks_per_s").innerText = "-";
+                document.querySelector("#tick_duration").innerText = "-";
+                document.querySelector("#actual_duration").innerText =  "-";
+                document.querySelector("#lag").innerText = "-";
+                document.querySelector("#cpu_cores").innerText = "-";
+                document.querySelector("#time_usage").innerText = "-";
+                document.querySelector("#usage").innerText = "-";
+                document.querySelector("#webui_updates_per_s").innerText = "-";
+                document.querySelector("#webui_interval").innerText = "-";
+                document.querySelector("#webui_req_int").innerText = "-";
+                document.querySelector("#webui_ping").innerText = "-";
+                document.querySelector("#webui_lag").innerText = "-";
+                let p = document.querySelector("#progress");
+                p.style.display = "none";
+                return;
+            }
             if(response.tick == "-" || response.tick == -1)
                 document.querySelector("#tick").innerText = "-";
             else if(response.tick >= 0)
@@ -440,11 +464,6 @@ controller = {
 
         else if(package_type == "data")
         {
-            if(response.state == 3)
-            {
-                console.log("Let's play");
-            }
-
             controller.setSystemInfo(response);
             controller.tick_duration = response.tick_duration || 0;
             if(response.has_data)
