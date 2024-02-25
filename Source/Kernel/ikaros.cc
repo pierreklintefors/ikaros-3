@@ -1458,6 +1458,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         if(run_mode == run_mode_restart_realtime)
             Realtime();
+        else if(run_mode == run_mode_restart_play)
+            Play();
         else
             Pause();
 
@@ -1473,6 +1475,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                 if(run_mode == run_mode_realtime)
                     lag = timer.WaitUntil(double(tick+1)*tick_duration);
+                else if(run_mode == run_mode_play)
+                    timer.SetTime(timer.GetTime()+tick_duration); // Fake time increase
                 else
                     Sleep(0.01); // Wait 10 ms to avoid wasting cycles if there are no requests
 
@@ -1480,7 +1484,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
                 // Run_mode may have changed during the delay - needs to be checked again
 
-                if(run_mode == run_mode_realtime) 
+                if(run_mode == run_mode_realtime || run_mode == run_mode_play) 
                 {
                     actual_tick_duration = intra_tick_timer.GetTime();
                     intra_tick_timer.Restart();
@@ -1640,6 +1644,24 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
+
+
+    void
+    Kernel::Play()
+    {
+        while(tick_is_running)
+            {}
+
+        if(run_mode == run_mode_stop)
+        {
+            run_mode = run_mode_restart_play;
+        }
+        else
+        {
+            run_mode = run_mode_play;
+            timer.Continue();
+        }
+    }
 
 
     void
@@ -1935,6 +1957,15 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         log.push_back("realtime");
         Realtime();
+        DoSendData(request);
+    }
+
+
+    void
+    Kernel::DoPlay(Request & request)
+    {
+        log.push_back("play");
+        Play();
         DoSendData(request);
     }
 
@@ -2293,8 +2324,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             DoPause(request);
         else if(request == "step")
             DoStep(request);
-//        else if(request == "play")
-//            DoPlay(request);
+        else if(request == "play")
+            DoPlay(request);
         else if(request == "realtime")
             DoRealtime(request);
 
