@@ -207,18 +207,18 @@ namespace ikaros
     }
 
 
-dictionary::dictionary(XMLElement * xml_node):
-    dictionary()
-{
-    for(XMLAttribute * a = xml_node->attributes; a!=nullptr; a=(XMLAttribute *)(a->next))
-        (*dict_)[std::string(a->name)] = a->value;
+    dictionary::dictionary(XMLElement * xml_node):
+        dictionary()
+    {
+        for(XMLAttribute * a = xml_node->attributes; a!=nullptr; a=(XMLAttribute *)(a->next))
+            (*dict_)[std::string(a->name)] = a->value;
 
-    for (XMLElement * xml_element = xml_node->GetContentElement(); xml_element != nullptr; xml_element = xml_element->GetNextElement())
-        //if(merge.empty())
-            (*dict_)[std::string(xml_element->name)+"s"].push_back(dictionary(xml_element));
-        //else
-        //    (*dict_)["elements"].push_back(dictionary(xml_element));
-}
+        for (XMLElement * xml_element = xml_node->GetContentElement(); xml_element != nullptr; xml_element = xml_element->GetNextElement())
+            //if(merge.empty())
+                (*dict_)[std::string(xml_element->name)+"s"].push_back(dictionary(xml_element));
+            //else
+            //    (*dict_)["elements"].push_back(dictionary(xml_element));
+    }
 
     dictionary::dictionary(std::string filename):
         dictionary(XMLDocument(filename.c_str()).xml)
