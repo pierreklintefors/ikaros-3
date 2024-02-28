@@ -909,7 +909,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             parameters.clear();
 
             tick = -1;
-            run_mode = run_mode_pause;
+            //run_mode = run_mode_pause;
             tick_is_running = false;
             tick_time_usage = 0;
             tick_duration = 1; // default value
@@ -931,6 +931,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             log.push_back(Message("New file"));
        
             Clear();
+            Pause();
             dictionary d;
 
             d["name"] = "Untitled";
@@ -1886,8 +1887,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::string file = request.parameters["file"];
         Stop();
         Clear();    // Remove all things
-        //std::vector<std::string> files_;
-        //files_.push_back(files.at(file));
         options_.filename = files.at(file);
         LoadFile();
         DoUpdate(request);
