@@ -96,7 +96,7 @@ function formatTime(d)
         if(d < 0)
             return "-";
         else if(d < 0.001)
-            return 1000000*d + " &micro;s";
+            return 1000000*d + " &#181;s";
         else if(d < 5)
             return 1000*d + " ms";
         else
@@ -221,6 +221,7 @@ controller = {
 
     init: function ()
     {
+        controller.getFiles();
         controller.requestUpdate();
         controller.reconnect_timer = setInterval(controller.reconnect, controller.reconnect_interval);
     },
@@ -235,13 +236,12 @@ controller = {
 
     openCallback: function(x)
     {
-        //controller.queueCommand('open');
         controller.get("open?file="+x, controller.update);
     },
 
     open: function () {
 
-        dialog.showOpenDialog(interaction.filelist, controller.openCallback, "Select file to open");
+        dialog.showOpenDialog(controller.filelist, controller.openCallback, "Select file to open");
     },
 
     save: function () {
@@ -373,6 +373,7 @@ controller = {
         {
             if(response == null)
             {
+                document.querySelector("#file").innerText = "-";
                 document.querySelector("#tick").innerText = "-";
                 document.querySelector("#state").innerText = "-";
                 document.querySelector("#uptime").innerText = "-";
@@ -394,13 +395,14 @@ controller = {
                 return;
             }
 
+            document.querySelector("#file").innerText = response.file;
             document.querySelector("#tick").innerText = (Number.isInteger(response.tick) && response.tick >= 0 ?  response.tick : "-");
             document.querySelector("#state").innerText = controller.run_mode;
             document.querySelector("#uptime").innerText = secondsToHMS(response.uptime);
             document.querySelector("#time").innerText = secondsToHMS(response.time);
             document.querySelector("#ticks_per_s").innerText = response.ticks_per_s;
-            document.querySelector("#tick_duration").innerText = formatTime(response.tick_duration);
-            document.querySelector("#actual_duration").innerText = formatTime(response.actual_duration);
+            document.querySelector("#tick_duration").innerHTML = formatTime(response.tick_duration);
+            document.querySelector("#actual_duration").innerHTML = formatTime(response.actual_duration);
             document.querySelector("#lag").innerHTML = formatTime(response.lag);
             document.querySelector("#cpu_cores").innerText = response.cpu_cores;
             document.querySelector("#time_usage").value = response.time_usage;
@@ -487,7 +489,18 @@ controller = {
         if(response.log)
         {
             let logElement = document.querySelector('.log');
-            response.log.forEach((element) => logElement.innerHTML += "<p>"+element+"</p>\n");
+            response.log.forEach((element) => {
+                if(element[0] == "M")
+                logElement.innerHTML += "<p class='message'>"+element[1]+"</p>\n";
+                else if(element[0] == "W")
+                    logElement.innerHTML += "<p class='warning'>"+element[1]+"</p>\n";
+                else if(element[0] == "E" || element[0] == "F")
+                {
+                    logElement.innerHTML += "<p class='error'>"+element[1]+"</p>\n";
+                    log.showView();
+                }
+        });
+ 
             logElement.scrollTop = logElement.scrollHeight;
         }
     },
@@ -563,7 +576,7 @@ controller = {
             return response.json();
         })
         .then(json => {
-            interaction.filelist = json.files || [];
+            controller.filelist = json.files || [];
         })
         .catch(function () {
             console.log("Could not get file list from server.");
@@ -611,6 +624,12 @@ log = {
             log.view.style.display = 'block';
         else 
         log.view.style.display = 'none';
+    },
+
+    showView()
+    {
+        log.view.style.display = 'block';
+
     }
 }
 
@@ -622,6 +641,52 @@ brainstudio = {
         log.init();
         inspector.init();
         controller.init();
+    }
+}
+
+
+
+/*
+ *
+ * Dialog Scrips
+ *
+ *
+ */
+
+dialog = {
+    confirmOpen: function()
+    {
+        let sel = document.getElementById("openDialogItems");
+        let text= sel.options[sel.selectedIndex].text;
+        dialog.window.close(text);
+            if(dialog.callback)
+                dialog.callback(text);
+    },
+        
+    cancelOpen: function()
+    {
+        dialog.window.close(null);
+    },
+
+    showOpenDialog: function (file_list, callback, message)
+    {
+        dialog.callback = callback;
+        dialog.window = document.getElementById('openDialog');
+        let sel = document.getElementById('openDialogItems');
+        sel.innerHTML = '';
+        if(file_list)
+            for(i of file_list) // FIXME: TEST was .split(",")
+            {
+                var opt = document.createElement('option');
+                opt.value = i;
+                opt.innerHTML = i;
+                document.getElementById('openDialogItems').appendChild(opt);
+            }
+            if(message)
+            {
+                document.getElementById('openDialogTitle').innerText = message;
+            }
+        dialog.window.showModal();
     }
 }
 

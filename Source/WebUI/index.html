@@ -55,17 +55,15 @@
 <script src="js/controls/OrbitControls.js" defer></script>
 <script src="js/loaders/GLTFLoader.js" defer></script>
 <script src="js/libs/stats.min.js" defer></script>
-     <dialog id="openDialog">
-        <p id="openDialogTitle"></p>
-        <select size="14" id="openDialogItems" style="width:100%">
-            </select>
-        <menu>
-            <button  onclick="dialog.cancelOpen()">Cancel</button>
-            <button onclick="dialog.confirmOpen()">Open</button>
-        </menu>
-    </dialog>
-      
-    
+<dialog id="openDialog">
+    <p id="openDialogTitle"></p>
+    <select size="14" id="openDialogItems" style="width:100%">
+    </select>
+    <menu>
+        <button  onclick="dialog.cancelOpen()">Cancel</button>
+        <button onclick="dialog.confirmOpen()">Open</button>
+    </menu>
+</dialog>
           </div>
         </div>
       </div>
@@ -281,6 +279,11 @@
             <button onmousedown="controller.realtime()">Realtime</button>
             <table id="i_table">
                  <tbody>
+
+                    <tr>
+                        <td>file</td><td id="file">-</td>
+                    </tr>
+                    <tr>
 
                     <tr>
                         <td>state</td><td id="state">-</td>
