@@ -1,11 +1,12 @@
 // Ikaros 3.0
 
-#include "ikaros.h"
-
 #include <iostream> 
+
+#include "ikaros.h"
 
 using namespace ikaros;
 using namespace std::chrono;
+using namespace std::literals;
 
 namespace ikaros
 {
@@ -21,6 +22,12 @@ namespace ikaros
                 throw exception("Illegal character in identifier: "+s);
         return s;
     }
+
+    long new_session_id()
+    {
+        return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    }
+
 
 // CircularBuffer
 
@@ -893,7 +900,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         Kernel::Clear()
         {
             std::cout << "Kernel::Clear" << std::endl;
-
             // FIXME: retain persistent components
             components.clear();
             connections.clear();
@@ -903,17 +909,46 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             parameters.clear();
 
             tick = -1;
-            //run_mode = run_mode_stop;
+            run_mode = run_mode_pause;
             tick_is_running = false;
             tick_time_usage = 0;
+            tick_duration = 1; // default value
             actual_tick_duration = tick_duration;
             idle_time = 0;
             stop_after = -1;
             shutdown = false;
+            info_ = dictionary();
+            info_["filename"] = "Untitled.ikg";
 
-           // AddGroup("Untitled");     // FIXME: RESTORE LATER
+            session_id = new_session_id();
+        }
 
-            session_id = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
+        void
+        Kernel::New()
+        {
+            std::cout << "Kernel::New" << std::endl;
+            log.push_back(Message("New file"));
+       
+            Clear();
+            dictionary d;
+
+            d["name"] = "Untitled";
+            d["groups"] = list();
+            d["modules"] = list();
+            d["connections"] = list();       
+            d["inputs"] = list();            
+            d["outputs"] = list();            
+            d["parameters"] = list();           
+            d["stop"] = "-1";
+            // d["webui_port"] = "8000";
+
+            SetCommandLineParameters(d);
+            d["filename"] = "Untitled.ikg";
+            BuildGroup(d);
+            info_ = d;
+            session_id = new_session_id(); 
+            SetUp();
         }
 
 
@@ -925,6 +960,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
          for(auto & m : components)
             try
             {
+                //std::cout <<" Tick: " << m.second->info_["name"] << std::endl;
                 m.second->Tick();
             }
             catch(const empty_matrix_error& e)
@@ -1144,14 +1180,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void Kernel::PrintLog()
     {
         for(auto & s : log)
-            std::cout << "IKAROS: " << s << std::endl;
+            std::cout << "IKAROS: " << s.type << ": " << s.msg << std::endl;
         log.clear();
     }
 
 
     Kernel::Kernel():
         tick(0),
-        run_mode(run_mode_stop),
+        run_mode(run_mode_pause),
         tick_is_running(false),
         tick_time_usage(0),
         actual_tick_duration(0), // FIME: Use desired tick duration here
@@ -1159,7 +1195,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         stop_after(-1),
         tick_duration(1),
         shutdown(false),
-        session_id(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count()),
+        session_id(new_session_id()),
         webui_dir("Source/WebUI/") // FIXME: get from somewhere else
     {
         cpu_cores = std::thread::hardware_concurrency();
@@ -1279,40 +1315,34 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             }
             catch(const fatal_error& e)
             {
-                log.push_back("Fatal error. Init failed for \""+c.second->path_+"\": "+std::string(e.what())); // FIXME: set end of execution
+                log.push_back(Message("F", "Fatal error. Init failed for \""+c.second->path_+"\": "+std::string(e.what()))); // FIXME: set end of execution
             }
             catch(const std::exception& e)
             {
-                log.push_back("Init failed for \""+c.second->path_+"\": "+std::string(e.what()));
+                log.push_back(Message("F", "Init failed for "+c.second->path_+": "+std::string(e.what())));
             }
     }
 
 
-    void Kernel::LoadFile()
+    void Kernel::SetCommandLineParameters(dictionary & d) // Add command line arguments - will override XML - probably not correct ******************
     {
-            std::cout << "Kernel::LoadFile" << std::endl;
-            try
-                {
-                    dictionary d;
-                    if(!options_.filename.empty())
-                        d = dictionary(options_.filename);
+    
+        for(auto & x : options_.d)
+            d[x.first] = x.second;
 
-                    // Add command line arguments - will override XML - probably not correct ******************
+        d["filename"] = options_.filename;
 
-                    for(auto & x : options_.d)
-                        d[x.first] = x.second;
+        if(d.contains("stop"))
+            stop_after = d["stop"];
 
-                    d["filename"] = options_.filename;
+        if(d.contains("tick_duration"))
+            tick_duration = d["tick_duration"];
 
-                    if(d.contains("start"))
-                        start = is_true(d["start"]);
+//                if(run_mode >= run_mode_stop) // only look at below command line arguments started from command line
+//                    {
 
-                    if(d.contains("stop"))
-                        stop_after = d["stop"];
-
-                    if(d.contains("tick_duration"))
-                        tick_duration = d["tick_duration"];
-
+        if(d.contains("start"))
+            start = is_true(d["start"]);
 /*
                     if(d.contains("real_time"))
                         if(is_true(d["real_time"]))
@@ -1320,20 +1350,31 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                             run_mode = run_mode_restart_realtime;
                             start = true;
                         }
+       
 */
+    }
 
-                    BuildGroup(d);
 
-                    info_ = d;
-                }
-                catch(const std::exception& e)
-                {
-                    log.push_back(e.what());
-                    throw;
-                }
-    
-        session_id = std::time(nullptr); 
-        SetUp();
+
+    void Kernel::LoadFile()
+    {
+            std::cout << "Kernel::LoadFile" << std::endl;
+            try
+            {
+                dictionary d = dictionary(options_.filename);
+                SetCommandLineParameters(d);
+                BuildGroup(d);
+                info_ = d;
+                session_id = new_session_id(); 
+                SetUp();
+                log.push_back(Message("Loaded "s+options_.filename));
+            }
+            catch(const exception& e)
+            {
+                log.push_back(Message("E", e.what()));
+                log.push_back(Message("E", "Load file failed for "s+options_.filename));
+                New();
+            }
     }
 
 
@@ -1476,10 +1517,12 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 if(run_mode == run_mode_realtime)
                     lag = timer.WaitUntil(double(tick+1)*tick_duration);
                 else if(run_mode == run_mode_play)
-                    timer.SetTime(timer.GetTime()+tick_duration); // Fake time increase
+                {
+                    timer.SetTime(double(tick+1)*tick_duration); // Fake time increase
+                    Sleep(0.01);
+                }
                 else
                     Sleep(0.01); // Wait 10 ms to avoid wasting cycles if there are no requests
-
 
 
                 // Run_mode may have changed during the delay - needs to be checked again
@@ -1493,6 +1536,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                     idle_time = tick_duration - tick_time_usage;
                 }                    
             }
+
+
             Sleep(0.1);
         }
     }
@@ -1638,8 +1683,10 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         }
         else
         {
-            run_mode = run_mode_realtime;
+     
+            Pause();
             timer.Continue();
+            run_mode = run_mode_realtime;
         }
     }
 
@@ -1682,6 +1729,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendDataStatus()
     {
+        std::string nm = std::string(info_["filename"]);
+        if(nm.find("/") != std::string::npos)
+            nm = rtail(nm,"/");
+
+        socket->Send("\t\"file\": \"%s\",\n", nm.c_str());
         socket->Send("\t\"state\": %d,\n", run_mode);
         if(stop_after != -1)
         {
@@ -1745,9 +1797,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
     socket->Send(",\n\"log\": [");
     std::string sep;
-    for(std::string line : log)
+    for(auto line : log)
     {
-        socket->Send(sep + "\""+line+"\"");
+        socket->Send(sep +line.json());
+        sep = ",";
+        //std::cout << "LOG: " << line.json() << std::endl;
     }
     socket->Send("]");
     log.clear();
@@ -1820,9 +1874,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoNew(Request & request)// FIXME: CHANGE FILENAME AND RESTART ***************
     {
-        Stop();
-        run_mode = run_mode_stop;
-        Clear();    // Remove all things
+        Pause(); // Probably not necessary
+        New();
         DoUpdate(request);
     }
 
@@ -1831,14 +1884,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::DoOpen(Request & request) // FIXME: CHANGE FILENAME AND RESTART ***************
     {
         std::string file = request.parameters["file"];
-
-        //std::cout << "Open: " << file << std::endl;
         Stop();
-        run_mode = run_mode_stop;
         Clear();    // Remove all things
-        std::vector<std::string> files_;
-        files_.push_back(files.at(file));
-        options_.filename = file;
+        //std::vector<std::string> files_;
+        //files_.push_back(files.at(file));
+        options_.filename = files.at(file);
         LoadFile();
         DoUpdate(request);
     }
@@ -1860,7 +1910,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoQuit(Request & request)
     {
-        log.push_back("quit");
+        log.push_back(Message("quit"));
         Stop();
         run_mode = run_mode_quit;
         DoUpdate(request);
@@ -1870,9 +1920,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoStop(Request & request)
     {
-        log.push_back("stop");
+        log.push_back(Message("stop"));
         Stop();
-        run_mode = run_mode_stop;
         DoUpdate(request);
     }
 
@@ -1921,7 +1970,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoPause(Request & request)
     {
-        log.push_back("pause");
+        log.push_back(Message("pause"));
         Pause();
         DoSendData(request);
     }
@@ -1930,7 +1979,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoStep(Request & request)
     {
-        log.push_back("step");
+        log.push_back(Message("step"));
         Pause();
         run_mode = run_mode_pause;
         Tick();
@@ -1955,7 +2004,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoRealtime(Request & request)
     {
-        log.push_back("realtime");
+        log.push_back(Message("realtime"));
         Realtime();
         DoSendData(request);
     }
@@ -1964,7 +2013,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoPlay(Request & request)
     {
-        log.push_back("play");
+        log.push_back(Message("play"));
         Play();
         DoSendData(request);
     }
@@ -2305,8 +2354,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         Request request(socket->header.Get("URI"), sid);
 
-        if(request.url != "/update/?data=")
-            std::cout << request.url << std::endl;
+        //if(request.url != "/update/?data=")
+        //    std::cout << request.url << std::endl;
 
         if(request == "network")
             DoNetwork(request);

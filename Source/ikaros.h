@@ -12,6 +12,8 @@
 #include <filesystem>
 #include <algorithm>
 
+using namespace std::literals;
+
 #define INSTALL_CLASS(class_name)  static InitClass init_##class_name(#class_name, []() { return new class_name(); });
 
 #include "Kernel/exceptions.h"
@@ -133,6 +135,33 @@ float operator/(float x, parameter p);
 float operator/(parameter p, double x);
 float operator/(double x, parameter p);
 float operator/(parameter x, parameter p);
+
+//
+// MESSAGE
+//
+
+class Message
+{
+    public:
+
+        std::string     type;  // M: msg, W: warning, E: fatal error
+        std::string     msg;
+
+        Message(std::string m):
+            msg(m),
+            type("M")
+        {}
+
+        Message(std::string t, std::string m):
+            msg(m),
+            type(t)
+        {}
+
+        std::string json()
+        {
+            return "[\""s+type+"\",\""s+msg+"\"]"s;
+        }
+};
 
 //
 // COMPONENT
@@ -309,7 +338,7 @@ public:
     double                                  lag_sum;        // Sum |lag|
 
     ServerSocket *                          socket;
-    std::vector<std::string>                log;
+    std::vector<Message>                    log;
     std::thread *                           httpThread;
 
     Kernel();
@@ -361,7 +390,7 @@ public:
     void AllocateInputs();
     void InitComponents();
     void SetUp();
-
+    void SetCommandLineParameters(dictionary & d);
     void LoadFile();
     void Save();
 
@@ -373,8 +402,8 @@ public:
 
     void InitSocket(long port);
 
+    void New();
     void Pause();
-  //  void Play();
     void Stop();
     void Play();
     void Realtime();
