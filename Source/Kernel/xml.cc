@@ -4,7 +4,7 @@
 //
 //    Version 1.0.2
 //
-//    Copyright (C) 2001-2013  Christian Balkenius
+//    Copyright (C) 2001-2024  Christian Balkenius
 //
 //    This program is free software; you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 //
 
 #include "xml.h"
+#include "exceptions.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -411,7 +412,7 @@ XMLProcessingInstruction::Print(FILE * f, int d)
     return;
 }
 
-
+ 
 
 XMLDocument::XMLDocument(const char * filename, bool included)
 {
@@ -478,7 +479,12 @@ XMLDocument::XMLDocument(const char * filename, bool included)
             printf(" while %s at line %d\n", action, action_line);
         else
             printf("\n");
-        exit(1);
+
+        if (action_line != 0)
+            throw ikaros::exception(std::string(msg)+ " at line "+std::to_string(line)+" position "+std::to_string(character)+" while "+std::string(action)+" at line "+std::to_string(action_line));
+        else
+            throw ikaros::exception(std::string(msg)+ " at line "+std::to_string(line)+" position "+std::to_string(character));
+        // exit(1);
     }
 
     fclose(f);
