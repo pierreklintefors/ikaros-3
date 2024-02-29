@@ -144,9 +144,82 @@ function resetCookies()
 
 
 
-network = {
-    network: null
+/*
+ *
+ * Dialog Scrips
+ *
+ *
+ */
+
+dialog = {
+    confirmOpen: function()
+    {
+        let sel = document.getElementById("openDialogItems");
+        let text= sel.options[sel.selectedIndex].text;
+        dialog.window.close(text);
+            if(dialog.callback)
+                dialog.callback(text);
+    },
+        
+    cancelOpen: function()
+    {
+        dialog.window.close(null);
+    },
+
+    showOpenDialog: function (file_list, callback, message)
+    {
+        dialog.callback = callback;
+        dialog.window = document.getElementById('openDialog');
+        let sel = document.getElementById('openDialogItems');
+        sel.innerHTML = '';
+        if(file_list)
+            for(i of file_list) // FIXME: TEST was .split(",")
+            {
+                var opt = document.createElement('option');
+                opt.value = i;
+                opt.innerHTML = i;
+                document.getElementById('openDialogItems').appendChild(opt);
+            }
+            if(message)
+            {
+                document.getElementById('openDialogTitle').innerText = message;
+            }
+        dialog.window.showModal();
+    }
 }
+
+
+
+
+network = {
+    network: null,
+
+    getGroup(path) // FIXME: 
+    {
+        let p = path.split("/");
+        let g = [network.network];
+        for(let i in p)
+        {
+            // Find group named p[i]
+
+            for(let gi in g)
+            {
+                if(g[gi].name == p[i])
+                {
+                    g = g[gi];
+                }
+
+                if(i == p.length-1)
+                {
+                    return g;
+                }
+            }
+        }
+        return null;
+    }
+}
+
+
 
 webui_widgets = {
     constructors: {},
@@ -284,47 +357,6 @@ controller = {
         controller.play();  // FIXME: possibly start selected mode play/fast-forward/realtime
     },
 
-    getGroup(path) // FIXME: 
-    {
-        let p = path.split("/");
-        let g = [controller.network];
-        for(let i in p)
-        {
-            // Find group named p[i]
-
-            for(let gi in g)
-            {
-                if(g[gi].name == p[i])
-                {
-                    g = g[gi];
-                }
-
-                if(i == p.length-1)
-                {
-                    return g;
-                }
-            }
-        }
-        return null;
-    },
-
-    updateWidgets(data)
-    {
-        // Update the views with data in response
-        let w = document.getElementsByClassName('frame')
-
-        for(let i=0; i<w.length; i++)
-            try
-            {
-                w[i].children[1].receivedData = data;
-                w[i].children[1].update(data); // include data for backward compatibility
-            }
-            catch(err)
-            {
-                console.log("updateWidgets failed: "+controller.client_id);
-            }
-    },
-
     clear_wait()
     {
         controller.load_count = 0;
@@ -452,8 +484,8 @@ controller = {
             document.querySelector("#load").style.display="none";
             controller.session_id = session_id;
             controller.tick = response.tick;
-            //nav.init(response);
-            controller.network = response;
+            network.network = response;
+            nav.populate(network.network);
             //controller.views = {};
             //controller.buildViewDictionary(response, "");
             
@@ -581,8 +613,142 @@ controller = {
         .catch(function () {
             console.log("Could not get file list from server.");
         })
+    },
+
+
+    updateWidgets(data)
+    {
+        // Update the views with data in response
+        let w = document.getElementsByClassName('frame')
+
+        for(let i=0; i<w.length; i++)
+            try
+            {
+                w[i].children[1].receivedData = data;
+                w[i].children[1].update(data); // include data for backward compatibility
+            }
+            catch(err)
+            {
+                console.log("updateWidgets failed: "+controller.client_id);
+            }
     }
 }
+
+
+/*
+ *
+ * Navigator scripts
+ *
+ */
+
+let nav = {
+
+    init() 
+    {
+        nav.navigator = document.getElementById('navigator');
+  
+    },
+    toggle()
+    {
+        let s = window.getComputedStyle(nav.navigator , null);
+        if (s.display === 'none')
+            nav.navigator.style.display = 'block';
+        else 
+            nav.navigator.style.display = 'none';
+    },
+    toggleGroup(e)
+    {
+        if(e.target.classList.contains("group-open"))
+        {
+            e.target.classList.remove("group-open");
+            e.target.classList.add("group-closed");
+        }
+        else if(e.target.classList.contains("group-closed"))
+        {
+            e.target.classList.remove("group-closed");
+            e.target.classList.add("group-open");
+        }
+        e.stopPropagation();
+    },
+    openGroup(item)
+    {
+        let g = nav.navigator.querySelector("[data-name='"+item+"']");
+        g = g.parentElement;
+        while(g)
+        {
+            //g.setAttribute("class", "group-open");
+            g.classList.remove("group-closed");
+            g.classList.add("group-open");
+            g = g.parentElement;
+        }
+    },
+    selectItem(item)
+    {
+        // interaction.addView(item)
+        nav.traverseAndSelect(nav.navigator, item);
+        nav.traverseAndOpen(nav.navigator, item);
+    },
+    selectModule(evt)
+    {
+    
+    },
+    navClick(e)
+    {
+  //      alert(e.target.parentElement.dataset.name);
+        this.selectItem(e.target.parentElement.dataset.name); // FIXME: Call from selector later ***********
+        //e.target.parentElement.classList.add("selected");
+
+
+        e.stopPropagation();
+    },
+
+    buildList(group, name) {
+        if (isEmpty(group)) return "";
+    
+        let fullName = name ? `${name}.${group.name}` : group.name;
+        let s = `<li data-name='${fullName}' class='group-closed' onclick='return nav.toggleGroup(event)'><span onclick='return nav.navClick(event)'>${group.name}</span>`;
+        
+        const buildItems = (items, prefix, isView = false) => items.map((item, i) => {
+          const itemName = item.name || `${prefix} #${i}`;
+          const dataName = isView ? `${fullName}/${itemName}` : `${fullName}.${itemName}`; 
+          return `<li class='${prefix}' data-name='${dataName}'>-&nbsp<span onclick='return nav.navClick(event)'>${itemName}</span></li>`;
+        }).join('');
+    
+        if (group.views) s += `<ul>${buildItems(group.views, 'view', true)}</ul>`;
+        if (group.modules) s += `<ul>${buildItems(group.modules, 'module')}</ul>`;
+        if (group.groups) s += `<ul>${group.groups.map(subGroup => nav.buildList(subGroup, fullName)).join('')}</ul>`;
+    
+        return s + "</li>";
+      },
+
+      traverseAndSelect(element, data_name)
+      {
+        if (!element) return;
+    
+        if(element.dataset.name == data_name)
+            element.classList.add("selected");
+        else
+            element.classList.remove("selected");
+
+        if (element.children)
+        {
+            Array.from(element.children).forEach((child) => { nav.traverseAndSelect(child, data_name); });
+        }
+    },
+
+    traverseAndOpen(element, data_name)
+    {
+        // Open tree to make selection visible
+    },
+
+    populate(net) 
+    {
+        nav.navigator.innerHTML = "<ul>"+nav.buildList(net, "")+"</ul>";
+    }
+}
+
+
+
 
 inspector = {
     init()
@@ -641,52 +807,9 @@ brainstudio = {
         log.init();
         inspector.init();
         controller.init();
+        nav.init();
     }
 }
 
 
-
-/*
- *
- * Dialog Scrips
- *
- *
- */
-
-dialog = {
-    confirmOpen: function()
-    {
-        let sel = document.getElementById("openDialogItems");
-        let text= sel.options[sel.selectedIndex].text;
-        dialog.window.close(text);
-            if(dialog.callback)
-                dialog.callback(text);
-    },
-        
-    cancelOpen: function()
-    {
-        dialog.window.close(null);
-    },
-
-    showOpenDialog: function (file_list, callback, message)
-    {
-        dialog.callback = callback;
-        dialog.window = document.getElementById('openDialog');
-        let sel = document.getElementById('openDialogItems');
-        sel.innerHTML = '';
-        if(file_list)
-            for(i of file_list) // FIXME: TEST was .split(",")
-            {
-                var opt = document.createElement('option');
-                opt.value = i;
-                opt.innerHTML = i;
-                document.getElementById('openDialogItems').appendChild(opt);
-            }
-            if(message)
-            {
-                document.getElementById('openDialogTitle').innerText = message;
-            }
-        dialog.window.showModal();
-    }
-}
 

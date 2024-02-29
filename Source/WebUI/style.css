@@ -330,13 +330,17 @@ nav {
 
 
 li:hover {
-    color: var(--accent-color);
+    color: white;
 }
-
 
 li.view {
     font-style: italic;
 }
+
+li.selected {
+    color: var(--accent-color);
+}
+
 li {
     overflow-x: hidden;
     white-space: nowrap;
