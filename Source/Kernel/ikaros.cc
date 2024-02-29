@@ -848,9 +848,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
         {
             source = peek_head(s, "[");
-            source_range = range(peek_tail(s, "[")); // FIXME: CHECK NEW TAIL FUNCTION (used to include separator)
+            source_range = range(peek_tail(s, "[", true));
             target = peek_head(t, "[");
-            target_range = range(peek_tail(t, "[")); // FIXME: CHECK NEW TAIL FUNCTION (used to include separator)
+            target_range = range(peek_tail(t, "[", true));
             delay_range_ = delay_range;
             flatten_ = false;
             alias_ = alias;

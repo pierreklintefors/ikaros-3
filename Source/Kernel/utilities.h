@@ -24,7 +24,7 @@ namespace ikaros
     std::string rtail(std::string & s, const std::string & delimiter); // return string after last delimiter and remove it from s together with the delimiter
 
     std::string peek_head(const std::string & s, const std::string & delimiter); // return string before first delimiter
-    std::string peek_tail(const std::string & s, const std::string & delimiter); // return string after first delimiter
+    std::string peek_tail(const std::string & s, const std::string & delimiter, bool keep_delimiter=false); // return string after first delimiter
     std::string peek_rhead(const std::string & s, const std::string & delimiter); // return string before last delimiter
     std::string peek_rtail(const std::string & s, const std::string & delimiter); // return string after last delimiter
 

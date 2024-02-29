@@ -247,16 +247,20 @@ peek_rhead(const std::string & s, const std::string & delimiter)
 
 
 
-// tail: return tail of string and erase tail and delimiter from original string. Returns empty string if delimiter not found.
+// tail: return tail of string. Returns empty string if delimiter not found.
 
 std::string
-peek_tail(const std::string & s, const std::string & delimiter)
+peek_tail(const std::string & s, const std::string & delimiter, bool keep_delimiter)
 {
     int end = s.find(delimiter);
     if(end == std::string::npos)
         return "";
 
-    std::string t = s.substr(end+delimiter.length());
+    std::string t;
+    if(keep_delimiter)
+        t = s.substr(end);
+    else
+        t = s.substr(end+delimiter.length());
     return t;
 }
 
