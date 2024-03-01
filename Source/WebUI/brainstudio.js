@@ -637,6 +637,64 @@ controller = {
 
 /*
  *
+ * Breadcrums scripts
+ *
+ */
+
+breadcrumbs = {
+
+    init()
+    {
+        breadcrumbs.breadcrumbs = document.querySelector("#breadcrumbs");
+    },
+
+    selectItem(item)
+    {
+        const crum = breadcrumbs.breadcrumbs.querySelectorAll('.bread');
+        crum.forEach(crum => {
+            crum.remove();
+            });
+
+            let v = null;
+        let n = item.split('/');
+        if(n.length>1)
+        {   v = n[1];
+            n = n[0];
+        }
+        else
+            n = item;
+        let h = "";
+        let viewPath = "";
+        let sep = ""
+        for(g of n.split('.'))
+        {
+            viewPath += sep+g;
+            sep=".";
+            let styleStr = "";
+            if(viewPath==item)
+                styleStr = "style='--breadcrumb-element-color: var(--breadcrumb-active-color)'";
+            h += "<div class='bread' "+styleStr+" onclick='selector.selectItem(\""+viewPath+"\")'>"+g+"</div>";
+        }
+            if(v)
+                h+= "<div class='bread' style='--breadcrumb-element-color: var(--breadcrumb-active-color)'>"+v+"</div>"; // change class instead
+            else
+            {
+                /*
+                let vw = controller.views[item];
+                if(vw && vw.views && vw.views[0])
+                {
+                    viewPath += "#"+vw.views[0].name;
+                    h+= "<div class='bread' onclick='controller.selectView(\""+viewPath+"\")'>"+vw.views[0].name+"</div>";
+
+                }
+                */
+            }
+            document.querySelector("#nav").insertAdjacentHTML('afterend', h);
+    }
+}
+
+/*
+ *
  * Navigator scripts
  *
  */
@@ -659,15 +717,10 @@ let nav = {
     toggleGroup(e)
     {
         if(e.target.classList.contains("group-open"))
-        {
-            e.target.classList.remove("group-open");
-            e.target.classList.add("group-closed");
-        }
+            e.target.classList.replace("group-open", "group-closed");
         else if(e.target.classList.contains("group-closed"))
-        {
-            e.target.classList.remove("group-closed");
-            e.target.classList.add("group-open");
-        }
+            e.target.classList.replace("group-closed", "group-open");
+
         e.stopPropagation();
     },
     openGroup(item)
@@ -694,11 +747,7 @@ let nav = {
     },
     navClick(e)
     {
-  //      alert(e.target.parentElement.dataset.name);
-        this.selectItem(e.target.parentElement.dataset.name); // FIXME: Call from selector later ***********
-        //e.target.parentElement.classList.add("selected");
-
-
+        selector.selectItem(e.target.parentElement.dataset.name);
         e.stopPropagation();
     },
 
@@ -800,6 +849,17 @@ log = {
 }
 
 
+selector = {
+    selected_item: null,
+
+    selectItem(item)
+    {
+        nav.selectItem(item);
+        breadcrumbs.selectItem(item);
+    }
+}
+
+
 brainstudio = {
 
     init()
@@ -808,6 +868,7 @@ brainstudio = {
         inspector.init();
         controller.init();
         nav.init();
+        breadcrumbs.init();
     }
 }
 
