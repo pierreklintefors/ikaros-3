@@ -1,0 +1,22 @@
+<group filename="Source/Modules/TestModules/Test5.ikg" name="Brain" stop="-1" webui_port="8000">
+   <group name="Amydala">
+      <group name="Lateral">
+      </group>
+      <group name="Central">
+         <group name="View">
+            <widget class="Plot" name="ABC"/>
+         </group>
+         <module class="Idle" description="does nothing for the specified time" duration="1" name="123">
+            <parameter description="idle time in seconds" name="duration" type="float" value="1"/>
+         </module>
+         <module class="Idle" description="does nothing for the specified time" duration="1" name="456">
+            <parameter description="idle time in seconds" name="duration" type="float" value="1"/>
+         </module>
+         <module class="Idle" description="does nothing for the specified time" duration="1" name="789">
+            <parameter description="idle time in seconds" name="duration" type="float" value="1"/>
+         </module>
+      </group>
+   </group>
+   <group name="BasalGanglia">
+   </group>
+</group>

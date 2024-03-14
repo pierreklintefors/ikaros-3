@@ -163,32 +163,37 @@ header > button:first-child {
     font-size: calc(0.55*var(--breadcrumb-height))
 }
 
-/*
+
 .breadcrumbs div:hover {
 	background-color:var(--breadcrumb-hover-color);
 }
 
-*/
 
 .breadcrumbs div:active {
 	background-color:var(--breadcrumb-active-color);
 }
-
-
-.breadcrumbs div:nth-child(2) {
+/*
+.breadcrumbs div.bread:nth-last-child(5) {
 	border-radius: 5px;
+    background-color:red;
 }
 
-
-.breadcrumbs div:nth-last-child(5) {
-	border-radius: 5px;
-}
-
-.breadcrumbs div:nth-last-child(5):after {
+.breadcrumbs div.bread:nth-last-child(5):after {
     display: none;
+    background-color:green;
+}
+*/
+
+.breadcrumbs div.add_button {
+	border-radius: 5px;
+    margin-left:10px;
 }
 
-.breadcrumbs div:after {
+.breadcrumbs div.bread:nth-child(2) {
+	border-radius: 5px;
+}
+
+.breadcrumbs div.bread:after {
 	box-sizing: border-box;
   	content: "";
   	position: absolute;
@@ -203,7 +208,6 @@ header > button:first-child {
     border-right: var(--breadcrumb-gap) solid var(--breadcrumb-background-color);
 	z-index: 1;
 }
-
 
 .breadcrumbs div.button {
     margin-left: calc(2px + var(--breadcrumb-gap));
@@ -262,7 +266,6 @@ nav {
 
 aside {
     flex: 0 0 300px;
-    display: block; /* or none to hide */
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0px;
@@ -304,11 +307,13 @@ td + td.textedit {
     padding-right: 20px;
     -webkit-user-select: text;
     user-select: text;
+    background-color: lightgray;
 }
 
 td + td.textedit:hover
 {
-    background-color: #303034;
+    background-color: lightgray;
+    cursor:text;
 }
 
 td + td.textedit:focus
@@ -333,10 +338,6 @@ li:hover {
     color: white;
 }
 
-li.view {
-    font-style: italic;
-}
-
 li.selected {
     color: var(--accent-color);
 }
@@ -350,10 +351,7 @@ li {
     color: #eee;
 }
 
-li.add_view {
-    text-align: right;
-    font-size:16px;
-}
+
 
 li.group-open::before {
     content: "\0025BD\0020";
@@ -365,6 +363,10 @@ li.group-closed::before {
 
 li.group-closed > ul {
     display: none;
+}
+
+li.group-empty {
+    padding-left: 34px;
 }
 
 main {
@@ -389,7 +391,7 @@ aside table {
 aside table td.header {
     text-align: left;
     padding-top: 10px;
-    padding-bottom: 10px;
+    padding-bottom: 7px;
     font-weight: bold;
 }
 /*
@@ -650,9 +652,6 @@ main[data-mode="edit"] div#grid {
 }
 
 
-#system_inspector {
-    display: none;
-}
 
 header button, aside button {
     background-color: transparent;

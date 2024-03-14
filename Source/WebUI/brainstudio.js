@@ -190,32 +190,26 @@ dialog = {
 
 
 
-
 network = {
     network: null,
+    dict: {},
 
-    getGroup(path) // FIXME: 
+    init(n)
     {
-        let p = path.split("/");
-        let g = [network.network];
-        for(let i in p)
-        {
-            // Find group named p[i]
+        network.network = n;
+        network.buildDict(n, "");
+    },
 
-            for(let gi in g)
-            {
-                if(g[gi].name == p[i])
-                {
-                    g = g[gi];
-                }
+    buildDict(o, path)
+    {
+        network.dict[(path+'.'+o.name).substring(1)] = o;
+        for(g of o.groups || [])
+            network.buildDict(g, path+'.'+o.name)
+        for(m of o.modules || [])
+            network.dict[(path+'.'+o.name).substring(1)+'.'+m.name] = m;
+        for(v of o.views || [])
+            network.dict[(path+'.'+o.name).substring(1)+'/'+v.name] = v;
 
-                if(i == p.length-1)
-                {
-                    return g;
-                }
-            }
-        }
-        return null;
     }
 }
 
@@ -484,7 +478,7 @@ controller = {
             document.querySelector("#load").style.display="none";
             controller.session_id = session_id;
             controller.tick = response.tick;
-            network.network = response;
+            network.init(response);
             nav.populate(network.network);
             //controller.views = {};
             //controller.buildViewDictionary(response, "");
@@ -650,45 +644,34 @@ breadcrumbs = {
 
     selectItem(item)
     {
-        const crum = breadcrumbs.breadcrumbs.querySelectorAll('.bread');
-        crum.forEach(crum => {
-            crum.remove();
-            });
-
-            let v = null;
-        let n = item.split('/');
-        if(n.length>1)
-        {   v = n[1];
-            n = n[0];
-        }
-        else
-            n = item;
+        const crum = breadcrumbs.breadcrumbs.querySelectorAll('.dynamic');
+        crum.forEach(crum => { crum.remove(); });
+        let sep = "";
+        let path = "";
         let h = "";
-        let viewPath = "";
-        let sep = ""
-        for(g of n.split('.'))
+        for(g of item.split('.'))
         {
-            viewPath += sep+g;
+            path += sep+g;
             sep=".";
             let styleStr = "";
-            if(viewPath==item)
-                styleStr = "style='--breadcrumb-element-color: var(--breadcrumb-active-color)'";
-            h += "<div class='bread' "+styleStr+" onclick='selector.selectItem(\""+viewPath+"\")'>"+g+"</div>";
-        }
-            if(v)
-                h+= "<div class='bread' style='--breadcrumb-element-color: var(--breadcrumb-active-color)'>"+v+"</div>"; // change class instead
+            if(path==item)
+            {
+                styleStr = "style='--breadcrumb-element-color: var(--breadcrumb-active-color); border-radius: 5px;'";
+                h += "<div class='dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", false)' ondblclick='selector.selectItem(\""+path+"\", true)' >"+g+"</div>";
+            }
             else
             {
-                /*
-                let vw = controller.views[item];
-                if(vw && vw.views && vw.views[0])
-                {
-                    viewPath += "#"+vw.views[0].name;
-                    h+= "<div class='bread' onclick='controller.selectView(\""+viewPath+"\")'>"+vw.views[0].name+"</div>";
-
-                }
-                */
+                h += "<div class='bread dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", false)' ondblclick='selector.selectItem(\""+path+"\", true)' >"+g+"</div>";    
             }
+        }
+        h += "</div>";
+
+        // IF GROUP BACKGROUND IS VISIBLE
+
+        h+= "<div class='add_button dynamic' style=''>Add&nbsp;Group</div>";
+        h+= "<div class='add_button dynamic' style=''>Add&nbsp;Module</div>";
+        h+= "<div class='add_button dynamic' style=''>Add&nbsp;Widget</div>";
+
             document.querySelector("#nav").insertAdjacentHTML('afterend', h);
     }
 }
@@ -748,6 +731,7 @@ let nav = {
     navClick(e)
     {
         selector.selectItem(e.target.parentElement.dataset.name);
+        selector.showGroup(e.target.parentElement.dataset.name);
         e.stopPropagation();
     },
 
@@ -755,19 +739,18 @@ let nav = {
         if (isEmpty(group)) return "";
     
         let fullName = name ? `${name}.${group.name}` : group.name;
-        let s = `<li data-name='${fullName}' class='group-closed' onclick='return nav.toggleGroup(event)'><span onclick='return nav.navClick(event)'>${group.name}</span>`;
-        
-        const buildItems = (items, prefix, isView = false) => items.map((item, i) => {
-          const itemName = item.name || `${prefix} #${i}`;
-          const dataName = isView ? `${fullName}/${itemName}` : `${fullName}.${itemName}`; 
-          return `<li class='${prefix}' data-name='${dataName}'>-&nbsp<span onclick='return nav.navClick(event)'>${itemName}</span></li>`;
-        }).join('');
-    
-        if (group.views) s += `<ul>${buildItems(group.views, 'view', true)}</ul>`;
-        if (group.modules) s += `<ul>${buildItems(group.modules, 'module')}</ul>`;
-        if (group.groups) s += `<ul>${group.groups.map(subGroup => nav.buildList(subGroup, fullName)).join('')}</ul>`;
-    
-        return s + "</li>";
+
+        if(group.groups.length == 0)
+        {
+            return `<li data-name='${fullName}' class='group-empty' ><span onclick='return nav.navClick(event)' >${group.name}</span></li>`;
+        }
+        else
+        {
+            let s = `<li data-name='${fullName}' class='group-closed' onclick='return nav.toggleGroup(event)'><span onclick='return nav.navClick(event)' >${group.name}</span>`;
+            s += `<ul>${group.groups.map(subGroup => nav.buildList(subGroup, fullName)).join('')}</ul>`;
+            s +=  "</li>";
+            return s;
+         }
       },
 
       traverseAndSelect(element, data_name)
@@ -798,31 +781,85 @@ let nav = {
 
 
 
-
 inspector = {
+    subview: {},
+    current_t_body: null,
+
     init()
     {
         inspector.system = document.querySelector('#system_inspector');
-    },
+        inspector.component = document.querySelector('#component_inspector');
 
-    showInspector(i)
-    {
-        for (const s of document.querySelectorAll('aside'))
-            if(s === i)
-                s.style.display = 'block';
-            else
-                s.style.display = 'none';
-    },
+        inspector.subview.nothing  = document.querySelector('#inspector_nothing'); 
+        inspector.subview.group_background = document.querySelector('#inspector_group_background');
+        inspector.subview.group = document.querySelector('#inspector_group');
+        inspector.subview.module =  document.querySelector('#inspector_module');
+        inspector.subview.widget =  document.querySelector('#inspector_widget');
 
+        inspector.hideSubviews();
+        inspector.subview.nothing.style.display='block';
+    },
     toggleSystem()
     {
         if (window.getComputedStyle(inspector.system, null).display === 'none')
-            inspector.showInspector(inspector.system);
+        {
+            inspector.system.style.display = 'block';
+            inspector.component.style.display = 'none';
+        }
         else
-            inspector.showInspector(null);
+        {
+            inspector.system.style.display = 'none';
+            inspector.component.style.display = 'none';
+        }
+    },
+    toggleComponent()
+    {
+        if (window.getComputedStyle(inspector.component, null).display === 'none')        {
+            inspector.component.style.display = "block";
+            inspector.system.style.display = "none";
+        }
+        else
+        {
+            inspector.system.style.display = "none";
+            inspector.component.style.display = "none";
+        }
+    },
+
+    hideSubviews()
+    {
+        Object.entries(inspector.subview).forEach(([key, value]) => { value.style.display = 'none'; });
+    },
+
+    setTable(table)
+    {
+        current_t_body = table.tBodies[0];
+        current_t_body.innerHTML = "";
+    },
+
+    addHeader(header)
+    {
+        current_t_body.innerHTML += `<tr><td colspan='2' class='header'>${header}</td></tr>`;
+    },
+
+    addAttributeValue(attribute, value)
+    {
+        current_t_body.innerHTML += `<tr><td>${attribute}</td><td>${value}</td></tr>`;
+    },
+
+    showGroupBackground(item)
+    {
+        let g = network.dict[item];
+
+        inspector.hideSubviews();
+        inspector.setTable(inspector.subview.group_background);
+        inspector.subview.group_background.style.display = 'block';
+        inspector.addHeader("GROUP");
+        inspector.addAttributeValue("name", g.name);
+        inspector.addAttributeValue("subgroups", (g.groups || []).length);
+        inspector.addAttributeValue("modules", (g.modules || []).length);
+        inspector.addAttributeValue("connections", (g.connections || []).length);
     }
 }
-
 
 log = {
 
@@ -832,7 +869,7 @@ log = {
         log.view = document.querySelector('footer');
     },
 
-    toggleView()
+    toggleLog()
     {
         var s = window.getComputedStyle(log.view, null);
         if (s.display === 'none')
@@ -848,16 +885,50 @@ log = {
     }
 }
 
+/*
+ *
+ * Selector
+ * 
+ */
 
 selector = {
     selected_item: null,
+    selected_item_type: null,
+    viewed_item: null,
+    viewed_item_type: null,
 
     selectItem(item)
     {
         nav.selectItem(item);
         breadcrumbs.selectItem(item);
+        // alert(JSON.stringify(network.dict[item]));
+
+        if(network.dict[item].class != undefined)
+        {
+            selector.selected_item_type = "module";
+            //alert("MODULE: "+network.dict[item].name+" "+doshow);
+            // POPULATE MODULE INSPECTOR
+            // SHOW IF INSPECTOR ON *OR* DOUBLE CLICK
+        }
+        else if(network.dict[item].modules != undefined)
+        {
+            selector.selected_item_type = "group";
+            //alert("GROUP: "+network.dict[item].name+" "+doshow);
+        }
+        else
+        {
+            selector.selected_item_type = "widget4";
+            //alert("WIDGET?: "+JSON.stringify(network.dict[item])+" "+doshow);
+        }
+    },
+
+    showGroup(item)
+    {
+        inspector.showGroupBackground(item);
+        // SWITCH PANE ***
     }
 }
+
 
 
 brainstudio = {

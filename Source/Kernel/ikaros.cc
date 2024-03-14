@@ -884,7 +884,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             uri.erase(0, 1);
             std::string params = tail(uri, "?");
             command = head(uri, "/"); 
-            view_name = tail(uri, "/"); 
+            //view_name = tail(uri, "/"); 
             component_path = uri;
             parameters.parse_url(params);
         }
@@ -2068,7 +2068,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         */
     }
 
-
+/*
     dictionary
     Kernel::GetView(std::string component, std::string view_name)   // FIXME: Remove later on
     {
@@ -2115,12 +2115,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         DoSendData(request);
     }
+*/
+
 
     void
     Kernel::AddWidget(Request & request) // FIXME: Local exception handling
     {
         std::cout << "AddWidget: " << std::endl;
-
+/*
         auto view = GetView(request);
         if(view["widgets"].is_null())
             view["widgets"] = list();
@@ -2128,6 +2130,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         list u = list(view["widgets"]);
         u.push_back(request.parameters);
 
+*/
         DoSendData(request);
     }
 
@@ -2136,7 +2139,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Kernel::DeleteWidget(Request & request)
     {
         std::cout << "DeleteWidget: "  << std::endl;
-
+/*
         int index = std::stoi(request.parameters["index"]);
         list view = list(GetView(request)["widgets"]);
         view.erase(index);
@@ -2144,7 +2147,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         int i=0;
         for(auto & w : view)
             w["_index_"] = i++;
-    
+*/
         DoSendData(request);
     }
 
@@ -2155,8 +2158,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::cout << "SetWidgetParameters: " << std::endl;
 
         int index = request.parameters.get_int("_index_");
-        list u = list(GetView(request)["widgets"]);
-        u[index] = request.parameters;
+        //list u = list(GetView(request)["widgets"]);
+        //u[index] = request.parameters;
 
         DoSendData(request);
     }
@@ -2168,8 +2171,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::cout << "SetWidgetToFront: " << std::endl;
 
         int index = request.parameters.get_int("index");
-
-        list u = list(GetView(request)["widgets"]);
+/*
+        //list u = list(GetView(request)["widgets"]);
 
         dictionary d = u[index];
         u.erase(index);
@@ -2179,6 +2182,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         for(auto & item : u)
             item["_index_"] = i++;
 
+*/
         DoSendData(request);
      }
 
@@ -2190,7 +2194,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::cout << "SetWidgetToBack: " << std::endl;
 
         int index = request.parameters.get_int("index");
-
+/*
         list u = list(GetView(request)["widgets"]);
 
         dictionary d = u[index];
@@ -2200,11 +2204,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         int i=0;
         for(auto & item : u)
             item["_index_"] = i++;
-
+*/
         DoSendData(request);
     }
 
-
+/*
     void
     Kernel::RenameView(Request & request)
     {
@@ -2215,7 +2219,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         DoSendData(request);
     }
-
+*/
 
     void
     Kernel::DoAddGroup(Request & request)
@@ -2405,7 +2409,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             DoControl(request);
 
         // View editing
-
+/*
         else if(request == "addview")
             AddView(request);
         else if(request == "renameview")
@@ -2420,7 +2424,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             WidgetToFront(request);
         else if(request == "widgettoback")
             WidgetToBack(request);
-
+*/
         // Network editing
 
         else if(request == "addgroup")

@@ -13,8 +13,6 @@
 
 <title>BrainStudio</title>
 
-
-
 </head>
 <body>
     <div id="load">
@@ -50,41 +48,31 @@
     <script src="WebUIWidgetKeyPoints.js" defer ></script>
     <script src="WebUIWidgetEpiHead.js" defer ></script>
 
-<!-- three.js -->
-<script src="js/three.min.js" defer></script>
-<script src="js/controls/OrbitControls.js" defer></script>
-<script src="js/loaders/GLTFLoader.js" defer></script>
-<script src="js/libs/stats.min.js" defer></script>
-<dialog id="openDialog">
-    <p id="openDialogTitle"></p>
-    <select size="14" id="openDialogItems" style="width:100%">
-    </select>
-    <menu>
-        <button  onclick="dialog.cancelOpen()">Cancel</button>
-        <button onclick="dialog.confirmOpen()">Open</button>
-    </menu>
-</dialog>
-          </div>
-        </div>
-      </div>
+    <!-- three.js -->
+    <script src="js/three.min.js" defer></script>
+    <script src="js/controls/OrbitControls.js" defer></script>
+    <script src="js/loaders/GLTFLoader.js" defer></script>
+    <script src="js/libs/stats.min.js" defer></script>
 
-    
+    <dialog id="openDialog">
+        <p id="openDialogTitle"></p>
+        <select size="14" id="openDialogItems" style="width:100%">
+        </select>
+        <menu>
+            <button  onclick="dialog.cancelOpen()">Cancel</button>
+            <button onclick="dialog.confirmOpen()">Open</button>
+        </menu>
+    </dialog>
+
 	<header style="display:none">
         <div  class="breadcrumbs" id="breadcrumbs">
             <div class="button" onclick="nav.toggle()" id="nav">&#8801;</div>
             <div class="stretch" ></div>
-            <div class="button" onclick="log.toggleView()">&#x26A0;</div>
-            <div class="button" onclick="mode.toggleEditMode()">&#9432;</divb></div>
-            <!--
-            <div class="button" class="button" onclick="controller.saveNetwork()">Save</div>
-            <div class="button" onclick="controller.start()">Start</div>
-            -->
-            <div class="large button" onclick="inspector.toggleSystem()">&#x2699;</div>
+            <div class="button" onclick="log.toggleLog()">&#x26A0;</div>
+            <div class="button" onclick="inspector.toggleComponent()">&#9432;</divb></div>
+            <div class="button large" onclick="inspector.toggleSystem()">&#x2699;</div>
         </div>
     </header>
-
-
-	</header>
 
 	<section>
 		<main id="main" display:none">
@@ -93,10 +81,281 @@
             </canvas>
 		</main>
 	
+        <!-- NAVIGATOR -->
+
 		<nav id="navigator">
 		</nav>
 
-        
+        <!-- COMPONENT INSPECTOR -->
+
+        <aside id="component_inspector">
+
+            <!-- NONE -->
+
+            <table id="inspector_nothing">
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>INSPECTOR</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"  style="text-align: center">
+                            <span>Nothing&nbsp;selected</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>    
+
+            <!-- GROUP -->
+
+            <table id="inspector_group_background">
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>GROUP (BACKGROUND)</span>
+                        </td>
+                    </tr>
+
+                    
+                <!--
+                    <tr>
+                        <td>
+                        </td>
+                        <td style="text-align: right">
+ 
+                            <button class="big_button">Add</button>
+                        </td>
+                    </tr>
+                -->
+                </tbody>
+            </table>
+
+            <table id="inspector_group">
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>GROUP</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"  style="text-align: center">
+                            <span>Group background selected</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- MODULE -->
+
+            <table id="inspector_module">
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>MODULE</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"  style="text-align: center">
+                            <span>Module selected</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>  
+
+
+            <!-- WIDGET -->
+
+            <table id="inspector_widget">
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>WIDGET</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"  style="text-align: center">
+                            <span>Widget selected</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>  
+        </aside>
+
+        <!-- COMPONENT INSPECTOR END -->
+
+        <aside id="inspector_x">
+            <table>
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>INSPECTOR</span>
+                            <div style="float:right;">
+                                <button onclick="" style="margin:0;font-family:times;font-weight:bold;width:20px">i</button>
+                                <button onclick="" style="margin:0;margin-left:0;font-family:times;font-weight:bold;width:20px">&#x270E;</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table id="group_table_view" class="inspector_view">
+                <tbody>
+                </tbody>
+            </table>
+            <table id="group_table_edit" class="inspector_edit">
+                <tbody>
+                    <tr>
+                        <td  class="">name</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                    <tr>
+                        <td  class="">stuff</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                </tbody>
+            </table>
+        </aside>
+
+
+        <!-- GROUP INPECTOR -->
+
+        <aside id="group_inspector">
+            <table>
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>GROUP</span>
+                            <div style="float:right;">
+                                <button onclick="" style="margin:0;font-family:times;font-weight:bold;width:20px">i</button>
+                                <button onclick="" style="margin:0;margin-left:0;font-family:times;font-weight:bold;width:20px">&#x270E;</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table id="group_table_view" class="inspector_view">
+                <tbody>
+                </tbody>
+            </table>
+            <table id="group_table_edit" class="inspector_edit">
+                <tbody>
+                    <tr>
+                        <td  class="">name</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                    <tr>
+                        <td  class="">stuff</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                </tbody>
+            </table>
+        </aside>
+
+
+        <!-- MODULE INPECTOR -->
+
+        <aside id="module_inspector">
+            <table>
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>MODULE</span>
+                            <div style="float:right;">
+                                <button onclick="" style="margin:0;font-family:times;font-weight:bold;width:20px">i</button>
+                                <button onclick="" style="margin:0;margin-left:0;font-family:times;font-weight:bold;width:20px">&#x270E;</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table id="group_table_view" class="inspector_view">
+                <tbody>
+                </tbody>
+            </table>
+            <table id="group_table_edit" class="inspector_edit">
+                <tbody>
+                    <tr>
+                        <td  class="">name</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                    <tr>
+                        <td  class="">stuff</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                </tbody>
+            </table>
+        </aside>
+
+        <!-- VIEW INPECTOR -->
+
+        <aside id="view_inspector">
+            <table>
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>VIEW</span>
+                            <div style="float:right;">
+                                <button onclick="" style="margin:0;font-family:times;font-weight:bold;width:20px">i</button>
+                                <button onclick="" style="margin:0;margin-left:0;font-family:times;font-weight:bold;width:20px">&#x270E;</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table id="group_table_view" class="inspector_view">
+                <tbody>
+                </tbody>
+            </table>
+            <table id="group_table_edit" class="inspector_edit">
+                <tbody>
+                    <tr>
+                        <td  class="">name</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                    <tr>
+                        <td  class="">stuff</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                </tbody>
+            </table>
+        </aside>
+
+        <!-- WIDGET INPECTOR -->
+
+        <aside id="widget_inspector">
+            <table>
+                <tbody>
+                    <tr>
+                        <td colspan="2" class="header">
+                            <span>WIDGET</span>
+                            <div style="float:right;">
+                                <button onclick="" style="margin:0;font-family:times;font-weight:bold;width:20px">i</button>
+                                <button onclick="" style="margin:0;margin-left:0;font-family:times;font-weight:bold;width:20px">&#x270E;</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table id="group_table_view" class="inspector_view">
+                <tbody>
+                </tbody>
+            </table>
+            <table id="group_table_edit" class="inspector_edit">
+                <tbody>
+                    <tr>
+                        <td  class="">name</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                    <tr>
+                        <td  class="">stuff</td>
+                        <td  class="string textedit" id="view_name" contentEditable></td>
+                    </tr>
+                </tbody>
+            </table>
+        </aside>
+
+        <!-- OLD INSPECTORS -->
 
 		<aside id="widget_inspector_edit">
             <table id="button_table">
@@ -111,32 +370,24 @@
                    </tr>
                 </tbody>
             </table>
-			<div id="inspector">
+			<div id="old_inspector">
 
 				<div id="i_header"></div>
 				<table id="i_table">
 				</table>
 			</div>
-            
-			<script>
-			// inspector.init();
-			</script>
 		</aside>
 
 
 
 
         <aside id="module_inspector">
-            <div id="inspector">
+            <div id="old_inspector">
 
                 <div id="mi_header"></div>
                 <table id="mi_table">
                 </table>
             </div>
-            
-            <script>
-            // module_inspector.init();
-            </script>
         </aside>
 
         <aside id="module_edit_inspector">
@@ -151,15 +402,11 @@
                 </tbody>
             </table>
 
-            <div id="inspector">
+            <div id="old_inspector">
                 <div id="mei_header"></div>
                 <table id="mei_table">
                 </table>
             </div>
-            
-            <script>
-            // module_edit_inspector.init();
-            </script>
         </aside>
 
 		<aside id="view_inspector" >
@@ -238,47 +485,35 @@
                 </tbody>
             </table>
 		</aside>
-
-
-        <aside id="group_inspector">
-            <table id="">
-                 <tbody>
-                    <tr>
-                        <td colspan="2" style="text-align:right;padding-right:5px">
-                            <button onclick="interaction.decreaseGrid()">Grid -</button>
-                            <button onclick="interaction.increaseGrid()">Grid +</button>
-                            <!--
-                            <button onclick="interaction.arrangeGroups()">Arrange</button>
-                            -->
-                            <button onclick="interaction.addNewView()">Add View</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <table id="gi_table">
-                <tbody>
-                </tbody>
-            </table>
-            <script>
-                // group_inspector.init();
-            </script>
-        </aside>
-
+    
 		<aside id="system_inspector">
-            <button onmousedown="controller.new()">New</button>
-            <button onmousedown="controller.open()">Open...</button>
-            <button onmousedown="controller.save()">Save</button>
-            <button onmousedown="controller.saveas()">Save As...</button>
-            <button onmousedown="controller.quit()">Quit</button>
-            </br>
-            <button onmousedown="controller.stop()">Stop</button>
-            <button onmousedown="controller.pause()">Pause</button>
-            <button onmousedown="controller.step()">Step</button>
-            <button onmousedown="controller.play()">Play</button>
-            <button onmousedown="controller.realtime()">Realtime</button>
             <table id="i_table">
                  <tbody>
+                    <tr>
+                        <td colspan="2"  style="text-align: center;">
+                            <button onmousedown="controller.new()">New</button>
+                            <button onmousedown="controller.open()">Open...</button>
+                            <button onmousedown="controller.save()">Save</button>
+                            <button onmousedown="controller.saveas()">Save As...</button>
+                            <button onmousedown="controller.quit()">Quit</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="text-align: center;padding-top:25px;">
+                            <img src="images/logo.png" style="height:50px; width: 50px"><br />
+                            <span id="brainstudio_logo">BrainStudio</span>
+                        </td>
+                    </tr>
 
+                    <tr>
+                        <td colspan="2"  style="text-align: center;">
+                            <button onmousedown="controller.stop()">Stop</button>
+                            <button onmousedown="controller.pause()">Pause</button>
+                            <button onmousedown="controller.step()">Step</button>
+                            <button onmousedown="controller.play()">Play</button>
+                            <button onmousedown="controller.realtime()">Realtime</button>
+                        </td>
+                    </tr>
                     <tr>
                         <td>file</td><td id="file">-</td>
                     </tr>
@@ -344,7 +579,6 @@
 
             <p id="title"></p>
 		</aside>
-
 	</section>
 
 	<footer class="log"></footer>
@@ -367,9 +601,7 @@
     </script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", (event) => {
-            setTimeout("brainstudio.init()", 500);
-        });
+        document.addEventListener("DOMContentLoaded", (event) => { setTimeout("brainstudio.init()", 500); });
     </script>
 
 </body>

@@ -278,7 +278,7 @@ struct Request
         dictionary parameters;
         std::string url;
         std::string command; 
-        std::string view_name; 
+        //std::string view_name; 
         std::string component_path;
 
         Request(std::string  uri, long sid=0);  // Add client id later
@@ -424,16 +424,16 @@ public:
     void DoCommand(Request & request);
     void DoControl(Request & request);
     
-    dictionary GetView(std::string component, std::string view_name);
-    dictionary GetView(Request & request);
+    //dictionary GetView(std::string component, std::string view_name);
+    //dictionary GetView(Request & request);
 
-    void AddView(Request & request);
+    //void AddView(Request & request);
     void AddWidget(Request & request);
     void DeleteWidget(Request & request);
     void SetWidgetParameters(Request & request);
     void WidgetToFront(Request & request);
     void WidgetToBack(Request & request);
-    void RenameView(Request & request);
+    //void RenameView(Request & request);
 
     void DoAddGroup(Request & request);
     void DoAddModule(Request & request);
