@@ -68,19 +68,20 @@
         <div  class="breadcrumbs" id="breadcrumbs">
             <div class="button" onclick="nav.toggle()" id="nav">&#8801;</div>
             <div class="stretch" ></div>
+            <div class="button" onclick="main.toggleGrid()" style="font-family:Arial">#</div>
             <div class="button" onclick="log.toggleLog()">&#x26A0;</div>
             <div class="button" onclick="inspector.toggleComponent()">&#9432;</divb></div>
             <div class="button large" onclick="inspector.toggleSystem()">&#x2699;</div>
         </div>
     </header>
 
-	<section>
-		<main id="main" display:none">
-            <div id="grid"></div>
-            <canvas id="maincanvas" width="3000" height="2000">
-            </canvas>
+	<section style ="">
+        <main id="main" style ="">             
+            <canvas id="main_grid" width="3000" height="3000" style="background-color:#ffffff88;position: absolute; top:0;left:0;z-index: 200;display:none;" ></canvas>
+            <div id="main_view" style="position:absolute;z-index: 400;height:800px;width:800px;top:0px;left:0px">
+            </div>
 		</main>
-	
+
         <!-- NAVIGATOR -->
 
 		<nav id="navigator">

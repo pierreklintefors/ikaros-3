@@ -549,35 +549,6 @@ div.visible.selected {
     display: block;
 }
 
-/* Style for modules */
-
-div.module {
-    position: absolute;
-    z-index: 200;
-    overflow: hidden;
-    background-color: #383838;
-    color: #ddd;
-    font-size: 10px;
-    cursor: move;
-
-    text-align: center;
-    border-radius:6px;
-    width:120px;
-
-}
-
-    .module .title {
-    color:#e2e2e2;
-    background-color: #5a5a5a;
-    font-size: 10px;  
-}
-
-/*
-div.module:hover {
-    border: 1px solid var(--accent-color);
-
-}
-*/
 /*
 div.group {
 
@@ -739,4 +710,127 @@ p.warning {
 
 p.error {
     color: red;
+}
+
+/* VIEW */
+
+/* Style for modules */
+
+div.module {
+    position: absolute;
+    z-index: 200;
+    overflow: hidden;
+    background-color: #383838;
+    color: yellow;
+    /*font-size: 12px;*/
+    cursor: move;
+    text-align: center;
+    /* border:4px solid  #888; #00000000; */
+    border-radius: 14px;
+}
+
+div.module td {
+    width: auto;
+}
+
+div.module td.title {
+    text-align: center;
+    padding-right: 20px;
+}
+
+div.module td.input {
+    /* background-color: red; */
+    width:10px;
+    padding-left: 5px;
+    margin-left: 0px;
+}
+
+div.module td.output {
+    /* background-color: green; */
+    width:10px;
+    padding: 0px;
+}
+.module .title {
+    color:#e2e2e2;
+    background-color: #5a5a5a; 
+}
+
+/*
+div.module:hover {
+    border: 1px solid var(--accent-color);
+}
+*/
+
+{
+    /* height:40px;
+    width:160px;  */ 
+    background-color:#ddd;
+    border:1px solid #666;
+    position:absolute;
+}
+
+svg {
+    position:absolute;
+    left: 0px;
+    top: 0px;
+    width: 3000px;
+    height: 3000px;
+}
+
+.connection_line {
+    stroke:darkgray;
+    stroke-width:3;
+}
+
+.connection_line:hover {
+    stroke:darkgray;
+    stroke-width:5;
+}
+
+.connection_line .selected:hover {
+    stroke:black;
+    stroke-width:5;
+}
+
+.group_input
+{
+    position:absolute;
+    /* height:26px; */
+    padding-top: 5px;
+    padding-right: 0px;
+    padding-left:16px;
+    padding-bottom: 2px;
+    width: auto;
+    color:#e2e2e2;
+    background-color:#383838;
+    border:2px solid #00000000;
+    border-radius: 14px;
+    font-size: 13.33333px;
+}
+
+.o_spot {
+    float: right;
+    height: 10px;
+    width: 10px;
+    margin: 4px;
+    margin-left: 8px;
+    margin-right: 7px;
+    margin-top: 1px;
+    border-radius: 7px;
+    background-color: rgb(177, 177, 177);
+}
+
+.o_spot:hover {
+    background-color: white;
+}
+
+.i_spot {
+    float: right;
+    height: 10px;
+    width: 10px;
+    margin: 4px;
+    margin-right: 8px;
+    margin-top: 3px;
+    border-radius: 5px;
+    background-color: rgb(177, 177, 177);
 }
