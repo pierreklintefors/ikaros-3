@@ -1298,7 +1298,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         for(auto g : d["groups"])
             BuildGroup(g, name);
-
         for(auto m : d["modules"])
             AddModule(m, name);
         for(auto c : d["connections"])
@@ -1351,10 +1350,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                             run_mode = run_mode_restart_realtime;
                             start = true;
                         }
-       
 */
     }
-
 
 
     void Kernel::LoadFile()

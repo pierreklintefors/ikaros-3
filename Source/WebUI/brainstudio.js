@@ -450,14 +450,12 @@ controller = {
 
             controller.tick = response.tick;
             controller.run_mode = ['quit', 'stop','pause','play','realtime','restart'][response.state];
-            
         }
         catch(err)
         {
             console.log("controller.setSystemInfo: incorrect package received form ikaros.")
         }
     },
-
 
     update(response, session_id, package_type)
     {
@@ -480,6 +478,8 @@ controller = {
             controller.tick = response.tick;
             network.init(response);
             nav.populate(network.network);
+            let top = network.network.name;
+            selector.selectItem(top, top);
             //controller.views = {};
             //controller.buildViewDictionary(response, "");
             
@@ -657,21 +657,21 @@ breadcrumbs = {
             if(path==item)
             {
                 styleStr = "style='--breadcrumb-element-color: var(--breadcrumb-active-color); border-radius: 5px;'";
-                h += "<div class='dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", false)' ondblclick='selector.selectItem(\""+path+"\", true)' >"+g+"</div>";
+                h += "<div class='dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", \""+path+"\")' ondblclick='selector.selectItem(\""+path+"\", \""+path+"\")' >"+g+"</div>";
             }
             else
             {
-                h += "<div class='bread dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", false)' ondblclick='selector.selectItem(\""+path+"\", true)' >"+g+"</div>";    
+                h += "<div class='bread dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", \""+path+"\")' ondblclick='selector.selectItem(\""+path+"\", \""+path+"\")' >"+g+"</div>";    
             }
         }
         h += "</div>";
 
         // IF GROUP BACKGROUND IS VISIBLE
-
+/*
         h+= "<div class='add_button dynamic' style=''>Add&nbsp;Group</div>";
         h+= "<div class='add_button dynamic' style=''>Add&nbsp;Module</div>";
         h+= "<div class='add_button dynamic' style=''>Add&nbsp;Widget</div>";
-
+*/
             document.querySelector("#nav").insertAdjacentHTML('afterend', h);
     }
 }
@@ -909,8 +909,8 @@ selector = {
         {
             nav.selectItem(background);
             breadcrumbs.selectItem(background);    
-            main.selectItem(background, background);  
- 
+            main.selectItem(background, background);
+            inspector.showGroupBackground(background); // FIXME: for edit *****
         }
 
         else if(network.dict[foreground].modules != undefined) // select group on group-background
@@ -941,9 +941,13 @@ selector = {
             breadcrumbs.selectItem(background);   
             // INSPECTOR SHOW WIDGET
         }
+    },
+
+    selectConnection(source, target)
+    {
+        alert(source+" => "+target);
     }
 }
-
 
 main = 
 {
@@ -978,75 +982,79 @@ main =
         }
     },
 
-    addGroup(g)
+    addGroup(g,path)
     {
         let s = "";
-        s += `<div class='module' style='top:${g._y}px;left:${g._x}px;'>`;
+        s += `<div class='gi module' style='top:${g._y}px;left:${g._x}px;'>`; // CLASS GROUP *******
         s += `<table>`;
         s += `<tr><td class='title' colspan='3'>${g.name}</td></tr>`;
 
        for(let i of g.inputs || [])
-           s += `<tr><td class='input'><div class='i_spot' id='Brain.Amygdala.Central.${g.name}.INPUT_1' onclick='alert(this.id)'></div></td><td>${i.name}</td><td></td></tr>`;
+           s += `<tr><td class='input'><div class='i_spot' id='${path}.${g.name}.${i.name}' onclick='alert(this.id)'></div></td><td>${i.name}</td><td></td></tr>`;
  
        for(let o of g.outputs || [])
-           s += `<tr><td></td><td>${o.name}</td><td class='output'><div class='o_spot' id='Brain.Amygdala.Central.${g.name}.OUTPUT_1'></div></td></tr>`;
+           s += `<tr><td></td><td>${o.name}</td><td class='output'><div class='o_spot' id='${path}.${g.name}.${o.name}'></div></td></tr>`;
 
         s += `</table>`;
         s += `</div>`;
        main.view.innerHTML += s;
    },
 
-    addInput(i)
+    addInput(i,path)
     {
-        main.view.innerHTML += `<div class='group_input' style='top:${i._y}px;left:${i._x}px;'>${i.name}<div class='o_spot'></div></div>`;
+        main.view.innerHTML += `<div class='gi group_input' style='top:${i._y}px;left:${i._x}px;'>${i.name}<div class='o_spot' id='${path}.${i.name}'></div></div>`;
     },
 
-    addOutput(o)
+    addOutput(o,path)
     {
-        main.view.innerHTML += `<div style='height:40px; width:160px;background-color:cyan;border:1px solid #666;position:absolute;top:${o._y}px;left:${o._x}px;'>${o.name}</div>`;
+        main.view.innerHTML += `<div class='gi group_output' style='height:40px; width:160px;background-color:cyan;border:1px solid #666;position:absolute;top:${o._y}px;left:${o._x}px;'>${o.name}</div>`;
     },
 
-    addModule(m)
+    addModule(m,path)
     {
          let s = "";
-         s += `<div class='module' style='top:${m._y}px;left:${m._x}px;'>`;
+         s += `<div class='gi module' style='top:${m._y}px;left:${m._x}px;'>`;
          s += `<table>`;
          s += `<tr><td class='title' colspan='3'>${m.name}</td></tr>`;
 
         for(let i of m.inputs || [])
-            s += `<tr><td class='input'><div class='i_spot' id='Brain.Amygdala.Central.${m.name}.INPUT_1' onclick='alert(this.id)'></div></td ><td>INPUT_1</td><td class='output'></td></tr>`;
+            s += `<tr><td class='input'><div class='i_spot' id='${path}.${m.name}.${i.name}' onclick='alert(this.id)'></div></td ><td>${i.name}</td><td class='output'></td></tr>`;
   
         for(let o of m.outputs || [])
-            s += `<tr><td class='output'></td><td>${o.name}</td><td class='output'><div class='o_spot' id='Brain.Amygdala.Central.${m.name}.OUTPUT_1'></div></td></tr>`;
+            s += `<tr><td class='output'></td><td>${o.name}</td><td class='output'><div class='o_spot' id='${path}.${m.name}.${o.name}'></div></td></tr>`;
 
          s += `</table>`;
          s += `</div>`;
         main.view.innerHTML += s;
     },
     
-    addWidget(w)
+    addWidget(w,path)
     {
-        main.view.innerHTML += `<div style='height:40px; width:160px;background-color:#dd0;border:1px solid #666;position:absolute;top:${w._y}px;left:${w._x}px;'>${w.name}</div>`;
+        main.view.innerHTML += `<div class='gi widget' style='height:40px; width:160px;background-color:#dd0;border:1px solid #666;position:absolute;top:${w._y}px;left:${w._x}px;'>${w.name}</div>`;
     },
     
-    addConnection(c)
+    addConnection(c,path)
     {
-        let source_point = document.getElementById("Brain.Amygdala.Central.456.OUTPUT_1");
+        let source_point = document.getElementById(`${path}.${c.source}`);
+        let target_point = document.getElementById(`${path}.${c.target}`);
 
+        if(source_point == undefined ||target_point == undefined)
+            return;
+        
         let ox = main.view.getBoundingClientRect().left;
         let oy = main.view.getBoundingClientRect().top;
 
-        let x1 = source_point.getBoundingClientRect().left-ox;
-        let y1 = source_point.getBoundingClientRect().top-oy;
-        let target_point = document.getElementById("Brain.Amygdala.Central.123.INPUT_2");
-        let x2 = target_point.getBoundingClientRect().left-ox;
-        let y2 = target_point.getBoundingClientRect().top-oy;
+        let x1 = source_point.getBoundingClientRect().left-ox+4.5;
+        let y1 = source_point.getBoundingClientRect().top-oy+4.5;
 
-        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line' onclick='alert(1);'/>`;
+        let x2 = target_point.getBoundingClientRect().left-ox+4.5;
+        let y2 = target_point.getBoundingClientRect().top-oy+4.5;
+
+        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='gi connection_line' onclick='selector.selectConnection("${c.source}","${c.target}")'/> id='${c.source}$_{c.target}'`;
         main.connections += cc;
     },
 
-    placeObjects(group) // *************** ADD PATH to include it in IDs
+    placeObjects(group, path)
     {
         if(group == undefined)
             return;
@@ -1054,35 +1062,33 @@ main =
         main.view.innerHTML = "";
 
         for(let i of group.inputs || [])
-            main.addInput(i);
+            main.addInput(i,path);
 
     for(let o of group.output || [])
-            main.addOutput(o);
+            main.addOutput(o,path);
+
         for(let g of group.groups || [])
-            main.addGroup(g);
+            main.addGroup(g,path);
 
     for(let m of group.modules || [])
-        main.addModule(m);
+        main.addModule(m,path);
 
     for(let w of group.widgets || [])
-        main.addGroup(w);
+        main.addGroup(w,path);
 
-    for(let c of group.connections || [])
-        main.addConnection(g);
+        main.connections = "<svg xmlns='http://www.w3.org/2000/svg'>";
+        for(let c of group.connections || [])
+            main.addConnection(c,path);
+        main.connections += "</svg>";
 
-    main.connections = "<svg xmlns='http://www.w3.org/2000/svg'>";
-    // main.connections += "<line x1='0' y1='0' x2='300' y2='200' class='connection_line' onclick='alert(1);'/>";
-    //main.connections += "<line x1='0' y1='50' x2='300' y2='200' class='connection_line' onclick='alert(1);'/>";
-    //main.connections += "<line x1='0' y1='0' x2='824' y2='607' class='connection_line' onclick='alert(1);'/>";
-
-    main.addConnection();
-
-    main.connections += "</svg>";
-    main.view.innerHTML += main.connections;
-
-    
+        main.view.innerHTML += main.connections;
 
         // ADD CLICK AND SHIFT CLICK FUNCTIONS TO ALL OBJECTS
+
+        for(e of main.view.querySelectorAll(".gi"))
+        {
+
+        }
     },
 
     toggleGrid()
@@ -1094,10 +1100,10 @@ main =
         main.grid.style.display = 'none';
     },
 
-    selectItem(foreground, background) // ******* first select objects in fg list
+    selectItem(foreground, background) // ******* first select objects in fg list *******
     {
         group = network.dict[background];
-        main.placeObjects(group);
+        main.placeObjects(group, background);
     }
 }
 
@@ -1113,6 +1119,4 @@ brainstudio = {
         main.init();
     }
 }
-
-
 

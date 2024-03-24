@@ -718,24 +718,32 @@ p.error {
 
 div.module {
     position: absolute;
-    z-index: 200;
+    /* z-index: 200; */
     overflow: hidden;
     background-color: #383838;
     color: yellow;
     /*font-size: 12px;*/
     cursor: move;
     text-align: center;
-    /* border:4px solid  #888; #00000000; */
+    /* border:2px solid #00000000;*/
+    /* border:2px solid  red; */
     border-radius: 14px;
+}
+
+div.module:hover {
+    border: 3px solid green;
 }
 
 div.module td {
     width: auto;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 div.module td.title {
     text-align: center;
     padding-right: 20px;
+    padding-left:20px;
 }
 
 div.module td.input {
@@ -752,7 +760,7 @@ div.module td.output {
 }
 .module .title {
     color:#e2e2e2;
-    background-color: #5a5a5a; 
+    background-color: #5a5a5a;
 }
 
 /*
@@ -760,31 +768,38 @@ div.module:hover {
     border: 1px solid var(--accent-color);
 }
 */
-
+    /*
 {
-    /* height:40px;
-    width:160px;  */ 
+    height:40px;
+    width:160px;
     background-color:#ddd;
     border:1px solid #666;
     position:absolute;
 }
+*/
 
 svg {
     position:absolute;
     left: 0px;
     top: 0px;
     width: 3000px;
-    height: 3000px;
+    height: 3000px;    
+    /* z-index: 10;*/
+    pointer-events: none;
 }
 
+svg *{
+    pointer-events:auto;
+  }
+  
 .connection_line {
     stroke:darkgray;
     stroke-width:3;
 }
 
 .connection_line:hover {
-    stroke:darkgray;
-    stroke-width:5;
+    stroke:#555;
+    stroke-width:3;
 }
 
 .connection_line .selected:hover {
@@ -804,6 +819,7 @@ svg {
     color:#e2e2e2;
     background-color:#383838;
     border:2px solid #00000000;
+    /* border:2px solid  red; */
     border-radius: 14px;
     font-size: 13.33333px;
 }
@@ -834,3 +850,16 @@ svg {
     border-radius: 5px;
     background-color: rgb(177, 177, 177);
 }
+
+.gi:hover {
+    border: 3px solid orange;
+}
+
+.gi.selected {
+    border: 3px solid orange;
+}
+
+.gi {
+    border: 3px solid #00000000;
+}
+
