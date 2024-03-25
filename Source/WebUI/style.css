@@ -720,47 +720,47 @@ div.module {
     position: absolute;
     /* z-index: 200; */
     overflow: hidden;
-    background-color: #383838;
+    background-color: #38383
+    border:2px solid #00000000;
     color: yellow;
     /*font-size: 12px;*/
     cursor: move;
     text-align: center;
-    /* border:2px solid #00000000;*/
-    /* border:2px solid  red; */
+
+    /*  border:2px solid  red;  */
     border-radius: 14px;
 }
 
-div.module:hover {
-    border: 3px solid green;
-}
 
 div.module td {
     width: auto;
     padding-left: 5px;
     padding-right: 5px;
+    color:#ddd;
+    background-color: #535353;
 }
 
 div.module td.title {
     text-align: center;
     padding-right: 20px;
     padding-left:20px;
+    background-color: #383838;
 }
 
 div.module td.input {
-    /* background-color: red; */
     width:10px;
     padding-left: 5px;
     margin-left: 0px;
 }
 
 div.module td.output {
-    /* background-color: green; */
     width:10px;
     padding: 0px;
 }
 .module .title {
-    color:#e2e2e2;
-    background-color: #5a5a5a;
+    border-top: none;
+    color:#f2f0f0;
+    /* background-color: #5a5a5a; */
 }
 
 /*
@@ -791,14 +791,15 @@ svg {
 svg *{
     pointer-events:auto;
   }
-  
+
 .connection_line {
     stroke:darkgray;
     stroke-width:3;
 }
 
 .connection_line:hover {
-    stroke:#555;
+    stroke:orange;
+    stroke-dasharray: 5,5;
     stroke-width:3;
 }
 
@@ -817,8 +818,7 @@ svg *{
     padding-bottom: 2px;
     width: auto;
     color:#e2e2e2;
-    background-color:#383838;
-    border:2px solid #00000000;
+
     /* border:2px solid  red; */
     border-radius: 14px;
     font-size: 13.33333px;
@@ -837,7 +837,7 @@ svg *{
 }
 
 .o_spot:hover {
-    background-color: white;
+    background-color: orange;
 }
 
 .i_spot {
@@ -852,7 +852,7 @@ svg *{
 }
 
 .gi:hover {
-    border: 3px solid orange;
+    border: 3px dashed orange;
 }
 
 .gi.selected {
@@ -860,6 +860,7 @@ svg *{
 }
 
 .gi {
+    background-color:#383838;
     border: 3px solid #00000000;
 }
 

@@ -15,6 +15,32 @@ function isEmpty(obj)
   }
 
 
+  function toggleInArray(array, value) 
+  {
+    var index = array.indexOf(value);
+
+    if (index == -1) 
+    {
+        array.push(value);
+    } 
+    else 
+    {
+        do 
+        {
+            array.splice(index, 1);
+            index = array.indexOf(value);
+        }
+        while (index != -1);
+    }
+  }
+  
+
+  function toggleStrings(array, toggleItems)
+  {
+    for(let i of toggleItems)
+        toggleInArray(array, i);
+  }
+
 
   String.prototype.rsplit = function(sep, maxsplit) {
     var split = this.split(sep || /\s+/);
@@ -479,7 +505,7 @@ controller = {
             network.init(response);
             nav.populate(network.network);
             let top = network.network.name;
-            selector.selectItem(top, top);
+            selector.selectItems([], top);
             //controller.views = {};
             //controller.buildViewDictionary(response, "");
             
@@ -657,11 +683,11 @@ breadcrumbs = {
             if(path==item)
             {
                 styleStr = "style='--breadcrumb-element-color: var(--breadcrumb-active-color); border-radius: 5px;'";
-                h += "<div class='dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", \""+path+"\")' ondblclick='selector.selectItem(\""+path+"\", \""+path+"\")' >"+g+"</div>";
+                h += "<div class='dynamic' "+styleStr+" onclick='selector.selectItems([], \""+path+"\")'>"+g+"</div>";
             }
             else
             {
-                h += "<div class='bread dynamic' "+styleStr+" onclick='selector.selectItem(\""+path+"\", \""+path+"\")' ondblclick='selector.selectItem(\""+path+"\", \""+path+"\")' >"+g+"</div>";    
+                h += "<div class='bread dynamic' "+styleStr+" onclick='selector.selectItems([], \""+path+"\")'>"+g+"</div>";    
             }
         }
         h += "</div>";
@@ -730,7 +756,7 @@ let nav = {
     navClick(e)
     {
         let fg = bg = e.target.parentElement.dataset.name;
-        selector.selectItem(fg, bg);
+        selector.selectItems([], bg);
         e.stopPropagation();
     },
 
@@ -790,6 +816,10 @@ inspector = {
         inspector.component = document.querySelector('#component_inspector');
 
         inspector.subview.nothing  = document.querySelector('#inspector_nothing'); 
+        inspector.subview.multiple  = document.querySelector('#inspector_multiple');
+        inspector.subview.table  = document.querySelector('#inspector_table');
+        
+
         inspector.subview.group_background = document.querySelector('#inspector_group_background');
         inspector.subview.group = document.querySelector('#inspector_group');
         inspector.subview.module =  document.querySelector('#inspector_module');
@@ -851,13 +881,31 @@ inspector = {
         let g = network.dict[item];
 
         inspector.hideSubviews();
-        inspector.setTable(inspector.subview.group_background);
-        inspector.subview.group_background.style.display = 'block';
+        inspector.setTable(inspector.subview.table);
+        inspector.subview.table.style.display = 'block';
         inspector.addHeader("GROUP");
         inspector.addAttributeValue("name", g.name);
         inspector.addAttributeValue("subgroups", (g.groups || []).length);
         inspector.addAttributeValue("modules", (g.modules || []).length);
         inspector.addAttributeValue("connections", (g.connections || []).length);
+    },
+
+    showSingleSelection(c)
+    {
+        inspector.hideSubviews();
+        inspector.setTable(inspector.subview.table);
+        inspector.subview.table.style.display = 'block';
+        inspector.addHeader("COMPONENT");
+        inspector.addAttributeValue("name", c); 
+    },
+
+    showMultipleSelection(n)
+    {
+        inspector.hideSubviews();
+        inspector.setTable(inspector.subview.table);
+        inspector.subview.table.style.display = 'block';
+        inspector.addHeader("MULTIPLE");
+        inspector.addAttributeValue("selected", n); 
     }
 }
 
@@ -893,53 +941,41 @@ log = {
  */
 
 selector = {
-    selected_foreground: null,
+    selected_foreground: [],
     selected_background: null,
 
-    selectItem(foreground, background)
+    selectItems(foreground=[], background=null, toggle)
     {
-        selected_foreground = foreground;
-        selected_background = background;
+        // Select background
 
-    // mainView Update
+        if(background != null)
+            selector.selected_background = background;
 
-        // alert(JSON.stringify(network.dict[item]));
+        // Toggle foreground
 
-        if(foreground == background) // background group
+        if(toggle)
+            toggleStrings(selector.selected_foreground, foreground);
+        else if(!selector.selected_foreground.includes(foreground[0]))
+            selector.selected_foreground = foreground;
+
+        if(selector.selected_background == null)
+            return;
+
+        if(selector.selected_foreground.length==0) // select background group
         {
-            nav.selectItem(background);
-            breadcrumbs.selectItem(background);    
-            main.selectItem(background, background);
-            inspector.showGroupBackground(background); // FIXME: for edit *****
+            nav.selectItem(selector.selected_background);
+            breadcrumbs.selectItem(selector.selected_background);    
+            main.selectItem([], selector.selected_background);
+            inspector.showGroupBackground(selector.selected_background); // FIXME: for edit *****
         }
 
-        else if(network.dict[foreground].modules != undefined) // select group on group-background
+        else // select forground components
         {
-            nav.selectItem(background);
-            breadcrumbs.selectItem(background); 
-               // INSPECTOR SHOW GROUP (NOT BACKGROUND)
-        }
-        
-        else if(network.dict[foreground].class != undefined) // select MODULE in background
-        {
-            nav.selectItem(background);
-            breadcrumbs.selectItem(background);   
-            // INSPECTOR SHOW MODULE
-        
-        }
-
-        else if(network.dict[foreground].souce != undefined) // select CONNECTION in background
-        {
-            nav.selectItem(background);
-            breadcrumbs.selectItem(background);   
-            // INSPECTOR SHOW CONNECTION
-        }
-
-        else
-        {
-            nav.selectItem(background);
-            breadcrumbs.selectItem(background);   
-            // INSPECTOR SHOW WIDGET
+            main.selectItem(selector.selected_foreground, selector.selected_background);
+            if(selector.selected_foreground.length > 1)
+                inspector.showMultipleSelection(selector.selected_foreground.length);
+            else
+                inspector.showSingleSelection(selector.selected_foreground[0]);
         }
     },
 
@@ -984,8 +1020,9 @@ main =
 
     addGroup(g,path)
     {
+        let fullName = `${path}.${g.name}`;
         let s = "";
-        s += `<div class='gi module' style='top:${g._y}px;left:${g._x}px;'>`; // CLASS GROUP *******
+        s += `<div class='gi module' style='top:${g._y}px;left:${g._x}px;'  data-name='${fullName}'>`;
         s += `<table>`;
         s += `<tr><td class='title' colspan='3'>${g.name}</td></tr>`;
 
@@ -1002,18 +1039,18 @@ main =
 
     addInput(i,path)
     {
-        main.view.innerHTML += `<div class='gi group_input' style='top:${i._y}px;left:${i._x}px;'>${i.name}<div class='o_spot' id='${path}.${i.name}'></div></div>`;
+        main.view.innerHTML += `<div class='gi group_input' data-name='${path}.${i.name}' style='top:${i._y}px;left:${i._x}px;'>${i.name}<div class='o_spot' id='${path}.${i.name}'></div></div>`;
     },
 
     addOutput(o,path)
     {
-        main.view.innerHTML += `<div class='gi group_output' style='height:40px; width:160px;background-color:cyan;border:1px solid #666;position:absolute;top:${o._y}px;left:${o._x}px;'>${o.name}</div>`;
+        main.view.innerHTML += `<div class='gi group_output' data-name='${path}.${o.name}'  style='height:40px; width:160px;background-color:cyan;border:1px solid #666;position:absolute;top:${o._y}px;left:${o._x}px;'>${o.name}<div class='o_spot' id='${path}.${o.name}'></div>`; // ****NO COMPLETE
     },
 
     addModule(m,path)
     {
          let s = "";
-         s += `<div class='gi module' style='top:${m._y}px;left:${m._x}px;'>`;
+         s += `<div class='gi module' style='top:${m._y}px;left:${m._x}px;'  data-name='${path}.${m.name}'>`;
          s += `<table>`;
          s += `<tr><td class='title' colspan='3'>${m.name}</td></tr>`;
 
@@ -1050,11 +1087,11 @@ main =
         let x2 = target_point.getBoundingClientRect().left-ox+4.5;
         let y2 = target_point.getBoundingClientRect().top-oy+4.5;
 
-        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='gi connection_line' onclick='selector.selectConnection("${c.source}","${c.target}")'/> id='${c.source}$_{c.target}'`;
+        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='gi connection_line' onclick='selector.selectConnection("${c.source}","${c.target}")'/> data-name='${c.source}$_{c.target}'`;
         main.connections += cc;
     },
 
-    placeObjects(group, path)
+    placeObjects(group, selectionList, path)
     {
         if(group == undefined)
             return;
@@ -1064,17 +1101,17 @@ main =
         for(let i of group.inputs || [])
             main.addInput(i,path);
 
-    for(let o of group.output || [])
-            main.addOutput(o,path);
+        for(let o of group.output || [])
+                main.addOutput(o,path);
 
-        for(let g of group.groups || [])
-            main.addGroup(g,path);
+            for(let g of group.groups || [])
+                main.addGroup(g,path);
 
-    for(let m of group.modules || [])
-        main.addModule(m,path);
+        for(let m of group.modules || [])
+            main.addModule(m,path);
 
-    for(let w of group.widgets || [])
-        main.addGroup(w,path);
+        for(let w of group.widgets || [])
+            main.addGroup(w,path, selectionList);
 
         main.connections = "<svg xmlns='http://www.w3.org/2000/svg'>";
         for(let c of group.connections || [])
@@ -1085,9 +1122,16 @@ main =
 
         // ADD CLICK AND SHIFT CLICK FUNCTIONS TO ALL OBJECTS
 
-        for(e of main.view.querySelectorAll(".gi"))
-        {
+        for(let e of main.view.querySelectorAll(".group"))
+            e.ondblclick = function(e) { selector.selectItems([], this.dataset.name); }; // Jump into group
 
+        for(let e of main.view.querySelectorAll(".gi"))
+        {
+            e.onclick = function(e) { selector.selectItems([this.dataset.name], null, e.shiftKey); };
+            if(selectionList.includes(e.dataset.name))
+                e.classList.add("selected")
+            else
+                e.classList.remove("selected");
         }
     },
 
@@ -1100,10 +1144,13 @@ main =
         main.grid.style.display = 'none';
     },
 
-    selectItem(foreground, background) // ******* first select objects in fg list *******
+    selectItem(foreground, background)
     {
-        group = network.dict[background];
-        main.placeObjects(group, background);
+        if(background != null)
+        {
+            group = network.dict[background];
+            main.placeObjects(group, foreground, background);
+        }
     }
 }
 
