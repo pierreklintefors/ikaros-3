@@ -1,6 +1,6 @@
 <group filename="Source/Modules/TestModules/Test5.ikg" name="Brain" stop="-1" webui_port="8000">
-   <group name="Amydala">
-      <group name="Lateral">
+   <group _x="100" _y="350" name="Amydala">
+      <group _x="100" _y="100" name="Lateral">
       </group>
       <group _x="100" _y="300" name="Central">
          <connection source="Constant.OUTPUT" target="TestGroup.T_INPUT"/>
@@ -16,8 +16,6 @@
          </group>
          <input _x="10" _y="10" name="C_A_INPUT_1"/>
          <input _x="10" _y="50" name="C_A_INPUT_2"/>
-         <output _x="400" _y="50" name="X_OUTPUT" size="2" />
-
          <module _x="600" _y="550" class="Scale" description="does nothing for the specified time" duration="1" name="123">
             <input description="The  input" name="INPUT"/>
             <output description="The output" name="OUTPUT" size="INPUT.size"/>
@@ -32,10 +30,14 @@
             <output description="The output" name="OUTPUT" size="INPUT.size"/>
             <parameter default="1" name="factor" type="float" value="1"/>
          </module>
-         <output _x="800" _y="50" name="C_A_OUTPUT" size="1"/>
-         <widget _x="350" _y="50" class="Plot" name="ABC"/>
+         <output _x="600" _y="300" name="GROUP_OUTPUT" size="1"/>
+         <output _x="600" _y="100" name="X_OUTPUT" size="2"/>
+         <output _x="600" _y="200" name="C_A_OUTPUT" size="1"/>
+         <widget _x="500" _y="400" class="Plot" name="WIDGET-ABC"/>
       </group>
    </group>
-   <group name="BasalGanglia">
+   <group _x="100" _y="30" name="BasalGanglia">
    </group>
+   <input _x="100" _y="100" name="INPUT"/>
+   <output _x="300" _y="100" name="OUTPUT" size="1"/>
 </group>
