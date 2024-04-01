@@ -185,9 +185,16 @@ target_link_libraries (ikaros ${MODULES_LIBS})
 # Set binary name to ikaros_d in debug mode
 set_target_properties(ikaros PROPERTIES DEBUG_POSTFIX "_d")
 
+add_compile_definitions(WIN32_LEAN_AND_MEAN NOMINMAX)
+
 # Print all variables
 # get_cmake_property(_variableNames VARIABLES)
 # list (SORT _variableNames)
 # foreach (_variableName ${_variableNames})
 #    message(STATUS "${_variableName}=${${_variableName}}")
 #endforeach()
+
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+add_compile_definitions(DEBUG)
+endif()
