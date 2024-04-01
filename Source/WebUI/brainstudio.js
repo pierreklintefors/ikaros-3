@@ -1,18 +1,18 @@
 /*
  * New version of WebUI interface wit BrainStudio functions
-*/
+ */
+
 
 function isEmpty(obj) 
 {
     if(obj)
-        for (const prop in obj) {
-        if (Object.hasOwn(obj, prop)) {
-            return false;
+        for (const prop in obj) 
+        {
+            if (Object.hasOwn(obj, prop)) 
+                return false;
         }
-        }
-
     return true;
-  }
+}
 
 
   function toggleInArray(array, value) 
@@ -33,7 +33,7 @@ function isEmpty(obj)
         while (index != -1);
     }
   }
-  
+
 
   function toggleStrings(array, toggleItems)
   {
@@ -41,6 +41,12 @@ function isEmpty(obj)
         toggleInArray(array, i);
   }
 
+  function removeStringFromStart(mainString, stringToRemove) {
+    if (mainString.startsWith(stringToRemove)) {
+      return mainString.slice(stringToRemove.length);
+    }
+    return mainString;
+  }
 
   String.prototype.rsplit = function(sep, maxsplit) {
     var split = this.split(sep || /\s+/);
@@ -218,6 +224,7 @@ dialog = {
 
 network = {
     network: null,
+    classes: null,
     dict: {},
 
     init(n)
@@ -229,17 +236,58 @@ network = {
     buildDict(o, path)
     {
         network.dict[(path+'.'+o.name).substring(1)] = o;
-        for(g of o.groups || [])
+        for(let g of o.groups || [])
             network.buildDict(g, path+'.'+o.name)
-        for(m of o.modules || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+m.name] = m;
-        for(v of o.views || [])
-            network.dict[(path+'.'+o.name).substring(1)+'/'+v.name] = v;
 
+        for(let i of o.inputs || [])
+            network.dict[(path+'.'+o.name).substring(1)+'.'+i.name] = i;
+        for(let i of o.outputs || [])
+            network.dict[(path+'.'+o.name).substring(1)+'.'+i.name] = i;
+
+        for(let m of o.modules || [])
+            network.dict[(path+'.'+o.name).substring(1)+'.'+m.name] = m;
+        for(let w of o.widgets || [])
+            network.dict[(path+'.'+o.name).substring(1)+'.'+w.name] = w;
+        for(let c of o.connections || [])
+            network.dict[(path+'.'+o.name).substring(1)+'.'+c.source+'*'+(path+'.'+o.name).substring(1)+'.'+c.target] = c;
+    },
+
+
+    addConnection(path, source, target)
+    {
+        let connection = 
+        {
+            "source": source,
+            "target": target,
+            "source_range":"",
+            "target_range": "",
+            delay_range: ""
+        };
+        let group = network.dict[path];
+        if(group.connections == null) // FIXME: SHOULD NOT BE NECESSARY
+        group.connections = [];
+        group.connections.push(connection);
+        network.dict[path+"."+source+"*"+path+"."+target]=connection;
+
+        // FIXME: SEND TO IKAROS KERNEL *********************
+    },
+
+    debug_json()
+    {
+        var w = window.open("about:blank", "", "_blank");
+        w.document.write('<html><body><pre>'+JSON.stringify(network.network,null,2)+ '</pre></body></html>');
+    },
+
+    debug_dict()
+    {
+        var w = window.open("about:blank", "", "_blank");
+        w.document.write('<html><body><h1>All components (in network.dict)</h1><pre>');
+        w.document.write('<html><body><pre>');
+        for(let k of Object.keys(network.dict))
+            w.document.write(k+"\n");
+        w.document.write('</pre></body></html>');
     }
 }
-
-
 
 webui_widgets = {
     constructors: {},
@@ -447,6 +495,11 @@ controller = {
                 return;
             }
 
+            if(response.debug)
+                document.querySelector("#debug_row").style.display="block";
+            else
+                document.querySelector("#debug_row").style.display="none";
+
             document.querySelector("#file").innerText = response.file;
             document.querySelector("#tick").innerText = (Number.isInteger(response.tick) && response.tick >= 0 ?  response.tick : "-");
             document.querySelector("#state").innerText = controller.run_mode;
@@ -612,7 +665,7 @@ controller = {
             return response.json();
         })
         .then(json => {
-            interaction.classes = json.classes.sort();
+            network.classes = json.classes.sort();
         })
         .catch(function () {
             console.log("Could not get class list from server.");
@@ -653,7 +706,6 @@ controller = {
             }
     }
 }
-
 
 /*
  *
@@ -866,6 +918,16 @@ inspector = {
         current_t_body.innerHTML = "";
     },
 
+    addTableRow(label, content="")
+    {
+        let row = current_t_body.insertRow(-1);
+        let cell1 = row.insertCell(0);
+        let cell2 = row.insertCell(1);
+        cell1.innerText = label;
+        cell2.innerHTML = content;
+        return cell2.firstElementChild;
+    },
+
     addHeader(header)
     {
         current_t_body.innerHTML += `<tr><td colspan='2' class='header'>${header}</td></tr>`;
@@ -874,6 +936,22 @@ inspector = {
     addAttributeValue(attribute, value) // SET ALSO VARIABLE AND LINK GROUP for EDITABLE
     {
         current_t_body.innerHTML += `<tr><td>${attribute}</td><td>${value}</td></tr>`;
+    },
+
+    addMenu(name, value, opts, attribute, component) // SET ALSO VARIABLE AND LINK GROUP for EDITABLE
+    {
+        var s = '<select name="'+name+'" oninput="this">';
+        for(var j in opts)
+        {
+            let value = opts[j];
+            if(opts[j] == value)
+                s += '<option value="'+value+'"  >'+opts[j]+'</option>';
+            else
+                s += '<option value="'+value+'">'+opts[j]+'</option>';
+        }
+        s += '</select>';
+
+        inspector.addTableRow("color", s).addEventListener("input", function(evt) { console.log(this);});
     },
 
     showGroupBackground(item)
@@ -888,6 +966,7 @@ inspector = {
         inspector.addAttributeValue("subgroups", (g.groups || []).length);
         inspector.addAttributeValue("modules", (g.modules || []).length);
         inspector.addAttributeValue("connections", (g.connections || []).length);
+        inspector.addAttributeValue("widgets", (g.widgets || []).length);
     },
 
     showSingleSelection(c)
@@ -896,7 +975,23 @@ inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
         inspector.addHeader("COMPONENT");
-        inspector.addAttributeValue("name", c); 
+        inspector.addAttributeValue("name", network.dict[c].name); 
+        inspector.addMenu("color","black",['black','red','green','blue','yellow'],"_color", c);
+    },
+
+    showConnection(connection)
+    {
+        let c = network.dict[connection];
+
+        inspector.hideSubviews();
+        inspector.setTable(inspector.subview.table);
+        inspector.subview.table.style.display = 'block';
+        inspector.addHeader("CONNECTION");
+        inspector.addAttributeValue("source", c.source);
+        inspector.addAttributeValue("target", c.target);
+        inspector.addAttributeValue("source_range", "-"); // Get actual values
+        inspector.addAttributeValue("target_range", "-");
+        inspector.addAttributeValue("delay", "-");
     },
 
     showMultipleSelection(n)
@@ -942,9 +1037,10 @@ log = {
 
 selector = {
     selected_foreground: [],
+    selected_connection: null,
     selected_background: null,
 
-    selectItems(foreground=[], background=null, toggle)
+    selectItems(foreground=[], background=null, toggle=false, extend=false)
     {
         // Select background
 
@@ -958,6 +1054,9 @@ selector = {
         else if(!selector.selected_foreground.includes(foreground[0]))
             selector.selected_foreground = foreground;
 
+         if(extend)
+            selector.selected_foreground = [...new Set([...selector.selected_foreground , ...foreground])];
+
         if(selector.selected_background == null)
             return;
 
@@ -966,7 +1065,7 @@ selector = {
             nav.selectItem(selector.selected_background);
             breadcrumbs.selectItem(selector.selected_background);    
             main.selectItem([], selector.selected_background);
-            inspector.showGroupBackground(selector.selected_background); // FIXME: for edit *****
+            inspector.showGroupBackground(selector.selected_background);
         }
 
         else // select forground components
@@ -979,9 +1078,15 @@ selector = {
         }
     },
 
-    selectConnection(source, target)
+    selectConnection(connection)
     {
-        alert(source+" => "+target);
+        //alert("CONNECTION "+connection);
+        selector.selected_foreground = [];
+        selector.selected_connection = connection;
+        main.selectItem(selector.selected_foreground, selector.selected_background);
+        main.deselectConnection(selector.selected_connection);
+        main.selectConnection(connection);
+        inspector.showConnection(connection);
     }
 }
 
@@ -990,21 +1095,27 @@ main =
     view: null,
     grid: null,
     connections: "",
-    grid_spacing: 25,
+    grid_spacing: 24,
+    grid_active: false,
+    map: {},
 
     init()
     {
+        main.main = document.querySelector("#main");
         main.view = document.querySelector("#main_view");
         main.grid = document.querySelector("#main_grid");
+        main.main_grid_canvas = document.querySelector("#main_grid_canvas");
         main.drawGrid();
 
-        let g = network.dict["Brain.Amygdala.Central"];
-        main.placeObjects(g);
+        // let g = network.dict["Brain.Amygdala.Central"];
+        // main.placeObjects(g);
     },
 
     drawGrid()
     {
-        const ctx = main.grid.getContext("2d");
+        const ctx = main.main_grid_canvas.getContext("2d");
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, main.main_grid_canvas.width, main.main_grid_canvas.height);
         ctx.lineWidth = 0.2;
         ctx.strokeStyle = "gray";
         for(x=main.grid_spacing; x<3000; x+=main.grid_spacing)
@@ -1018,19 +1129,222 @@ main =
         }
     },
 
+    increaseGrid()
+    {
+        main.grid_spacing = main.grid_spacing*2;
+        if(main.grid_spacing > 192)
+        main.grid_spacing = 192;
+        main.drawGrid();
+    },
+
+    decreaseGrid()
+    {
+        main.grid_spacing = main.grid_spacing/2;
+        if(main.grid_spacing < 8)
+        main.grid_spacing = 8;
+        main.drawGrid();
+    },
+
+    centerComponents()
+    {
+        let g = network.dict[selector.selected_background];
+
+        let sum_x = 0;
+        let sum_y = 0;
+        let n = 0;
+        let comps = [...g.groups||[], ...g.modules||[], ...g.inputs||[], ...g.outputs||[], ...g.widgets||[]];
+        for(let c of comps)    // ******* widgets??? ******* USE MIN/MAX instead?
+        {
+            sum_x += parseInt(c._x);
+            sum_y += parseInt(c._y);
+            n += 1;
+        }
+
+        if(n==0)
+            return;
+
+        let old_center_x = sum_x/n;
+        let old_center_y = sum_y/n;    
+        
+        let new_center_x = main.main.offsetWidth/2;
+        let new_center_y = main.main.offsetHeight/2;
+
+        let dx = new_center_x-old_center_x;
+        let dy = new_center_y-old_center_y;
+
+        for(let c of comps)
+        {
+            c._x = `${parseInt(c._x) + dx}`;
+            c._y = `${parseInt(c._y) + dy}`;
+        }
+
+            selector.selectItems([], null);
+    },
+    
+    changeComponentPosition(c, dx,dy)
+    {
+        let e = document.getElementById(c);
+
+        let new_x = main.map[c][0] + dx;
+        let new_y = main.map[c][1] + dy;
+
+        if(new_x < 0)
+                new_x = 0;
+
+            if(new_y < 0)
+                new_y = 0;
+
+        if(main.grid_active) // snap
+        {
+            let g = main.grid_spacing;
+            new_x = g*Math.round(new_x/g);
+            new_y = g*Math.round(new_y/g);
+        }
+
+        e.style.left = new_x+"px";
+        e.style.top = new_y+"px";
+
+        network.dict[c]._x = new_x;
+        network.dict[c]._y = new_y;
+    },
+
+    moveComponents(evt)
+    {
+    //    alert("moveComponents");
+
+        if(Object.keys(main.map).length == 0) // FIME: SHOULD NOT BE NEEDED
+            return;
+
+        evt.stopPropagation()
+        let dx = evt.clientX - main.initialMouseX;
+        let dy = evt.clientY - main.initialMouseY;
+
+        for(let c of selector.selected_foreground)
+            main.changeComponentPosition(c, dx,dy);
+        main.addConnections();
+    },
+
+    releaseComponents(evt)
+    {
+
+ 
+        //  ***************SEND POSITION CHANGES TO KERNEL ***************
+
+        main.view.removeEventListener('mousemove',main.moveComponents, true);
+        main.view.removeEventListener('mouseup',main.releaseComponents, true);
+        main.view.removeEventListener('mousemove',main.moveComponents, false);
+        main.view.removeEventListener('mouseup',main.releaseComponents, false);
+        main.map = {};
+    },
+
+    startDragComponents(evt)
+    {
+    //    alert("startDragComponents");
+
+        if(evt.detail == 2) // ignore double clicks
+            return;
+
+        main.initialMouseX = evt.clientX;
+        main.initialMouseY = evt.clientY;
+
+        selector.selectItems([this.dataset.name], null, evt.shiftKey);
+        //evt.stopPropagation();
+
+        if(!selector.selected_foreground.includes(this.dataset.name))
+            return;
+
+        main.map = {};
+        for(let c of selector.selected_foreground)
+        {
+            let e = document.getElementById(c);
+            main.map[c] = [e.offsetLeft, e.offsetTop];
+        };
+
+        main.view.addEventListener('mousemove',main.moveComponents, true);
+        main.view.addEventListener('mouseup',main.releaseComponents,true);
+        //main.view.style.cursor = "e-resize";
+        //main.view.cursor = "e-resize";
+        return false;
+    },
+
+    startTrackConnection(evt)
+    {
+        this.style.backgroundColor="orange";
+        evt.stopPropagation();
+        let id = this.id;
+        let e = document.getElementById(id);
+        let x = e.getBoundingClientRect().left-main.view.getBoundingClientRect().left+4.5;
+        let y = e.getBoundingClientRect().top-main.view.getBoundingClientRect().top+4.5;
+
+        main.tracked_connection =  { "x1": x, "y1": y, "x2": x, "y2": y, "source": id.split(':')[0], "target": null, "source_element": e };
+        main.view.addEventListener('mousemove',main.moveTrackedConnection, true);
+        main.view.addEventListener('mouseup',main.releaseTrackedConnection,true);
+    },
+
+    moveTrackedConnection(evt)
+    {
+        if(!main.tracked_connection)
+            return;
+        //evt.stopPropagation();
+
+        let ox = main.view.getBoundingClientRect().left;
+        let oy = main.view.getBoundingClientRect().top;
+
+        main.tracked_connection.x2 = evt.clientX - ox;
+        main.tracked_connection.y2 = evt.clientY - oy;
+        main.addConnections();
+    },
+
+    releaseTrackedConnection(evt)
+    {
+        evt.stopPropagation();
+        if(!main.tracked_connection)
+            return;
+
+        if(main.tracked_connection.target==null)
+        {
+            main.tracked_connection = null;
+        }
+        else
+        {
+            let source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".")
+            let target = removeStringFromStart(main.tracked_connection.target.split(':')[0], selector.selected_background+".")
+            network.addConnection(selector.selected_background, source, target);
+            main.tracked_connection = null;
+            //main.addConnections();
+            selector.selectConnection(selector.selected_background+"."+source+"*"+selector.selected_background+"."+target);
+        }
+    },
+
+    setConnectectionTarget(evt)
+    {
+        if(!main.tracked_connection)
+            return;
+        this.style.backgroundColor="orange";
+        main.tracked_connection.target = this.id;
+    },
+
+    resetConnectectionTarget(evt)
+    {
+        if(!main.tracked_connection)
+            return;
+            main.tracked_connection.target = null;
+        this.style.backgroundColor="gray";
+    },
+
     addGroup(g,path)
     {
         let fullName = `${path}.${g.name}`;
         let s = "";
-        s += `<div class='gi module' style='top:${g._y}px;left:${g._x}px;'  data-name='${fullName}'>`;
+        s += `<div class='gi module group' style='top:${g._y}px;left:${g._x}px;'  id='${fullName}' data-name='${fullName}'>`;
         s += `<table>`;
         s += `<tr><td class='title' colspan='3'>${g.name}</td></tr>`;
 
        for(let i of g.inputs || [])
-           s += `<tr><td class='input'><div class='i_spot' id='${path}.${g.name}.${i.name}' onclick='alert(this.id)'></div></td><td>${i.name}</td><td></td></tr>`;
+           s += `<tr><td class='input'><div class='i_spot' id='${path}.${g.name}.${i.name}:in' onclick='alert(this.id)'></div></td><td>${i.name}</td><td></td></tr>`;
  
        for(let o of g.outputs || [])
-           s += `<tr><td></td><td>${o.name}</td><td class='output'><div class='o_spot' id='${path}.${g.name}.${o.name}'></div></td></tr>`;
+           s += `<tr><td></td><td>${o.name}</td><td class='output'><div  class='o_spot' id='${path}.${g.name}.${o.name}:out'></div></td></tr>`;
 
         s += `</table>`;
         s += `</div>`;
@@ -1039,32 +1353,35 @@ main =
 
     addInput(i,path)
     {
-        main.view.innerHTML += `<div class='gi group_input' data-name='${path}.${i.name}' style='top:${i._y}px;left:${i._x}px;'>${i.name}<div class='o_spot' id='${path}.${i.name}'></div></div>`;
+        main.view.innerHTML += `<div class='gi group_input' id='${path}.${i.name}' data-name='${path}.${i.name}' style='top:${i._y}px;left:${i._x}px;'>
+        ${i.name}
+        <div class='o_spot'  id='${path}.${i.name}:out'></div>
+        </div>`;
     },
 
     addOutput(o,path)
     {
-        main.view.innerHTML += `<div class='gi group_output' data-name='${path}.${o.name}'  style='height:40px; width:160px;background-color:cyan;border:1px solid #666;position:absolute;top:${o._y}px;left:${o._x}px;'>${o.name}<div class='o_spot' id='${path}.${o.name}'></div>`; // ****NO COMPLETE
+        main.view.innerHTML += `<div class='gi group_output'  id='${path}.${o.name}' data-name='${path}.${o.name}'  style='top:${o._y}px;left:${o._x}px;'><div class='i_spot' id='${path}.${o.name}:in'></div>${o.name}</div>`;
     },
 
     addModule(m,path)
     {
          let s = "";
-         s += `<div class='gi module' style='top:${m._y}px;left:${m._x}px;'  data-name='${path}.${m.name}'>`;
+         s += `<div class='gi module' style='top:${m._y}px;left:${m._x}px;'   id='${path}.${m.name}' data-name='${path}.${m.name}'>`;
          s += `<table>`;
          s += `<tr><td class='title' colspan='3'>${m.name}</td></tr>`;
 
         for(let i of m.inputs || [])
-            s += `<tr><td class='input'><div class='i_spot' id='${path}.${m.name}.${i.name}' onclick='alert(this.id)'></div></td ><td>${i.name}</td><td class='output'></td></tr>`;
+            s += `<tr><td class='input'><div class='i_spot' id='${path}.${m.name}.${i.name}:in' onclick='alert(this.id)'></div></td ><td>${i.name}</td><td class='output'></td></tr>`;
   
         for(let o of m.outputs || [])
-            s += `<tr><td class='output'></td><td>${o.name}</td><td class='output'><div class='o_spot' id='${path}.${m.name}.${o.name}'></div></td></tr>`;
+            s += `<tr><td class='output'></td><td>${o.name}</td><td class='output'><div class='o_spot' id='${path}.${m.name}.${o.name}:out'></div></td></tr>`;
 
          s += `</table>`;
          s += `</div>`;
         main.view.innerHTML += s;
     },
-    
+
     addWidget(w,path)
     {
         main.view.innerHTML += `<div class='gi widget' style='height:40px; width:160px;background-color:#dd0;border:1px solid #666;position:absolute;top:${w._y}px;left:${w._x}px;'>${w.name}</div>`;
@@ -1072,8 +1389,8 @@ main =
     
     addConnection(c,path)
     {
-        let source_point = document.getElementById(`${path}.${c.source}`);
-        let target_point = document.getElementById(`${path}.${c.target}`);
+        let source_point = document.getElementById(`${path}.${c.source}:out`);
+        let target_point = document.getElementById(`${path}.${c.target}:in`);
 
         if(source_point == undefined ||target_point == undefined)
             return;
@@ -1087,8 +1404,59 @@ main =
         let x2 = target_point.getBoundingClientRect().left-ox+4.5;
         let y2 = target_point.getBoundingClientRect().top-oy+4.5;
 
-        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='gi connection_line' onclick='selector.selectConnection("${c.source}","${c.target}")'/> data-name='${c.source}$_{c.target}'`;
+        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line' data-source='${c.source}' id="${path}.${c.source}*${path}.${c.target}" data-target='${c.target}'onclick='selector.selectConnection("${path}.${c.source}*${path}.${c.target}")'/>`; 
         main.connections += cc;
+    },
+
+    addTrackedConnection()
+    {
+        if(!main.tracked_connection)
+            return;
+        let x1 = main.tracked_connection.x1;
+        let y1 = main.tracked_connection.y1;
+        let x2 = main.tracked_connection.x2;
+        let y2 = main.tracked_connection.y2;
+        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line tracked'/>`; 
+        main.connections += cc;
+    },
+
+    selectConnection(connection)
+    {
+        let c = document.getElementById(connection);
+        if(c != undefined) // FIXME: Use exception above instead
+        {
+            c.classList.add("selected");
+
+            let st = connection.split('*');
+
+            let s = document.getElementById(st[0]+":out");
+            s.style.backgroundColor = "orange";
+
+            let t = document.getElementById(st[1]+":in");
+            t.style.backgroundColor = "orange";
+        }
+    },
+
+    deselectConnection(connection)
+    {
+        let c = document.getElementById(connection);
+        if(c != undefined) // FIXME: Use exception above instead
+            c.classList.remove("selected");
+
+    },
+
+    addConnections()
+    {
+        let path = selector.selected_background;
+        let s = document.getElementById("connections");
+        if(s)
+            s.innerHTML = "";
+        main.connections = "<svg xmlns='http://www.w3.org/2000/svg' id='connections'>";
+        for(let c of group.connections || [])
+            main.addConnection(c,path);
+        main.addTrackedConnection();
+        main.connections += "</svg>";
+        s.innerHTML += main.connections;
     },
 
     placeObjects(group, selectionList, path)
@@ -1101,7 +1469,7 @@ main =
         for(let i of group.inputs || [])
             main.addInput(i,path);
 
-        for(let o of group.output || [])
+        for(let o of group.outputs || [])
                 main.addOutput(o,path);
 
             for(let g of group.groups || [])
@@ -1113,35 +1481,46 @@ main =
         for(let w of group.widgets || [])
             main.addGroup(w,path, selectionList);
 
-        main.connections = "<svg xmlns='http://www.w3.org/2000/svg'>";
-        for(let c of group.connections || [])
-            main.addConnection(c,path);
-        main.connections += "</svg>";
+        main.addConnections();
 
-        main.view.innerHTML += main.connections;
-
-        // ADD CLICK AND SHIFT CLICK FUNCTIONS TO ALL OBJECTS
+        // Add object handlers
 
         for(let e of main.view.querySelectorAll(".group"))
-            e.ondblclick = function(e) { selector.selectItems([], this.dataset.name); }; // Jump into group
+            e.ondblclick = function(evt) { selector.selectItems([], this.dataset.name); 
+            }; // Jump into group
 
         for(let e of main.view.querySelectorAll(".gi"))
         {
-            e.onclick = function(e) { selector.selectItems([this.dataset.name], null, e.shiftKey); };
+            e.addEventListener('mousedown', main.startDragComponents, false);
             if(selectionList.includes(e.dataset.name))
                 e.classList.add("selected")
             else
                 e.classList.remove("selected");
         }
+
+        for(let o of main.view.querySelectorAll(".o_spot"))
+            o.addEventListener('mousedown', main.startTrackConnection, false);
+
+            for(let i of main.view.querySelectorAll(".i_spot"))
+            {
+                i.addEventListener('mouseover', main.setConnectectionTarget, true);
+                i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
+            }
     },
 
     toggleGrid()
     {
         let s = window.getComputedStyle(main.grid, null);
         if (s.display === 'none')
-        main.grid.style.display = 'block';
-        else 
-        main.grid.style.display = 'none';
+        {
+         main.grid.style.display = 'block';
+         main.grid_active = true;
+        }
+        else
+        {
+            main.grid.style.display = 'none';
+            main.grid_active = false;
+        }
     },
 
     selectItem(foreground, background)
@@ -1151,8 +1530,85 @@ main =
             group = network.dict[background];
             main.placeObjects(group, foreground, background);
         }
+    },
+
+
+    /*
+        TODO:
+            Tab: select next component (in main view; not in inspectors)
+            shift+Tab: select previous component (in main view; not in inspectors)
+            PageUp: exit current group
+            Enter/PageDown: jump into selected group
+            Arrow keys: jump between components
+    */
+
+    keydown(evt)
+    {
+        if(evt.key== "Escape")
+        {
+            inspector.toggleSystem();
+            evt.preventDefault();
+            return;
+        }
+
+        if(evt.key== "Backspace")
+        {
+            alert("Delete selected items. (NOT IMPLEMENTED YET)");
+        }
+
+        if(!evt.metaKey)
+            return;
+        if(evt.keyIdentifier=="Meta")
+            return;
+
+        if(evt.key=="a")
+        {
+            let bg = selector.selected_background;
+            let g = network.dict[bg];
+            let comps = [...g.groups||[], ...g.modules||[], ...g.inputs||[], ...g.outputs||[], ...g.widgets||[]];
+            selector.selectItems(comps.map((x) => bg+'.'+x.name), null, false, true);
+        }
+
+        else if (evt.key=="c")
+        {
+            evt.preventDefault();
+            alert("Copy selected items. (NOT IMPLEMENTED YET)");
+        }
+
+        else if (evt.key=="x")
+        {
+            evt.preventDefault();
+            alert("Cut selected items. (NOT IMPLEMENTED YET)");
+        }
+
+
+        else if (evt.key=="v")
+        {
+            evt.preventDefault();
+            alert("Paste copied items. (NOT IMPLEMENTED YET)");
+        }
+
+        else if (evt.key=="d")
+        {
+            evt.preventDefault();
+            alert("Duplicate selected items and possibly connections. (NOT IMPLEMENTED YET)");
+        }
+
+        else if (evt.key=="g")
+        {
+            evt.preventDefault();
+            main.toggleGrid();
+            return;
+        }
+
+        else if (evt.key=="i")
+        { 
+            evt.preventDefault();
+            inspector.toggleComponent();
+            return;
+        }
     }
-}
+}       
 
 brainstudio = {
 
@@ -1164,6 +1620,8 @@ brainstudio = {
         nav.init();
         breadcrumbs.init();
         main.init();
+
+        document.onkeydown = function (evt){ main.keydown(evt) };
     }
 }
 

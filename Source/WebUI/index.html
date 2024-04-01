@@ -76,10 +76,28 @@
     </header>
 
 	<section style ="">
-        <main id="main" style ="">             
-            <canvas id="main_grid" width="3000" height="3000" style="background-color:#ffffff88;position: absolute; top:0;left:0;z-index: 200;display:none;" ></canvas>
-            <div id="main_view" style="position:absolute;z-index: 400;height:800px;width:800px;top:0px;left:0px">
+        <main id="main" style ="" >
+            <div id="main_grid" >
+
+                <div class="grid_commands">
+                    <button onclick="main.decreaseGrid()" style="border-radius:15px 0 0 15px; margin-left: 0">-</button>
+                    <button onclick="main.increaseGrid()" >+</button>
+                    <button>auto</button>
+                    <button onclick="main.centerComponents()" style="border-radius:0 15px 15px 0;" >center</button>
+                </div>
+
+                <div class="group_commands">
+                    <button onclick="" style="border-radius:15px 0 0 15px; margin-left: 0">Module</button>
+                    <button onclick="" >Group</button>
+                    <button>Input</button>
+                    <button>Output</button>
+                    <button onclick="" style="border-radius:0 15px 15px 0;" >Widget</button>
+                </div>
+
+                <canvas id="main_grid_canvas" width="3000" height="3000" ></canvas>
             </div>
+            <div id="connections"> </div>
+            <div id="main_view" onclick="selector.selectItems([],null)" style="position:absolute;z-index: 400;height:3000px;width:3000px;top:0px;left:0px" > </div>
 		</main>
 
         <!-- NAVIGATOR -->
@@ -115,7 +133,6 @@
                             </tbody>
                         </table>
 
-                        
             <!-- MULTIPLE -->
 
                         <table id="inspector_multiple">
@@ -138,7 +155,6 @@
                             <span>GROUP (BACKGROUND)</span>
                         </td>
                     </tr>
-
                     
                 <!--
                     <tr>
@@ -535,6 +551,10 @@
                             <button onmousedown="controller.play()">Play</button>
                             <button onmousedown="controller.realtime()">Realtime</button>
                         </td>
+                    </tr>
+                    <tr id="debug_row">
+                        <td style="color:red">DEBUG</td>
+                        <td><button   onclick="network.debug_json()" style="border:1px solid red; color:red;display:inline-bock;">JSON</button><button style="border:1px solid red; color:red;" onclick="network.debug_dict()">dict</button></td>
                     </tr>
                     <tr>
                         <td>file</td><td id="file">-</td>

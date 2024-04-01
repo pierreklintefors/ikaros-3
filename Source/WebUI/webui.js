@@ -1719,7 +1719,7 @@ interaction = {
         interaction.selectedObject.widget.updateAll();
 
         interaction.selectedObject.widget.parameterChangeNotification();
-    },
+    },move
 
     changeStylesheet: function() {
         let sheet = document.getElementById("stylesheet_select").value;

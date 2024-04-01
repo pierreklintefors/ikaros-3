@@ -1732,6 +1732,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             nm = rtail(nm,"/");
 
         socket->Send("\t\"file\": \"%s\",\n", nm.c_str());
+
+#if DEBUG
+        socket->Send("\t\"debug\": true,\n");
+#else
+        socket->Send("\t\"debug\": false,\n");
+#endif
+
         socket->Send("\t\"state\": %d,\n", run_mode);
         if(stop_after != -1)
         {

@@ -10,6 +10,10 @@ using namespace ikaros;
 int
 main(int argc, char *argv[])
 {
+bool debug_mode = false;
+#if DEBUG
+    debug_mode = true;
+#endif
     try
     { 
         Kernel & k = kernel();
@@ -33,7 +37,11 @@ main(int argc, char *argv[])
             return 0;
         }
 
+#if DEBUG
+        std::cout << "Ikaros 3.0 Starting (Debug)\n" << std::endl;
+#else
         std::cout << "Ikaros 3.0 Starting\n" << std::endl;
+#endif
 
         k.options_ = o;
         k.InitSocket(o.get_long("webui_port"));

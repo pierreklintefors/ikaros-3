@@ -4,7 +4,6 @@
  *
  */
 
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -347,7 +346,7 @@ li {
     white-space: nowrap;
     text-overflow: ellipsis;
     padding:1px 1px 1px 20px;
-    cursor: pointer;
+    /* cursor: pointer; */
     color: #eee;
 }
 
@@ -377,6 +376,102 @@ main {
 main[data-mode="edit"] {
     background: white; /* lightyellow */
 }
+
+#main_grid
+{
+    width: 100%;
+    height: 100%;
+    display:none;
+}
+#main_grid_canvas
+{
+    position:absolute;
+    top:0px;
+    left:0px;
+    width: 3000;
+    height: 3000;
+}
+
+/* grid commands */
+
+.grid_commands {
+    position:absolute;
+    z-index: 1000;
+    top:12px;
+    left:15px;
+
+}
+
+
+.grid_commands button{
+    float: left;
+    padding: 3px 10px 3px 10px;
+    margin: 20;
+    margin-left: -1px;
+    font-size: 12px;
+    border-radius: 0px;
+    background-color: white;
+    border: 1px solid gray;
+}
+
+
+.grid_commands button:hover {
+    background-color: lightgray;
+}
+
+.grid_commands button:active {
+    background-color: #222;
+    color: #ccc;
+    border-color: black;
+}
+
+.grid_commands button.sekected {
+    background-color: #222;
+    color: #ccc;
+    border-color: black;
+}
+
+
+/* group commands */
+
+.group_commands {
+    position:absolute;
+    z-index: 1000;
+    top:12px;
+    left:215px;
+
+}
+
+
+.group_commands button{
+    float: left;
+    padding: 3px 10px 3px 10px;
+    margin: 20;
+    margin-left: -1px;
+    font-size: 12px;
+    border-radius: 0px;
+    background-color: white;
+    border: 1px solid gray;
+}
+
+
+.group_commands button:hover {
+    background-color: lightgray;
+}
+
+.group_commands button:active {
+    background-color: #222;
+    color: #ccc;
+    border-color: black;
+}
+
+.group_commands button.sekected {
+    background-color: #222;
+    color: #ccc;
+    border-color: black;
+}
+
+
 
 /* Inspector Styles */
 
@@ -431,7 +526,7 @@ webui-widget-button button {
 }
 
 webui-widget-button button:hover {
-    cursor: pointer;
+    /* cursor: pointer; */
 }
 
 /*
@@ -454,7 +549,7 @@ div.frame {
 /*    border: 1px solid red; */
     overflow: hidden;
     /* background-color: none; */
-    cursor: move;
+    /* cursor: move; */
     border: none;
 }
 
@@ -496,7 +591,7 @@ div.frame {
 
 [data-mode="edit"] .widget {
     background-color: #eeeeee88;
-    cursor: move;
+    /* cursor: move; */
     pointer-events: none;
 }
 
@@ -538,7 +633,7 @@ div.visible.selected {
     height: 10px;
     display: none;
     background-color: gray;
-    cursor: se-resize;
+    /* cursor: se-resize; */
 }
 
 
@@ -593,7 +688,7 @@ div.oconnector {
 
 div.oconnector:hover {
     background-color: lightskyblue;
-    cursor: e-resize;
+    /* cursor: e-resize; */
 }
 
 /* Style for grid */
@@ -723,8 +818,8 @@ div.module {
     background-color: #38383
     border:2px solid #00000000;
     color: yellow;
-    /*font-size: 12px;*/
-    cursor: move;
+    /*font-size: 12px;
+    cursor: move;*/
     text-align: center;
 
     /*  border:2px solid  red;  */
@@ -736,8 +831,10 @@ div.module td {
     width: auto;
     padding-left: 5px;
     padding-right: 5px;
+    border-top: 1px solid #888888;
     color:#ddd;
     background-color: #535353;
+    cursor:default;
 }
 
 div.module td.title {
@@ -747,6 +844,9 @@ div.module td.title {
     background-color: #383838;
 }
 
+div.module tr:last-child td {
+    border-bottom: none;
+  }
 div.module td.input {
     width:10px;
     padding-left: 5px;
@@ -768,7 +868,7 @@ div.module:hover {
     border: 1px solid var(--accent-color);
 }
 */
-    /*
+/*
 {
     height:40px;
     width:160px;
@@ -778,6 +878,10 @@ div.module:hover {
 }
 */
 
+div #connections {
+       z-index: 1000;
+}
+
 svg {
     position:absolute;
     left: 0px;
@@ -786,6 +890,7 @@ svg {
     height: 3000px;    
     /* z-index: 10;*/
     pointer-events: none;
+    /* background-color: #00008888;*/
 }
 
 svg *{
@@ -798,14 +903,25 @@ svg *{
 }
 
 .connection_line:hover {
-    stroke:orange;
-    stroke-dasharray: 5,5;
+    stroke:rgb(180, 117, 0);
     stroke-width:3;
+}
+
+.connection_line.selected {
+    stroke:orange;
+    stroke-width:3;
+}
+
+.connection_line.tracked {
+    stroke:orange;
+    stroke-width:3;
+    stroke-dasharray: 5,5;
+    pointer-events: none;
 }
 
 .connection_line .selected:hover {
     stroke:black;
-    stroke-width:5;
+    stroke-width:3;
 }
 
 .group_input
@@ -818,11 +934,25 @@ svg *{
     padding-bottom: 2px;
     width: auto;
     color:#e2e2e2;
-
-    /* border:2px solid  red; */
     border-radius: 14px;
     font-size: 13.33333px;
+    cursor: default;
 }
+
+.group_output
+{
+    position:absolute;
+    padding-top: 5px;
+    padding-right: 16px;
+    padding-left:0px;
+    padding-bottom: 2px;
+    width: auto;
+    color:#e2e2e2;
+    border-radius: 14px;
+    font-size: 13.33333px;
+    cursor: default;
+}
+
 
 .o_spot {
     float: right;
@@ -838,10 +968,11 @@ svg *{
 
 .o_spot:hover {
     background-color: orange;
+    pointer-events: auto;
 }
 
 .i_spot {
-    float: right;
+    float: left;
     height: 10px;
     width: 10px;
     margin: 4px;
@@ -851,8 +982,10 @@ svg *{
     background-color: rgb(177, 177, 177);
 }
 
+
+
 .gi:hover {
-    border: 3px dashed orange;
+    border: 3px solid rgb(180, 117, 0);
 }
 
 .gi.selected {
@@ -860,7 +993,27 @@ svg *{
 }
 
 .gi {
-    background-color:#383838;
+    background-color: #383838;
     border: 3px solid #00000000;
+}
+
+/************* RED OVERRIDE **************/
+
+.gi {
+    background-color: #f00;
+}
+
+div.module td {
+
+    border-top: 1px solid r#f00;
+    border-bottom: 1px solid #f00;
+
+    background-color: #f00;
+
+}
+
+div.module td.title
+{
+    background-color: #f00;
 }
 
