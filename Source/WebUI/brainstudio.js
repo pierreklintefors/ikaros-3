@@ -363,6 +363,7 @@ controller = {
     init: function ()
     {
         controller.getFiles();
+        controller.getClasses();
         controller.requestUpdate();
         controller.reconnect_timer = setInterval(controller.reconnect, controller.reconnect_interval);
     },
@@ -556,7 +557,7 @@ controller = {
             controller.session_id = session_id;
             controller.tick = response.tick;
             network.init(response);
-            nav.populate(network.network);
+            nav.populate();
             let top = network.network.name;
             selector.selectItems([], top);
             //controller.views = {};
@@ -850,9 +851,9 @@ let nav = {
         // Open tree to make selection visible
     },
 
-    populate(net) 
+    populate() 
     {
-        nav.navigator.innerHTML = "<ul>"+nav.buildList(net, "")+"</ul>";
+        nav.navigator.innerHTML = "<ul>"+nav.buildList(network.network, "")+"</ul>";
     }
 }
 
@@ -861,6 +862,8 @@ let nav = {
 inspector = {
     subview: {},
     current_t_body: null,
+    component: null,
+    system: null,
 
     init()
     {
@@ -951,18 +954,171 @@ inspector = {
         }
         s += '</select>';
 
-        inspector.addTableRow("color", s).addEventListener("input", function(evt) { console.log(this);});
+        inspector.addTableRow(name, s);
+    },
+
+    createTemplate(component)
+    {
+        let t = []; // {'name':'name','control':'textedit', 'type':'source'}] // FIXME: should be "identifier"
+        for(let [a,v] of Object.entries(component))
+        {
+            if(!["name","class"].includes(a) && a[0]!='_')
+             t.push({'name':a,'control':'textedit', 'type':'source'});
+        }
+        return t;
+    },
+
+    /* type, name, control */
+
+    addDataRows: function (item, template, notify=null) // TODO: Add exclude list - attributes already added or added afterward
+    {
+        //let widget = component.widget;
+        //let parameters = widget.parameters;
+
+        inspector.item = item;
+        inspector.template = template;
+
+        for(let p of inspector.template)
+        {
+            {
+                let row = current_t_body.insertRow(-1);
+                let value = item[p.name];
+                let cell1 = row.insertCell(0);
+                let cell2 = row.insertCell(1);
+                cell1.innerText = p.name;
+                cell2.innerHTML = value != undefined ? value : "";
+                cell2.setAttribute('class', p.type);
+                cell2.addEventListener("paste", function(e) {
+                    e.preventDefault();
+                    var text = e.clipboardData.getData("text/plain");
+                    document.execCommand("insertHTML", false, text); // FIXME: uses deprecated functions
+                });
+                switch(p.control)
+                {
+                    case 'header':
+                        cell1.setAttribute("colspan", 2);
+                        cell1.setAttribute("class", "header");
+                        row.deleteCell(1);
+                        break;
+
+                    case 'textedit':
+                        cell2.contentEditable = true;
+                        cell2.className += ' textedit';
+                        cell2.addEventListener("keypress", function(evt) {
+                            if(evt.keyCode == 13)
+                            {
+                                evt.target.blur();
+                                evt.preventDefault();
+                                return;
+                            }
+                            if(p.type == 'int' && "-0123456789".indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(p.type == 'float' && "-0123456789.".indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                        });
+                        cell2.addEventListener("blur", function(evt) {
+                            if(p.type == 'int')
+                            item[p.name] = parseInt(evt.target.innerText);
+                            else if(p.type == 'float')
+                            item[p.name] = parseFloat(evt.target.innerText);
+                            else
+                            {
+                                item[p.name] = evt.target.innerText.replace(String.fromCharCode(10), "").replace(String.fromCharCode(13), "");
+                            // if(p.name == "style")
+                                //    widget.updateStyle(widget, evt.target.innerText);     // FIXME ***********
+                                //if(p.name == "frame-style")
+                                //    widget.updateStyle(component, evt.target.innerText);   // FIXME ***********
+                            }
+                            if(notify)
+                            notify.parameterChangeNotification(p);
+                        });
+                    break;
+
+                    case 'slider':
+                        if(p.type == 'int' || p.type == 'float')
+                        {
+                            cell2.innerHTML= '<div>'+value+'</div><input type="range" value="'+value+'" min="'+p.min+'" max="'+p.max+'" step="'+(p.type == 'int' ?  1: 0.01)+'"/>';
+                            cell2.addEventListener("input", function(evt) {
+                                evt.target.parentElement.querySelector('div').innerText = evt.target.value;
+                                item[p.name] = evt.target.value;
+                                if(notify) notify.parameterChangeNotification(p);
+                            });
+                        }
+                    break;
+                    
+                    case 'menu':
+                        var opts = p.values.split(',').map(o=>o.trim());
+                        
+                        var s = '<select name="'+p.name+'">';
+                        for(var j in opts)
+                        {
+                            let value = p.type == 'int' ? j : opts[j];
+                            if(opts[j] == item[p.name])
+                                s += '<option value="'+value+'" selected >'+opts[j]+'</option>';
+                            else
+                                s += '<option value="'+value+'">'+opts[j]+'</option>';
+                        }
+                        s += '</select>';
+                        cell2.innerHTML= s;
+                        cell2.addEventListener("input", function(evt) { 
+                                component[p.name] = evt.target.value.trim();
+                                if(notify)
+                                notify.parameterChangeNotification(p);
+                            });
+                    break;
+                    
+                    case 'checkbox':
+                        if(p.type == 'bool')
+                        {
+                            if(value)
+                                cell2.innerHTML= '<input type="checkbox" checked />';
+                            else
+                                cell2.innerHTML= '<input type="checkbox" />';
+                            cell2.addEventListener("change", function(evt) { item[p.name] = evt.target.checked; if(notify) notify.parameterChangeNotification(p);});
+                        }
+                    break;
+                    
+                    case 'number':
+                        if(p.type == 'int')
+                        {
+                            cell2.innerHTML= '<input type="number" value="'+value+'" min="'+p.min+'" max="'+p.max+'"/>';
+                            cell2.addEventListener("input", function(evt) { 
+                                item[p.name] = evt.target.value; if(notify) notify.parameterChangeNotification(p);});
+                        }
+                    break;
+                    
+                    default:
+                    
+                    break;
+                }
+            }
+        }
     },
 
     showGroupBackground(item)
     {
-        let g = network.dict[item];
-
         inspector.hideSubviews();
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
+
+        let edit_mode = main.grid.style.display == 'block';
+/*
+        if(edit_mode)
+            inspector.addHeader("*** EDIT MODE ***");
+        else
+            inspector.addHeader("*** VIEW MODE ***");
+*/
+        let g = network.dict[item];
+
         inspector.addHeader("GROUP");
-        inspector.addAttributeValue("name", g.name);
+
+        if(edit_mode)
+            inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]);
+        else
+            inspector.addAttributeValue("name", g.name);
+
         inspector.addAttributeValue("subgroups", (g.groups || []).length);
         inspector.addAttributeValue("modules", (g.modules || []).length);
         inspector.addAttributeValue("connections", (g.connections || []).length);
@@ -971,12 +1127,90 @@ inspector = {
 
     showSingleSelection(c)
     {
+        let item = network.dict[c];
         inspector.hideSubviews();
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
-        inspector.addHeader("COMPONENT");
-        inspector.addAttributeValue("name", network.dict[c].name); 
-        inspector.addMenu("color","black",['black','red','green','blue','yellow'],"_color", c);
+
+        let edit_mode = main.grid.style.display == 'block';
+/*
+        if(edit_mode)
+            inspector.addHeader("*** EDIT MODE ***");
+        else
+            inspector.addHeader("*** VIEW MODE ***");
+  */      
+        if(item == undefined)
+        {
+            inspector.addHeader("Internal Error");
+        }
+        else if(item._tag == undefined)
+        {
+            inspector.addHeader("Component");
+            inspector.addAttributeValue("name", item.name);
+            inspector.addDataRows(item, inspector.createTemplate(item));
+        }
+        else if(item._tag=="Module")
+        {
+            inspector.addHeader("Module");
+            if(edit_mode)
+            {
+                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]);
+                inspector.addMenu("class", item.class, network.classes);
+            }
+            else
+            {
+                inspector.addAttributeValue("name", item.name);
+                inspector.addAttributeValue("class", item.class);
+            }
+        }
+
+        else if(item._tag=="Group")
+        {
+            inspector.addHeader("Group");
+            if(edit_mode)
+            {
+                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]);
+            }
+            else
+            {
+                inspector.addAttributeValue("name", item.name);
+            }
+     
+        }
+
+        else if(item._tag=="Input")
+        {
+            inspector.addHeader("Input");
+            if(edit_mode)
+                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]);
+            else
+                inspector.addAttributeValue("name", item.name); 
+        }
+
+        else if(item._tag=="Output")
+        {
+            inspector.addHeader("Output");
+
+            if(edit_mode)
+            {
+                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}, {'name':'size', 'control':'textedit', 'type':'source'}]);
+
+            }
+            else
+            {
+                inspector.addAttributeValue("name", item.name);
+                inspector.addAttributeValue("size", item.size);
+            }
+        }
+
+        //inspector.addMenu("color","black",['black','red','green','blue','yellow'],"_color", c);
+        /*
+        inspector.addDataRows({"a":5, "b":42}, 
+            [{'name':'a','control':'textedit', 'type':'int'}, 
+             {'name':'b','control':'slider', 'type':'int'}]);
+
+             inspector.addDataRows(item, inspector.createTemplate(component));
+                */
     },
 
     showConnection(connection)
@@ -986,6 +1220,14 @@ inspector = {
         inspector.hideSubviews();
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
+
+        let edit_mode = main.grid.style.display == 'block';
+/*
+        if(edit_mode)
+            inspector.addHeader("*** EDIT MODE ***");
+        else
+            inspector.addHeader("*** VIEW MODE ***");
+*/
         inspector.addHeader("CONNECTION");
         inspector.addAttributeValue("source", c.source);
         inspector.addAttributeValue("target", c.target);
@@ -1001,7 +1243,19 @@ inspector = {
         inspector.subview.table.style.display = 'block';
         inspector.addHeader("MULTIPLE");
         inspector.addAttributeValue("selected", n); 
-    }
+    },
+
+    showInspectorForSelection()
+    {
+        if(selector.selected_connection)
+            inspector.showConnection(selector.selected_connection)
+        else if(selector.selected_foreground.length == 0)
+            inspector.showGroupBackground(selector.selected_background);    
+        else if(selector.selected_foreground.length > 1)
+                inspector.showMultipleSelection(selector.selected_foreground.length);
+            else
+                inspector.showSingleSelection(selector.selected_foreground[0]);
+    }               
 }
 
 
@@ -1065,16 +1319,13 @@ selector = {
             nav.selectItem(selector.selected_background);
             breadcrumbs.selectItem(selector.selected_background);    
             main.selectItem([], selector.selected_background);
-            inspector.showGroupBackground(selector.selected_background);
+            inspector.showInspectorForSelection();
         }
 
         else // select forground components
         {
             main.selectItem(selector.selected_foreground, selector.selected_background);
-            if(selector.selected_foreground.length > 1)
-                inspector.showMultipleSelection(selector.selected_foreground.length);
-            else
-                inspector.showSingleSelection(selector.selected_foreground[0]);
+            inspector.showInspectorForSelection();
         }
     },
 
@@ -1086,7 +1337,7 @@ selector = {
         main.selectItem(selector.selected_foreground, selector.selected_background);
         main.deselectConnection(selector.selected_connection);
         main.selectConnection(connection);
-        inspector.showConnection(connection);
+        inspector.showInspectorForSelection();
     }
 }
 
@@ -1098,6 +1349,14 @@ main =
     grid_spacing: 24,
     grid_active: false,
     map: {},
+
+    module_counter: 1,
+    group_counter: 1,
+    input_counter: 1,
+    output_counter: 1,
+    widget_counter: 1,
+    new_position_x: 100,
+    new_position_y: 100,
 
     init()
     {
@@ -1181,6 +1440,125 @@ main =
             selector.selectItems([], null);
     },
     
+    newModule()
+    {
+        let name = "Untitled_"+main.module_counter++;
+        let m =
+        {
+            'name':name,
+            'class':"Module",
+            '_tag':"Module",
+            '_x':main.new_position_x,
+            '_y':main.new_position_y,
+            'inputs': [{'name':'INPUT'}],
+            'outputs': [{'name':'OUTPUT'}],
+            'parameters':[]
+        };
+        let full_name = selector.selected_background+'.'+name;
+        network.dict[selector.selected_background].modules.push(m);
+        network.dict[full_name]=m;
+        // TODO: SEND TO KERNEL **********************************************
+        main.new_position_x += 30;
+        main.new_position_y += 30;
+
+        if(main.new_position_y >600)
+        {
+            main.new_position_x -= 350;
+            main.new_position_y = 100;   
+        }
+        nav.populate();
+        selector.selectItems([full_name]);
+    },
+
+    newGroup()
+    {
+        let name = "Group_"+main.group_counter++;
+        let m =
+        {
+            'name':name,
+            '_tag':"Group",
+            '_x':main.new_position_x,
+            '_y':main.new_position_y,
+            'inputs': [],
+            'outputs': [],
+            'parameters':[],
+            'modules': [],
+            'groups':[]
+        };
+        let full_name = selector.selected_background+'.'+name;
+        network.dict[selector.selected_background].groups.push(m);
+        network.dict[full_name]=m;
+        // TODO: SEND TO KERNEL **********************************************
+        main.new_position_x += 30;
+        main.new_position_y += 30;
+
+        if(main.new_position_y >600)
+        {
+            main.new_position_x -= 350;
+            main.new_position_y = 100;   
+        }
+
+        nav.populate();
+        selector.selectItems([full_name]);
+    },
+
+    newInput()
+    {
+        let name = "Input_"+main.input_counter++;
+        let m =
+        {
+            'name':name,
+            '_tag':"Input",
+            '_x':main.new_position_x,
+            '_y':main.new_position_y
+        };
+        let full_name = selector.selected_background+'.'+name;
+        network.dict[selector.selected_background].inputs.push(m);
+        network.dict[full_name]=m;
+        // TODO: SEND TO KERNEL **********************************************
+        main.new_position_x += 30;
+        main.new_position_y += 30;
+
+        if(main.new_position_y >600)
+        {
+            main.new_position_x -= 350;
+            main.new_position_y = 100;   
+        }
+        selector.selectItems([full_name]);
+    },
+
+    newOutput()
+    {
+        let name = "Output_"+main.output_counter++;
+        let m =
+        {
+            'name':name,
+            'size':"1",
+            '_tag':"Output",
+            '_x':main.new_position_x,
+            '_y':main.new_position_y
+        };
+        let full_name = selector.selected_background+'.'+name;
+        network.dict[selector.selected_background].outputs.push(m);
+        network.dict[full_name]=m;
+        // TODO: SEND TO KERNEL **********************************************
+        main.new_position_x += 30;
+        main.new_position_y += 30;
+
+        if(main.new_position_y >600)
+        {
+            main.new_position_x -= 350;
+            main.new_position_y = 100;   
+        }
+        selector.selectItems([full_name]);
+    },
+
+    newWidget()
+    {
+        alert("newWidget");
+    },
+
+
     changeComponentPosition(c, dx,dy)
     {
         let e = document.getElementById(c);
@@ -1448,6 +1826,7 @@ main =
     addConnections()
     {
         let path = selector.selected_background;
+        let group = network.dict[path];
         let s = document.getElementById("connections");
         if(s)
             s.innerHTML = "";
@@ -1521,13 +1900,15 @@ main =
             main.grid.style.display = 'none';
             main.grid_active = false;
         }
+
+        inspector.showInspectorForSelection();
     },
 
     selectItem(foreground, background)
     {
         if(background != null)
         {
-            group = network.dict[background];
+            let group = network.dict[background];
             main.placeObjects(group, foreground, background);
         }
     },

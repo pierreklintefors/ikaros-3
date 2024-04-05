@@ -998,22 +998,37 @@ svg *{
 }
 
 /************* RED OVERRIDE **************/
+/*
+
+plain
+light
+dark
+
+RED
+
+#ff4d4d
+ffcccc
+#990000
+
+
+
 
 .gi {
-    background-color: #f00;
+    background-color: #990000;
 }
 
-div.module td {
+div.module dt {
 
-    border-top: 1px solid r#f00;
-    border-bottom: 1px solid #f00;
+    border-top: 1px solid #ffcccc;
+    border-bottom: 1px solid 990000;
 
-    background-color: #f00;
+    background-color: #ff4d4d;
 
 }
 
 div.module td.title
 {
-    background-color: #f00;
+    background-color: #990000;
 }
 
+*/

@@ -1,11 +1,5 @@
-<group name="Test"   _m31="7, 9">
-	<parameter name="m31" type="matrix" default="31, 31"/>
-	<group name="Inner"  m30.bind="m31" data="3, 0">
-		<parameter name="m30" type="matrix" default="30, 30"/>
+<group name="Top">
 
-		<module name="C3" class="Constant" _data.bind="m30"/>
-	</group>
-	<module class = "Logger" name = "Logger" />
 </group>
 
 
