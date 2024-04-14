@@ -256,13 +256,14 @@ public:
 class Class
 {
 public:
+    dictionary      info_;
     ModuleCreator   module_creator;
     std::string     name;
     std::string     path;
     std::map<std::string, std::string>  parameters;
 
     Class() {};
-    Class(std::string n, std::string p) : module_creator(nullptr), name(n), path(p) { };
+    Class(std::string n, std::string p); //  : module_creator(nullptr), name(n), path(p) { };
 
     void print();
 };
@@ -452,6 +453,7 @@ public:
     void DoNetwork(Request & request);
     void DoSendLog(Request & request);
     void DoSendClasses(Request & request);
+    void DoSendClassInfo(Request & request);
     void DoSendFileList(Request & request);
     void DoSendFile(std::string file);
     void DoSendError();

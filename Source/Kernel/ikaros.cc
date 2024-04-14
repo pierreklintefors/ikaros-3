@@ -869,6 +869,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     // Class
 
+        Class::Class(std::string n, std::string p) : module_creator(nullptr), name(n), path(p),info_(p)
+        {
+         //   info_ = dictionary(path);
+        }
+
         void 
         Class::print()
         {
@@ -2302,22 +2307,46 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSendClasses(Request & request)
     {
-    Dictionary header;
-    header.Set("Content-Type", "text/json");
-    header.Set("Cache-Control", "no-cache");
-    header.Set("Cache-Control", "no-store");
-    header.Set("Pragma", "no-cache");
-    socket->SendHTTPHeader(&header);
-    socket->Send("{\"classes\":[\n\t\"");
-    std::string s = "";
-    for(auto & c: classes)
+        Dictionary header;
+        header.Set("Content-Type", "text/json");
+        header.Set("Cache-Control", "no-cache");
+        header.Set("Cache-Control", "no-store");
+        header.Set("Pragma", "no-cache");
+        socket->SendHTTPHeader(&header);
+        socket->Send("{\"classes\":[\n\t\"");
+        std::string s = "";
+        for(auto & c: classes)
+        {
+            socket->Send(s.c_str());
+            socket->Send(c.first.c_str());
+            s = "\",\n\t\"";
+        }
+        socket->Send("\"\n]\n}\n");
+    }
+
+
+
+    void
+    Kernel::DoSendClassInfo(Request & request)
     {
-        socket->Send(s.c_str());
-        socket->Send(c.first.c_str());
-        s = "\",\n\t\"";
+        Dictionary header;
+        header.Set("Content-Type", "text/json");
+        header.Set("Cache-Control", "no-cache");
+        header.Set("Cache-Control", "no-store");
+        header.Set("Pragma", "no-cache");
+        socket->SendHTTPHeader(&header);
+        socket->Send("{\n");
+        std::string s = "";
+        for(auto & c: classes)
+        {
+            socket->Send(s);
+            socket->Send("\""+c.first+"\": ");
+            socket->Send(c.second.info_.json());
+            s = ",\n\t";
+        }
+        socket->Send("\n}\n");
     }
-    socket->Send("\"\n]\n}\n");
-    }
+
 
 
     void
@@ -2400,6 +2429,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         else if(request == "classes") 
             DoSendClasses(request);
+        else if(request == "classinfo") 
+            DoSendClassInfo(request);
         else if(request == "files") 
             DoSendFileList(request);
         else if(request == "")
