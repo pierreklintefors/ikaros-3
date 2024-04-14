@@ -306,6 +306,7 @@ td + td.textedit {
     padding-right: 20px;
     -webkit-user-select: text;
     user-select: text;
+    color: black;
     background-color: lightgray;
 }
 
@@ -815,7 +816,7 @@ div.module {
     position: absolute;
     /* z-index: 200; */
     overflow: hidden;
-    background-color: #38383
+    background-color: #38383;
     border:2px solid #00000000;
     color: yellow;
     /*font-size: 12px;
@@ -1032,3 +1033,4 @@ div.module td.title
 }
 
 */
+
