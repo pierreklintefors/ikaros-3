@@ -68,7 +68,8 @@
         <div  class="breadcrumbs" id="breadcrumbs">
             <div class="button" onclick="nav.toggle()" id="nav">&#8801;</div>
             <div class="stretch" ></div>
-            <div class="button" onclick="main.toggleGrid()" style="font-family:Arial">&#9998;</div>
+            <div class="button" onclick="main.toggleEditMode()" style="font-family:Arial">&#9998;</div>
+            <div class="button" onclick="main.toggleGrid()" style="font-family:Arial">#</div>
             <div class="button" onclick="log.toggleLog()">&#x26A0;</div>
             <div class="button" onclick="inspector.toggleComponent()">&#9432;</divb></div>
             <div class="button large" onclick="inspector.toggleSystem()">&#x2699;</div>
@@ -86,7 +87,7 @@
                     <button onclick="main.centerComponents()" style="border-radius:0 15px 15px 0;" >center</button>
                 </div>
 
-                <div class="group_commands">
+                <div class="group_commands" id="group_commands">
                     <button onclick="main.newModule()" style="border-radius:15px 0 0 15px; margin-left: 0">Module</button>
                     <button onclick="main.newGroup()" >Group</button>
                     <button onclick="main.newInput()">Input</button>

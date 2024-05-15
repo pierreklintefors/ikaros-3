@@ -391,6 +391,7 @@ main[data-mode="edit"] {
     left:0px;
     width: 3000;
     height: 3000;
+    display:none;
 }
 
 /* grid commands */
