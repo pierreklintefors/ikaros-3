@@ -210,6 +210,7 @@ namespace ikaros
     dictionary::dictionary(XMLElement * xml_node):
         dictionary()
     {
+        (*dict_)["_tag"] = xml_node->name;
         for(XMLAttribute * a = xml_node->attributes; a!=nullptr; a=(XMLAttribute *)(a->next))
             (*dict_)[std::string(a->name)] = a->value;
 
