@@ -939,9 +939,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             Pause();
             dictionary d;
 
+            d["_tag"] = "Group";
             d["name"] = "Untitled";
             d["groups"] = list();
             d["modules"] = list();
+            d["widgets"] = list();
             d["connections"] = list();       
             d["inputs"] = list();            
             d["outputs"] = list();            
@@ -1836,14 +1838,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     
         //std::string root = tail(args, "data=");
 
-        std::string data = request.parameters["data"];  // FIXME: Check that it exists ******** or rerturn ""
+        std::string data = request.parameters["data"];  // FIXME: Check that it exists ******** or return ""
 
         std::string sep = "";
         bool sent = false;
 
         while(!data.empty())
         {
-            std::string source = head(data, "#");
+            std::string source = head(data, ",");
             std::string format = rtail(source, ":");
             std::string source_with_root = request.component_path +"."+source;
 
@@ -2391,7 +2393,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         Request request(socket->header.Get("URI"), sid);
 
         //if(request.url != "/update/?data=")
-        //    std::cout << request.url << std::endl;
+        std::cout << request.url << std::endl;
 
         if(request == "network")
             DoNetwork(request);
