@@ -49,10 +49,21 @@ function deepCopy(source) {
   
 
   function toggleStrings(array, toggleItems)
-  {
-    for(let i of toggleItems)
-        toggleInArray(array, i);
+{
+    toggleItems.forEach(item => {
+      const index = array.indexOf(item);
+      if (index === -1) {
+        // If the item is not in array1, add it
+        array.push(item);
+      } else {
+        // If the item is in array, remove it
+        array.splice(index, 1);
+      }
+    });
   }
+
+  
+
 
   function removeStringFromStart(mainString, stringToRemove) {
     if (mainString.startsWith(stringToRemove)) {
@@ -326,7 +337,7 @@ let network = {
         // Update existing connections of possible
     },
 
-    renameGroupOrModule(old_name, new_name)
+    renameGroupOrModule(group, old_name, new_name)
     {
         network.dict[new_name] = network.dict[old_name]; // inspector.item; // FIME: Should also change item here and not in inspector
         delete network.dict[old_name];
@@ -334,18 +345,24 @@ let network = {
         // Update connections to and from this group or module
 
         let parent_path = parentPath(old_name);
-        let parent_group = network.dict[parent_path];
+        let parent_group = network.dict[group];
         let connection_parent = "";
-        for(let c of parent_group.connections)
+        for(let c of parent_group.connections || [])
         {
+            // Update if source (without output) == old_name
+
             connection_parent = parentPath(c.source);
-            if(connection_parent)
+            if(connection_parent == nameInPath(old_name))
             {
                 let p = c.source.split('.');
                 c.source = nameInPath(new_name)+'.'+p[1];
             }
+
+            // Update of target == this
+
+
             connection_parent = parentPath(c.target);
-            if(connection_parent)
+            if(connection_parent == nameInPath(old_name))
             {
                 let p = c.target.split('.');
                 c.target = nameInPath(new_name)+'.'+p[1];
@@ -739,6 +756,9 @@ let controller = {
         clearTimeout(controller.request_timer);
         controller.request_timer = setTimeout(controller.requestUpdate, controller.webui_req_int); // immediately schdeule next
 
+        if(selector.selected_background == null)
+            return;
+
         controller.webui_interval = Date.now() - controller.last_request_time;
         controller.last_request_time = Date.now();
 
@@ -750,12 +770,12 @@ let controller = {
             controller.get("update", controller.update);
             return;
         }
+*/
 
         // Request new data
         let data_set = new Set();
         
-        // Very fragile loop - maybe use class to mark widgets or something
-        let w = document.getElementsByClassName('frame');
+        let w = document.getElementsByClassName('widget'); // FiXME: only in view later
         for(let i=0; i<w.length; i++)
             try
             {
@@ -764,19 +784,18 @@ let controller = {
             catch(err)
             {}
 
-        let group_path = interaction.currentViewName.split('#')[0].split('/').toSpliced(0,1).join('.');
-        let data_string = ""; // should be added to names to support multiple clients
+        group_path = selector.selected_background; // interaction.currentViewName.split('#')[0].split('/').toSpliced(0,1).join('.');
+        data_string = ""; // should be added to names to support multiple clients
         let sep = "";
         for(s of data_set)
         {
             data_string += (sep + s);
             sep = ","
          }
-*/
 
          while(controller.commandQueue.length>0)
-            controller.get(controller.commandQueue.shift()+group_path+"?data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
-        controller.queueCommand('update/');
+            controller.get(controller.commandQueue.shift()+"/"+group_path+"?data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
+        controller.queueCommand('update');
     },
 
     getClasses()
@@ -1290,9 +1309,11 @@ let inspector = {
         {
             let old_name = selector.selected_foreground[0];
             let new_name = selector.selected_background+'.'+inspector.item.name;
+            let group = selector.selected_background;
+
             if(new_name != old_name)
             {
-                network.renameGroupOrModule(old_name, new_name);
+                network.renameGroupOrModule(group, old_name, new_name);
 
                 // network.dict[new_name] = inspector.item;
                 // delete network.dict[old_name];
@@ -1547,6 +1568,7 @@ let main =
     connections: "",
     grid_spacing: 24,
     grid_active: false,
+    edit_mode: false,
     map: {},
 
     module_counter: 1,
@@ -1562,18 +1584,19 @@ let main =
         main.main = document.querySelector("#main");
         main.view = document.querySelector("#main_view");
         main.grid = document.querySelector("#main_grid");
-        main.main_grid_canvas = document.querySelector("#main_grid_canvas");
+        //main.group_commands = document.querySelector("#group_commands");
+        main.grid_canvas = document.querySelector("#main_grid_canvas");
         main.drawGrid();
 
         // let g = network.dict["Brain.Amygdala.Central"];
-        // main.placeObjects(g);
+        // main.addComponents(g);
     },
 
     drawGrid()
     {
-        const ctx = main.main_grid_canvas.getContext("2d");
+        const ctx = main.grid_canvas.getContext("2d");
         ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, main.main_grid_canvas.width, main.main_grid_canvas.height);
+        ctx.fillRect(0, 0, main.grid_canvas.width, main.grid_canvas.height);
         ctx.lineWidth = 0.2;
         ctx.strokeStyle = "gray";
         for(x=main.grid_spacing; x<3000; x+=main.grid_spacing)
@@ -1682,7 +1705,8 @@ let main =
             'outputs': [],
             'parameters':[],
             'modules': [],
-            'groups':[]
+            'groups':[],
+            'widgets':[]
         };
         let full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].groups.push(m);
@@ -1752,9 +1776,111 @@ let main =
         selector.selectItems([full_name]);
     },
 
-    newWidget() // FIXME: Move to network
+    newWidget() // (w) FIXME: Move (data structure only) to network
     {
-        alert("newWidget");
+        let name = "Widget_"+main.widget_counter++;
+        let w = {
+            "_tag": "Widget",
+            "name": name,
+            "title": name,
+            "class": "bar-graph",
+            '_x':main.new_position_x,
+            '_y':main.new_position_y,
+            'width': 200,
+            'height': 200
+        };
+
+        let full_name = selector.selected_background+'.'+name;
+        network.dict[selector.selected_background].widgets.push(w);
+        network.dict[full_name]=w;
+        selector.selectItems([full_name]);
+
+        main.new_position_x += 30;
+        main.new_position_y += 30;
+
+        if(main.new_position_y >600)
+        {
+            main.new_position_x -= 350;
+            main.new_position_y = 100;   
+        }
+
+
+
+        return; // The rest should be moved to view building
+
+        let newObject = document.createElement("div");
+        newObject.setAttribute("class", "frame visible");
+
+        let newTitle = document.createElement("div");
+        newTitle.setAttribute("class", "title");
+        newTitle.innerHTML = w.name;
+        newObject.appendChild(newTitle);
+
+        let index = main.view.querySelectorAll(".widget").length;
+        main.view.appendChild(newObject);
+        newObject.addEventListener('mousedown', main.startDragComponents, false);
+
+        let constr = webui_widgets.constructors["webui-widget-"+w['class']];
+        if(!constr)
+        {
+            console.log("Internal Error: No constructor found for "+"webui-widget-"+w['class']);
+            newObject.widget = new webui_widgets.constructors['webui-widget-text'];
+            newObject.widget.element = newObject; // FIXME: why not also below??
+            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
+            newObject.widget.parameters['text'] = "\""+"webui-widget-"+w['class']+"\" not found. Is it included in index.html?";
+            newObject.widget.parameters['_index_'] = index;
+        }
+        else
+        {
+            newObject.widget = new webui_widgets.constructors["webui-widget-"+w['class']];
+            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
+            // Add default parameters from CSS - possibly...
+            for(let k in newObject.widget.parameters)
+            if(w[k] === undefined)
+            {
+                w[k] = newObject.widget.parameters[k];
+            }
+            else
+            {
+                let tp = newObject.widget.param_types[k]
+                w[k] = setType(w[k], tp);
+            }
+
+            newObject.widget.parameters = w;
+            newObject.widget.parameters['_index_'] = index;
+        }
+
+        newObject.widget.setAttribute('class', 'widget');
+        newObject.appendChild(newObject.widget);    // must append before next section
+
+        // Section below should not exists - probably...
+
+        newObject.style.top = w._y+"px";
+        newObject.style.left = w._x+"px";
+        newObject.style.width = (w.width || 200) +"px";
+        newObject.style.height = (w.height || 200) +"px";
+
+        newObject.handle = document.createElement("div");
+        newObject.handle.setAttribute("class", "handle");
+        newObject.handle.onmousedown = main.startResize;
+        newObject.appendChild(newObject.handle);
+
+        newObject.setAttribute("id", full_name);
+        
+        network.dict[full_name]=w;
+
+        selector.selectItems([full_name]);
+
+        try
+        {
+            newObject.widget.updateAll();
+        }
+        catch(err)
+        {
+            console.log(err);
+        }
+        
+        return newObject;
     },
 
     changeComponentPosition(c, dx,dy)
@@ -1811,6 +1937,11 @@ let main =
         main.view.removeEventListener('mousemove',main.moveComponents, false);
         main.view.removeEventListener('mouseup',main.releaseComponents, false);
         main.map = {};
+    },
+
+    startResize(evt)
+    {
+        alert("START RESIZE");
     },
 
     startDragComponents(evt)
@@ -1960,7 +2091,78 @@ let main =
 
     addWidget(w,path)
     {
-        main.view.innerHTML += `<div class='gi widget' style='height:40px; width:160px;background-color:#dd0;border:1px solid #666;position:absolute;top:${w._y}px;left:${w._x}px;'>${w.name}</div>`;
+        // main.view.innerHTML += `<div class='gi widget' style='height:40px; width:160px;background-color:#dd0;border:1px solid #666;position:absolute;top:${w._y}px;left:${w._x}px;'>${w.name}</div>`;
+
+        let newObject = document.createElement("div");
+        newObject.setAttribute("class", "frame visible gi widget");
+
+        let newTitle = document.createElement("div");
+        newTitle.setAttribute("class", "title");
+        newTitle.innerHTML = w.name;
+        newObject.appendChild(newTitle);
+
+        let index = main.view.querySelectorAll(".widget").length;
+        main.view.appendChild(newObject);
+        newObject.addEventListener('mousedown', main.startDragComponents, false);
+
+        let constr = webui_widgets.constructors["webui-widget-"+w['class']];
+        if(!constr)
+        {
+            console.log("Internal Error: No constructor found for "+"webui-widget-"+w['class']);
+            newObject.widget = new webui_widgets.constructors['webui-widget-text'];
+            newObject.widget.element = newObject; // FIXME: why not also below??
+            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
+            newObject.widget.parameters['text'] = "\""+"webui-widget-"+w['class']+"\" not found. Is it included in index.html?";
+            newObject.widget.parameters['_index_'] = index;
+        }
+        else
+        {
+            newObject.widget = new webui_widgets.constructors["webui-widget-"+w['class']];
+            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
+            // Add default parameters from CSS - possibly...
+            for(let k in newObject.widget.parameters)
+            if(w[k] === undefined)
+            {
+                w[k] = newObject.widget.parameters[k];
+            }
+            else
+            {
+                let tp = newObject.widget.param_types[k]
+                w[k] = setType(w[k], tp);
+            }
+
+            newObject.widget.parameters = w;
+            newObject.widget.parameters['_index_'] = index;
+        }
+
+        newObject.widget.setAttribute('class', 'widget');
+        newObject.appendChild(newObject.widget);    // must append before next section
+
+        // Section below should not exists - probably...
+
+        newObject.style.top = w._y+"px";
+        newObject.style.left = w._x+"px";
+        newObject.style.width = (w.width || 200) +"px";
+        newObject.style.height = (w.height || 200) +"px";
+
+        newObject.handle = document.createElement("div");
+        newObject.handle.setAttribute("class", "handle");
+        newObject.handle.onmousedown = main.startResize;    // SET IN ADD COMPONENTS
+        newObject.appendChild(newObject.handle);
+
+        let full_name = `${path}.${w.name}`;
+        newObject.setAttribute("id", full_name);
+        newObject.setAttribute("data-name", full_name);
+
+        try
+        {
+            newObject.widget.updateAll();
+        }
+        catch(err)
+        {
+            console.log(err);
+        }
+        
     },
     
     addConnection(c,path)
@@ -2036,7 +2238,7 @@ let main =
         s.innerHTML += main.connections;
     },
 
-    placeObjects(group, selectionList, path)
+    addComponents(group, selectionList, path)
     {
         if(group == undefined)
             return;
@@ -2056,7 +2258,7 @@ let main =
             main.addModule(m,path);
 
         for(let w of group.widgets || [])
-            main.addGroup(w,path, selectionList);
+            main.addWidget(w,path);
 
         main.addConnections();
 
@@ -2085,21 +2287,37 @@ let main =
             }
     },
 
-    toggleGrid()
+    toggleEditMode()
     {
         let s = window.getComputedStyle(main.grid, null);
         if (s.display === 'none')
         {
-         main.grid.style.display = 'block';
-         main.grid_active = true;
+             main.grid.style.display = 'block';
+            main.edit_mode = true;
         }
         else
         {
             main.grid.style.display = 'none';
+            main.edit_mode = false;
+        }
+        inspector.showInspectorForSelection();
+    },
+
+    toggleGrid()
+    {
+        let s = window.getComputedStyle(main.grid_canvas, null);
+        if (s.display === 'none')
+        {
+         main.grid_canvas.style.display = 'block';
+         main.grid_active = true;
+        }
+        else
+        {
+            main.grid_canvas.style.display = 'none';
             main.grid_active = false;
         }
 
-        inspector.showInspectorForSelection();
+
     },
 
     selectItem(foreground, background)
@@ -2107,7 +2325,7 @@ let main =
         if(background != null)
         {
             let group = network.dict[background];
-            main.placeObjects(group, foreground, background);
+            main.addComponents(group, foreground, background);
         }
     },
 
