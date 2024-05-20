@@ -68,6 +68,7 @@ namespace ikaros
         //void print();
 
         void parse_url(std::string s);
+        void parse_json(std::string s);
     };
 
 

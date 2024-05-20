@@ -281,8 +281,9 @@ struct Request
         std::string command; 
         //std::string view_name; 
         std::string component_path;
+        std::string body;
 
-        Request(std::string  uri, long sid=0);  // Add client id later
+        Request(std::string  uri, long sid=0, std::string body="");  // Add client id later
     };
 
     bool operator==(Request & r, const std::string s);
