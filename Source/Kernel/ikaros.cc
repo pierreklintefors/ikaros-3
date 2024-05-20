@@ -997,6 +997,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     void Kernel::ScanClasses(std::string path)
     {
+        if(!std::filesystem::exists(path))
+        {
+            std::cout << "Could not scan for classes \""+path+"\". Directory not found." << std::endl;
+            return;
+        }
         int i=0;
         for(auto& p: std::filesystem::recursive_directory_iterator(path))
             if(std::string(p.path().extension())==".ikc")
@@ -1009,6 +1014,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     void Kernel::ScanFiles(std::string path)
     {
+        if(!std::filesystem::exists(path))
+        {
+            std::cout << "Could not scan for files in \""+path+"\". Directory not found." << std::endl;
+            return;
+        }
         int i=0;
         for(auto& p: std::filesystem::recursive_directory_iterator(path))
             if(std::string(p.path().extension())==".ikg")
@@ -1205,13 +1215,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         tick_duration(1),
         shutdown(false),
         session_id(new_session_id()),
-        webui_dir("Source/WebUI/") // FIXME: get from somewhere else
+        webui_dir("../Source/WebUI/") // FIXME: get from somewhere else
     {
         cpu_cores = std::thread::hardware_concurrency();
         std::cout << std::filesystem::current_path() << std::endl;
 
-            ScanClasses("Source/Modules");
-            ScanFiles("Source/Modules");
+            ScanClasses("../Source/Modules");
+            ScanFiles("../Source/Modules");
     }
 
     // Functions for creating the network
@@ -1501,11 +1511,13 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
-
     void
     Kernel::Run()
     {
-        LoadFile();
+        if(options_.filename.empty())
+            New();
+        else
+            LoadFile();
         SetUp();
         timer.Restart();
         tick = -1; // To make first tick 0 after increment
