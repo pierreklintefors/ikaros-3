@@ -882,7 +882,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     // Request
 
-        Request::Request(std::string  uri, long sid)
+        Request::Request(std::string  uri, long sid, std::string b):
+            body(b)
         {
             url = uri;
             session_id = sid;
@@ -1309,6 +1310,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             AddModule(m, name);
         for(auto c : d["connections"])
             AddConnection(c, name);
+
+        if(d["widgets"].is_null())
+            d["widgets"] = list();
+
+        // FIX OTHER THINGS HERE
     }
 
 
@@ -1387,6 +1393,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     {
         std::cout << "Kernel::Save" << std::endl;
         std::string data = xml();
+
+        std::cout << data << std::endl;
 
         std::ofstream file;
         std::string filename = info_["filename"];
@@ -1907,7 +1915,26 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     void
     Kernel::DoSave(Request & request)
     {
-        Save();
+        std::cout << "SAVE: " << request.body << std::endl;
+
+        dictionary d; 
+        d.parse_json(request.body);
+
+                std::cout << "DICTIONARY: " << d.json() << std::endl;
+
+
+        std::string data = d.xml("group");
+
+        std::cout << data << std::endl;
+
+        std::ofstream file;
+        std::string filename = d["filename"];
+        file.open (filename);
+        file << data;
+        file.close();
+
+
+        // Save();
     }
 
 
@@ -2390,7 +2417,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         if(sids)
             sid = atol(sids);
 
-        Request request(socket->header.Get("URI"), sid);
+        Request request(socket->header.Get("URI"), sid, socket->body);
 
         //if(request.url != "/update/?data=")
         std::cout << request.url << std::endl;
@@ -2500,6 +2527,14 @@ Kernel::CalculateCPUUsage() // In percent
             if (socket != nullptr && socket->GetRequest(true))
             {
                 if (equal_strings(socket->header.Get("Method"), "GET"))
+                {
+                    while(tick_is_running)
+                        {}
+                    handling_request = true;
+                    HandleHTTPRequest();
+                    handling_request = false;
+                }
+                else if (equal_strings(socket->header.Get("Method"), "PUT")) // JSON Data
                 {
                     while(tick_is_running)
                         {}
