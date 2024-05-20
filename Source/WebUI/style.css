@@ -585,6 +585,7 @@ div.frame {
     display: flex;
     flex-direction: column;
     border: none;
+    background-color: var(--widget-background);
  }
 
 .widget * {

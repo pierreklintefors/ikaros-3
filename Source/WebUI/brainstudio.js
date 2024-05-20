@@ -49,26 +49,22 @@ function deepCopy(source) {
   
 
   function toggleStrings(array, toggleItems)
-{
+    {
     toggleItems.forEach(item => {
-      const index = array.indexOf(item);
-      if (index === -1) {
-        // If the item is not in array1, add it
-        array.push(item);
-      } else {
-        // If the item is in array, remove it
-        array.splice(index, 1);
-      }
+        const index = array.indexOf(item);
+        if (index === -1)
+            array.push(item);
+        else 
+            array.splice(index, 1);
     });
   }
 
-  
 
 
-  function removeStringFromStart(mainString, stringToRemove) {
-    if (mainString.startsWith(stringToRemove)) {
+  function removeStringFromStart(mainString, stringToRemove)
+  {
+    if (mainString.startsWith(stringToRemove))
       return mainString.slice(stringToRemove.length);
-    }
     return mainString;
   }
 
@@ -304,7 +300,7 @@ let network = {
     {
         let connection = 
         {
-            "_tag": "Connection",
+            "_tag": "connection",
             "source": source,
             "target": target,
             "source_range":"",
@@ -325,7 +321,7 @@ let network = {
         let old_module = deepCopy(network.dict[module]);
         replaceProperties(network.dict[module], network.classinfo[new_class]);
         let new_module = network.dict[module];
-        new_module._tag = "Module";
+        new_module._tag = "module";
         new_module.class = new_class;
         new_module.name = old_module.name;
         new_module._x = old_module._x;
@@ -474,6 +470,36 @@ let controller = {
         controller.reconnect_timer = setInterval(controller.reconnect, controller.reconnect_interval);
     },
 
+        saveNetwork() // FIXME: Change to allow saving of fragments
+        {
+            const jsonString = JSON.stringify(network.network,null,2);
+    
+        fetch("save", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Session-Id': controller.session_id,
+                'Client-Id': controller.client_id
+            },
+            body: jsonString
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json(); // Assuming the server responds with JSON
+        })
+        .then(data => {
+            alert(data);
+            console.log('Success:', data);
+            // Now request network!
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Save failed");
+        });
+    },
+    
     get: function (url, callback)
     {
         controller.send_stamp = Date.now();
@@ -527,7 +553,8 @@ let controller = {
     },
 
     save: function () {
-        controller.get("save", controller.update);
+        //controller.get("save", controller.update);
+        controller.saveNetwork();
     },
 
     saveas: function () {
@@ -1030,8 +1057,6 @@ let inspector = {
         inspector.subview.nothing  = document.querySelector('#inspector_nothing'); 
         inspector.subview.multiple  = document.querySelector('#inspector_multiple');
         inspector.subview.table  = document.querySelector('#inspector_table');
-        
-
         inspector.subview.group_background = document.querySelector('#inspector_group_background');
         inspector.subview.group = document.querySelector('#inspector_group');
         inspector.subview.module =  document.querySelector('#inspector_module');
@@ -1056,7 +1081,8 @@ let inspector = {
 
     toggleComponent()
     {
-        if (window.getComputedStyle(inspector.component, null).display === 'none')        {
+        if (window.getComputedStyle(inspector.component, null).display === 'none')        
+            {
             inspector.component.style.display = "block";
             inspector.system.style.display = "none";
         }
@@ -1272,11 +1298,11 @@ let inspector = {
 
     parameterChangeNotification(p)
     {
-        if(inspector.item._tag == "Connection")
+        if(inspector.item._tag == "connection")
         {
             alert("Connection parameters cannot be edited yet");
         }
-        else if(inspector.item._tag == "Group" && selector.selected_foreground.length == 0) // background is selected
+        else if(inspector.item._tag == "group" && selector.selected_foreground.length == 0) // background is selected
             {
                 let old_name = selector.selected_background;
                 let new_name = changeNameInPath(selector.selected_background, inspector.item.name);
@@ -1287,7 +1313,7 @@ let inspector = {
                     selector.selectItems([], new_name);
                 }
         }
-        else if (inspector.item._tag == "Input")
+        else if (inspector.item._tag == "input")
         {
             let old_name = selector.selected_foreground[0];
             let new_name = selector.selected_background+'.'+inspector.item.name;
@@ -1296,7 +1322,7 @@ let inspector = {
             network.renameInput(group, old_name, new_name);
             selector.selectItems([new_name], null);
          }
-        else if (inspector.item._tag == "Output")
+        else if (inspector.item._tag == "output")
         {
             let old_name = selector.selected_foreground[0];
             let new_name = selector.selected_background+'.'+inspector.item.name;
@@ -1334,7 +1360,7 @@ let inspector = {
         inspector.subview.table.style.display = 'block';
 
         let edit_mode = main.grid.style.display == 'block';
-        inspector.addHeader("GROUP");
+        inspector.addHeader("Group");
         if(edit_mode)
         {
             inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], inspector);
@@ -1368,9 +1394,9 @@ let inspector = {
             inspector.addAttributeValue("name", item.name);
             inspector.addDataRows(item, inspector.createTemplate(item));
         }
-        else if(item._tag=="Module")
+        else if(item._tag=="module")
         {
-            inspector.addHeader("Module");
+            inspector.addHeader("MODULE");
             if(edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
@@ -1384,9 +1410,9 @@ let inspector = {
             }
         }
 
-        else if(item._tag=="Group")
+        else if(item._tag=="group")
         {
-            inspector.addHeader("Group");
+            inspector.addHeader("GROUP");
             if(edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
@@ -1397,18 +1423,18 @@ let inspector = {
             }
         }
 
-        else if(item._tag=="Input")
+        else if(item._tag=="input")
         {
-            inspector.addHeader("Input");
+            inspector.addHeader("INPUT");
             if(edit_mode)
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
             else
                 inspector.addAttributeValue("name", item.name); 
         }
 
-        else if(item._tag=="Output")
+        else if(item._tag=="output")
         {
-            inspector.addHeader("Output");
+            inspector.addHeader("OUTPUT");
 
             if(edit_mode)
             {
@@ -1420,6 +1446,18 @@ let inspector = {
                 inspector.addAttributeValue("size", item.size);
             }
         }
+        else if(item._tag=="widget")
+        {
+            let widget_container = document.getElementById(selector.selected_background+'.'+item.name);
+
+            inspector.addHeader("WIDGET");
+
+            inspector.addMenu("class", item.class, ["A", "B","C"]); // , network.classes
+
+            let template = widget_container.widget.parameter_template;
+            inspector.addDataRows(item, template) // FIXME: , notify=null
+        }
+
 
         //inspector.addMenu("color","black",['black','red','green','blue','yellow'],"_color", c);
         /*
@@ -1441,7 +1479,7 @@ let inspector = {
 
         let edit_mode = main.grid.style.display == 'block';
 
-        inspector.addHeader("CONNECTION");
+        inspector.addHeader("Connection");
         inspector.addAttributeValue("source", item.source);
         inspector.addAttributeValue("target", item.target);
 
@@ -1458,7 +1496,7 @@ let inspector = {
         inspector.hideSubviews();
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
-        inspector.addHeader("MULTIPLE");
+        inspector.addHeader("Multiple");
         inspector.addAttributeValue("selected", n); 
     },
 
@@ -1669,7 +1707,7 @@ let main =
         {
             'name':name,
             'class':"Module",
-            '_tag':"Module",
+            '_tag':"module",
             '_x':main.new_position_x,
             '_y':main.new_position_y,
             'inputs': [],
@@ -1698,7 +1736,7 @@ let main =
         let m =
         {
             'name':name,
-            '_tag':"Group",
+            '_tag':"group",
             '_x':main.new_position_x,
             '_y':main.new_position_y,
             'inputs': [],
@@ -1731,7 +1769,7 @@ let main =
         let m =
         {
             'name':name,
-            '_tag':"Input",
+            '_tag':"input",
             '_x':main.new_position_x,
             '_y':main.new_position_y
         };
@@ -1757,7 +1795,7 @@ let main =
         {
             'name':name,
             'size':"1",
-            '_tag':"Output",
+            '_tag':"output",
             '_x':main.new_position_x,
             '_y':main.new_position_y
         };
@@ -1780,7 +1818,7 @@ let main =
     {
         let name = "Widget_"+main.widget_counter++;
         let w = {
-            "_tag": "Widget",
+            "_tag": "widget",
             "name": name,
             "title": name,
             "class": "bar-graph",
