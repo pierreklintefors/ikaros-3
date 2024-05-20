@@ -109,12 +109,14 @@ class ServerSocket
 		const char *		Host();									// Get host name
 		
 		int					errcode;								// Last error
+		std::string 		body;									// Body of PUT request
 	private:
 		ServerSocketData *	data;
+
 		
 		bool				Poll(bool block=false);                 // Poll for connection; return >=0 if accepted connection (or > 0 CHECK!!!)
 		long				Read(char * buffer, int maxSize);		// Read
-		std::string 		buffer;	
+
 	};
 
 

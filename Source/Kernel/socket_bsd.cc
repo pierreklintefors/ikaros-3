@@ -499,6 +499,22 @@ ServerSocket::GetRequest(bool block)
 	
 //	if(char * x = strpbrk(header.Get("URI"), "?#")) *x = '\0';	// Remove timestamp in request TODO: keep this later
 	
+    if (equal_strings(header.Get("Method"), "PUT"))
+    {
+                const char* content_length_str = header.Get("Content-Length");
+        if (content_length_str)
+        {
+            int content_length = atoi(content_length_str);
+            if (content_length > 0)
+            {   
+                char buffer[4*65535];
+                long rr = Read(buffer, content_length+4);
+                std::cout << buffer << std::endl;
+                body = std::string(buffer);
+            }
+        }
+    }
+
     return true;
 }
 
@@ -597,6 +613,7 @@ ServerSocket::Send(const char * format, ...)
     return SendData(buffer, strlen(buffer));
 }
 
+/*
 void ServerSocket::fillBuffer(std::string s)
 {
     buffer.append(s);
@@ -613,6 +630,7 @@ void ServerSocket::clearBuffer() // FIXME: what is this?
     if (buffer.empty())
         buffer.reserve(5000000); // 5Mb
 }
+*/
 
 bool
 ServerSocket::Send(const float * d, int sizex, int sizey)
