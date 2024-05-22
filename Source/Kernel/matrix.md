@@ -4,7 +4,7 @@ The matrix is the most fundamental data type in Ikaros. It is used for all commu
 
 A matrix is characterised by its rank and its size. The rank describes the dimensionality of the matrix. A normal two-dimensional matrix has rank 2. This can also be called a table. A row of floats has rank 1. And a single scalar value has rank 0. This allows for a matrix algebra over matrices that includes operations that changes the dimensionality of a matrix.
 
-The size of a matrix is the number of values in each dimensions. Foe example, a 2x3 matrix has two rows of three elements each. Its rank is 2.
+The size of a matrix is the number of values in each dimensions. For example, a 2x3 matrix has two rows of three elements each. Its rank is 2.
 
 ## Creating a matrix
 
@@ -72,7 +72,7 @@ m[1][2] = 42;
 x = m[1][2];
 ```
 
-Not that it is possible to access a part of a matrix with the bracked notatopn but not using the parantheses notaition. For example, if m is a three dimensional natrix:
+Note that it is possible to access a part of a matrix with the bracked notaion but not using the parantheses notaition. For example, if m is a three dimensional natrix:
 
 ```C++
 matrix m = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};
@@ -90,7 +90,7 @@ matrix n = m;
 matrix o;
 o.copy(m);
 
-n(1) = 5; // Both m and n will now be {1, 6} but o is still {1, 2}
+n(1) = 5; // Both m and n will now be {1, 5} but o is still {1, 2}
 ```
 
 
@@ -122,7 +122,7 @@ The internal data structures of a matrix can be printed using info()
 m.info();
 ```
 
-The rank of a matrix is obtained using the rank function. This is the dimensionality of the matrix (and not the matrix rank that can be obtained using the matrank-function instead, when implemented...):
+The rank of a matrix is obtained using the rank function. This is the dimensionality of the matrix (and not the matrix rank (that can be obtained using the matrank-function instead, once implemented...):
 
 ```C++
 m.rank();
@@ -172,13 +172,7 @@ m.set_labels(1, "Col1", "Col2, Col3");
 m.print();
 ```
 
-To print the internal structure of a matrix use the function info() to print all internal values:
-
-```C++
-m.info();
-```
-
-The JSON representation of a string can be obtained by the json() function:
+The JSON representation of a matrix can be obtained by the json() function:
 
 ```C++
 std::string s = m.json();
