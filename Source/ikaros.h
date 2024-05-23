@@ -28,6 +28,7 @@ using namespace std::literals;
 #include "Kernel/socket.h"
 #include "Kernel/deprecated.h"
 #include "Kernel/image_file_formats.h"
+#include "Kernel/serial.h"
 
 namespace ikaros {
 
