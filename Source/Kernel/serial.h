@@ -52,7 +52,9 @@ class Serial
 public:
 
     Serial();
-    Serial(const char * device, unsigned long baud_rate);   // defaults to 8 bits, no partity, 1 stop bit
+    //Serial(const char * device, unsigned long baud_rate);   // defaults to 8 bits, no partity, 1 stop bit
+    Serial(std::string device_name, unsigned long baud_rate);
+
     ~Serial();
 
 	int SendString(const char *sendbuf);
