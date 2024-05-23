@@ -1,5 +1,5 @@
 /*
- * New version of WebUI interface wit BrainStudio functions
+ * New version of WebUI interface with BrainStudio functions
  */
 
 
@@ -490,8 +490,8 @@ let controller = {
             return response.json(); // Assuming the server responds with JSON
         })
         .then(data => {
-            alert(data);
-            console.log('Success:', data);
+            //alert(data);
+            //console.log('Success:', data);
             // Now request network!
         })
         .catch(error => {
@@ -554,6 +554,9 @@ let controller = {
 
     save: function () {
         //controller.get("save", controller.update);
+    if(network.network.filename=="")
+            controller.saveas();
+    else
         controller.saveNetwork();
     },
 

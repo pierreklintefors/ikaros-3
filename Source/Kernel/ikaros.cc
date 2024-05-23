@@ -924,7 +924,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             stop_after = -1;
             shutdown = false;
             info_ = dictionary();
-            info_["filename"] = "Untitled.ikg";
+            info_["filename"] = ""; //EMPTY FILENAME
 
             session_id = new_session_id();
         }
@@ -953,7 +953,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             // d["webui_port"] = "8000";
 
             SetCommandLineParameters(d);
-            d["filename"] = "Untitled.ikg";
+            d["filename"] = "";
             BuildGroup(d);
             info_ = d;
             session_id = new_session_id(); 
@@ -1717,7 +1717,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
 
-
     void
     Kernel::Play()
     {
@@ -1932,7 +1931,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         dictionary d; 
         d.parse_json(request.body);
 
-                std::cout << "DICTIONARY: " << d.json() << std::endl;
+                // std::cout << "DICTIONARY: " << d.json() << std::endl;
 
 
         std::string data = d.xml("group");
@@ -1945,8 +1944,18 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         file << data;
         file.close();
 
+        New();
+        LoadFile();
 
-        // Save();
+
+        std::string s = "{\"status\":\"ok\"}"; 
+        Dictionary rtheader;
+        rtheader.Set("Session-Id", std::to_string(session_id).c_str());
+        rtheader.Set("Package-Type", "network");
+        rtheader.Set("Content-Type", "application/json");
+        rtheader.Set("Content-Length", int(s.size()));
+        socket->SendHTTPHeader(&rtheader);
+        socket->SendData(s.c_str(), int(s.size()));
     }
 
 
