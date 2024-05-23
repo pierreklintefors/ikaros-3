@@ -260,17 +260,17 @@ namespace ikaros
         {
             if(value.isString())
             {
-                std::cout << value.asString() << std::endl;
+                //std::cout << value.asString() << std::endl;
                 l.push_back(value.asString());
             }
             else if(value.isNull())
             {
-                std::cout << "NULL" << std::endl;
+                //std::cout << "NULL" << std::endl;
                 l.push_back(null());
             }
             else if(value.isBool())
             {
-                std::cout << "BOOL" << std::endl;
+                //std::cout << "BOOL" << std::endl;
                 if(value.asBool())
                     l.push_back("true");
                 else
@@ -278,19 +278,19 @@ namespace ikaros
             }
             else if(value.isNumber())
             {
-                std::cout << "NUMBER" << std::endl;
+                //std::cout << "NUMBER" << std::endl;
                 l.push_back(std::to_string(value.asNumber()));
             }
             else if(value.isArray())
             {
-                std::cout << "ARRAY" << std::endl;
+                //std::cout << "ARRAY" << std::endl;
                 list ll;
                 copy_from_json(ll, value.asArray());
                 l.push_back(ll);
             }
             else if(value.isObject())
             {
-                std::cout << "OBJECT" << std::endl;
+                //std::cout << "OBJECT" << std::endl;
                 dictionary dd;
                 copy_from_json(dd, value.asObject());
                 l.push_back(dd);
@@ -310,12 +310,12 @@ namespace ikaros
             }
             else if(value.isNull())
             {
-                std::cout << key << ": " << "NULL" << std::endl;
+                //std::cout << key << ": " << "NULL" << std::endl;
                 d[key] = null();
             }
             else if(value.isBool())
             {
-                std::cout << key << ": " << "BOOL" << std::endl;
+                //std::cout << key << ": " << "BOOL" << std::endl;
                 if(value.asBool())
                     d[key] ="true";
                 else
@@ -323,7 +323,7 @@ namespace ikaros
             }
             else if(value.isNumber())
             {
-                std::cout << key << ": " << "NUMBER" << std::endl;
+                //std::cout << key << ": " << "NUMBER" << std::endl;
                 d[key] = std::to_string(value.asNumber());
             }
             else if(value.isArray())
@@ -335,7 +335,7 @@ namespace ikaros
             }
             else if(value.isObject())
             {
-                std::cout << key << ": " << "OBJECT" << std::endl;
+                //std::cout << key << ": " << "OBJECT" << std::endl;
                 dictionary dd;
                 copy_from_json(dd, value.asObject());
                 d[key] = dd;
@@ -348,7 +348,7 @@ namespace ikaros
     dictionary::parse_json(std::string s)
     {
         JSON json = JSON::parse(s);
-        std::cout << "Parsed JSON successfully." << std::endl;
+       // std::cout << "Parsed JSON successfully." << std::endl;
 
         // 
 

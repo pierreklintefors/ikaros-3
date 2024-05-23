@@ -665,6 +665,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
   
     }
 
+INSTALL_CLASS(Module)
 
 // The following lines will create the kernel the first time it is accessed by one of the components
 
@@ -1936,7 +1937,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
         std::string data = d.xml("group");
 
-        std::cout << data << std::endl;
+        // std::cout << data << std::endl;
 
         std::ofstream file;
         std::string filename = d["filename"];
@@ -1944,7 +1945,8 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         file << data;
         file.close();
 
-        New();
+        Clear();
+        options_.filename = filename;
         LoadFile();
 
 
@@ -2441,7 +2443,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         Request request(socket->header.Get("URI"), sid, socket->body);
 
         //if(request.url != "/update/?data=")
-        std::cout << request.url << std::endl;
+        //std::cout << request.url << std::endl;
 
         if(request == "network")
             DoNetwork(request);

@@ -1,6 +1,7 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_subdirectory(Logger)
 add_subdirectory(Idle)
+
 add_subdirectory(Constant)
 add_subdirectory(Randomizer)
 

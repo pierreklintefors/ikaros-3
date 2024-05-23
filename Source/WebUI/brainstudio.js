@@ -2,6 +2,24 @@
  * New version of WebUI interface with BrainStudio functions
  */
 
+const widget_types = 
+[
+"bar-graph",
+"plot",
+"table",
+"marker",
+"path",
+"grid",
+"image",
+"text",
+"rectangle",
+"button",
+"slider-horizontal",
+"drop-down-menu",
+"control-grid",
+"canvas3d",
+"epi-head"
+]
 
 function isEmpty(obj) 
 {
@@ -560,8 +578,20 @@ let controller = {
         controller.saveNetwork();
     },
 
-    saveas: function () {
-        alert("SAVE AS coming soon");
+    saveas: function() 
+    {
+        const filename = prompt("Save as:");
+        if (filename !== null)
+        {
+            //console.log("User input:", userInput);
+            // FIXME: check name validity
+            network.network.filename = filename;
+            controller.save();
+        } 
+        else
+        {
+
+        }
     },
 
     quit: function () {
@@ -1455,7 +1485,7 @@ let inspector = {
 
             inspector.addHeader("WIDGET");
 
-            inspector.addMenu("class", item.class, ["A", "B","C"]); // , network.classes
+            inspector.addMenu("class", item.class, widget_types); // , network.classes
 
             let template = widget_container.widget.parameter_template;
             inspector.addDataRows(item, template) // FIXME: , notify=null
@@ -1705,7 +1735,7 @@ let main =
     
     newModule()
     {
-        let name = "Untitled_"+main.module_counter++;
+        let name = "Untitled_"+(Object.keys(network.dict).length+1);
         let m =
         {
             'name':name,
@@ -1735,7 +1765,7 @@ let main =
 
     newGroup() // FIXME: Move to network
     {
-        let name = "Group_"+main.group_counter++;
+        let name = "Group_"+(Object.keys(network.dict).length+1);
         let m =
         {
             'name':name,
@@ -1768,7 +1798,7 @@ let main =
 
     newInput() // FIXME: Move to network
     {
-        let name = "Input_"+main.input_counter++;
+        let name = "Input_"+(Object.keys(network.dict).length+1);
         let m =
         {
             'name':name,
@@ -1793,7 +1823,7 @@ let main =
 
     newOutput() // FIXME: Move to network
     {
-        let name = "Output_"+main.output_counter++;
+        let name = "Output_"+(Object.keys(network.dict).length+1);
         let m =
         {
             'name':name,
@@ -1819,7 +1849,7 @@ let main =
 
     newWidget() // (w) FIXME: Move (data structure only) to network
     {
-        let name = "Widget_"+main.widget_counter++;
+        let name = "Widget_"+(Object.keys(network.dict).length+1);
         let w = {
             "_tag": "widget",
             "name": name,
