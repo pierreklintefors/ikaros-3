@@ -1331,6 +1331,7 @@ INSTALL_CLASS(Module)
 
     void Kernel::InitComponents()
     {
+             std::cout << "Running Kernel::InitComponents()" << std::endl;
         // Call Init for all modules (after CalcalateSizes and Allocate)
         for(auto & c : components)
             try
@@ -1519,7 +1520,7 @@ INSTALL_CLASS(Module)
             New();
         else
             LoadFile();
-        SetUp();
+        //SetUp(); // PROBABLY WRONG
         timer.Restart();
         tick = -1; // To make first tick 0 after increment
 
