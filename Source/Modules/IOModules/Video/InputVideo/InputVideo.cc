@@ -27,12 +27,10 @@
 
 // Todo: Add rotation filter
 
-
-
 #define __STDC_CONSTANT_MACROS
 
 #ifdef _WIN32
-//Windows
+// Windows
 extern "C"
 {
 #include "libavcodec/avcodec.h"
@@ -42,7 +40,7 @@ extern "C"
 #include <libavutil/imgutils.h>
 };
 #else
-//Linux...
+// Linux...
 #ifdef __cplusplus
 extern "C"
 {
@@ -58,7 +56,6 @@ extern "C"
 #endif
 
 #define USE_DSHOW 0
-
 
 // Show Dshow Device
 void show_dshow_device()
@@ -364,16 +361,17 @@ class InputVideo : public Module
     matrix red;
     matrix green;
     matrix blue;
-    
+    matrix output;
+
     // FFmpeg related
     AVFormatContext *input_format_context;
-    int             videoStreamId;
-    //AVCodec         *input_codec;
-    AVCodecContext  *avctx;
-    AVFrame         *inputFrame;
-    AVFrame         *outputFrame;
-    AVPacket        packet;
-    SwsContext      *img_convert_ctx;
+    int videoStreamId;
+    // AVCodec         *input_codec;
+    AVCodecContext *avctx;
+    AVFrame *inputFrame;
+    AVFrame *outputFrame;
+    AVPacket packet;
+    SwsContext *img_convert_ctx;
 
     void Init()
     {
@@ -382,6 +380,7 @@ class InputVideo : public Module
         Bind(red, "RED");
         Bind(green, "GREEN");
         Bind(blue, "BLUE");
+        Bind(output, "OUTPUT");
 
         // Paramters
         Bind(frameRate, "frame_rate");
@@ -390,7 +389,6 @@ class InputVideo : public Module
         Bind(size_y, "size_y");
         Bind(listDevices, "list_devices");
 
- 
         // av_register_all();              // Register all formats and codecs
         input_format_context = avformat_alloc_context();
         avdevice_register_all(); // libavdevice
@@ -432,12 +430,12 @@ class InputVideo : public Module
 #else
 
         if (listDevices)
-            show_avfoundation_device();
+        show_avfoundation_device();
 
         const AVInputFormat *ifmt = av_find_input_format("avfoundation");
         AVDictionary *options = NULL;
 
-        // Setting options. 
+        // Setting options.
         std::string sizeString = std::to_string(size_x.as_int()) + std::string("x") + std::to_string(size_y.as_int());
         std::string frameRateString = std::to_string(frameRate.as_int());
         std::string idString = std::to_string(id.as_int());
@@ -445,9 +443,10 @@ class InputVideo : public Module
         av_dict_set(&options, "pixel_format", "1", 0); // AV_PIX_FMT_YUYV422
         av_dict_set(&options, "framerate", frameRateString.c_str(), 0);
 
-        if (avformat_open_input(&input_format_context, idString.c_str(), ifmt, &options) != 0)
+        if (avformat_open_input(&input_format_context, "0", ifmt, &options) != 0)
         {
-            //Notify(msg_fatal_error, "Couldn't open input stream.\n");
+            printf("Couldn't open input stream.\n");
+            // Notify(msg_fatal_error, "Couldn't open input stream.\n");
             return;
         }
 #endif
@@ -457,7 +456,7 @@ class InputVideo : public Module
         /// Retrieve stream information
         if (avformat_find_stream_info(input_format_context, NULL) < 0)
         {
-            //Notify(msg_fatal_error, "Couldn't find stream information\n");
+            // Notify(msg_fatal_error, "Couldn't find stream information\n");
             return;
         }
 
@@ -471,7 +470,7 @@ class InputVideo : public Module
             }
         if (videoStreamId == -1)
         {
-            //Notify(msg_fatal_error, "Didn't find a video stream\n");
+            // Notify(msg_fatal_error, "Didn't find a video stream\n");
             return;
         }
 
@@ -481,7 +480,7 @@ class InputVideo : public Module
         const AVCodec *input_codec = avcodec_find_decoder(input_format_context->streams[videoStreamId]->codecpar->codec_id);
         if (input_codec == NULL)
         {
-            //Notify(msg_fatal_error, "Unsupported codec!\n");
+            // Notify(msg_fatal_error, "Unsupported codec!\n");
             return; // Codec not found
         }
 
@@ -489,7 +488,7 @@ class InputVideo : public Module
         avctx = avcodec_alloc_context3(input_codec);
         if (!avctx)
         {
-            //Notify(msg_fatal_error, "Could not allocate a decoding context\n");
+            // Notify(msg_fatal_error, "Could not allocate a decoding context\n");
             avformat_close_input(&input_format_context);
             return;
         }
@@ -506,26 +505,26 @@ class InputVideo : public Module
         /// Open codec
         if (avcodec_open2(avctx, input_codec, NULL) < 0)
         {
-            //Notify(msg_fatal_error, "Could not open codec\n");
+            // Notify(msg_fatal_error, "Could not open codec\n");
             return;
         }
 
         inputFrame = av_frame_alloc(); // Input
         if (inputFrame == NULL)
         {
-            //Notify(msg_fatal_error, "Could not allocate AVFrame\n");
+            // Notify(msg_fatal_error, "Could not allocate AVFrame\n");
             return;
         }
 
         outputFrame = av_frame_alloc(); // Output (after resize and convertions)
         outputFrame->format = AV_PIX_FMT_RGB24;
-        outputFrame->width = size_x;
-        outputFrame->height = size_y;
-        av_image_alloc(outputFrame->data, outputFrame->linesize, size_x, size_y, AV_PIX_FMT_RGB24, 32);
+        outputFrame->width = size_x.as_int();
+        outputFrame->height = size_y.as_int();
+        av_image_alloc(outputFrame->data, outputFrame->linesize, size_x.as_int(), size_y.as_int(), AV_PIX_FMT_RGB24, 32);
 
         if (outputFrame == NULL)
         {
-            //Notify(msg_fatal_error, "Could not allocate AVFrame\n");
+            // Notify(msg_fatal_error, "Could not allocate AVFrame\n");
             return;
         }
     }
@@ -561,28 +560,40 @@ class InputVideo : public Module
                 // Convert the frame to AV_PIX_FMT_RGB24 format
                 img_convert_ctx = sws_getCachedContext(img_convert_ctx, avctx->width, avctx->height,
                                                        avctx->pix_fmt,
-                                                       size_x, size_y, AV_PIX_FMT_RGB24,
+                                                       size_x.as_int(), size_y.as_int(), AV_PIX_FMT_RGB24,
                                                        SWS_BICUBIC, NULL, NULL, NULL);
                 // Scale the image
                 sws_scale(img_convert_ctx, (const uint8_t *const *)inputFrame->data,
                           inputFrame->linesize, 0, avctx->height,
                           outputFrame->data, outputFrame->linesize);
 
+                // std::cout << intensity.shape() << std::endl;
+                // std::cout << "size_x: " << size_x.as_int();
+                // std::cout << " size_y: " << size_y.as_int() << std::endl;
+
                 // Put data in ikaros output
                 unsigned char *data = outputFrame->data[0];
-                for (int y = 0; y < size_y.as_int(); y++)
-                    for (int x = 0; x < size_x.as_int(); x++)
+                for (int row = 0; row < size_y.as_int(); row++)
+                    for (int col = 0; col < size_x.as_int(); col++)
                     {
-                        int yLineSize = y * outputFrame->linesize[0];
-                        int y1 = y * size_x.as_int();
-                        int xy = x + y1;
-                        int x3 = x * 3;
-                        intensity[xy] = red[xy] = c1255 * data[yLineSize + x3 + 0];
-                        intensity[xy] += green[xy] = c1255 * data[yLineSize + x3 + 1];
-                        intensity[xy] += blue[xy] = c1255 * data[yLineSize + x3 + 2];
-                        intensity[xy] *= c13;
+                        // printf(" %i %i\n", x,y);
+                        int yLineSize = row * outputFrame->linesize[0]; // y
+                        int y1 = row * size_x.as_int();                 // y1 = y * size_x;
+                        int xy = col + y1;                              // xy = x + y1;
+                        int x3 = col * 3;                               // x3 = x * 3;
+                        // printf(" %i %i\n", outputFrame->linesize[0],yLineSize);
+
+                        // intensity(x,y) = red(x,y) = c1255 * y;
+                        intensity(row, col) = red(row, col) = c1255 * data[yLineSize + x3 + 0];
+                        intensity(row, col) += green(row, col) = c1255 * data[yLineSize + x3 + 1];
+                        intensity(row, col) += blue(row, col) = c1255 * data[yLineSize + x3 + 2];
+                        intensity(row, col) *= c13;
                     }
                 av_packet_unref(&packet);
+                
+                output[0].copy(red);
+                output[1].copy(green);
+                output[2].copy(blue);
             }
         }
     }

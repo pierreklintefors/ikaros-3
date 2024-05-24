@@ -1,10 +1,12 @@
-<group name = "Example" title="InputVideo Example">
+<group start="true" name = "Example" title="InputVideo Example">
 
 	<module
 		class="InputVideo" 
 		name="InputVideo" 
 		frame_rate="30" 
 		list_devices = "yes"
+		size_x = "640"
+		size_y = "480"
 	/>
 	<widget class="image" 
 		max_x = "1"
