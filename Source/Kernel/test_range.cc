@@ -5,10 +5,7 @@ using namespace ikaros;
 
 int
 main()
-'
 
-
-'
 {
 /*    
     for(auto x = range(0,12,2); x.more(); x++)
