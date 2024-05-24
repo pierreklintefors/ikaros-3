@@ -2,7 +2,7 @@
  * New version of WebUI interface with BrainStudio functions
  */
 
-const widget_types = 
+const widget_classes = 
 [
 "bar-graph",
 "plot",
@@ -330,11 +330,9 @@ let network = {
         group.connections = [];
         group.connections.push(connection);
         network.dict[path+"."+source+"*"+path+"."+target]=connection;
-
-        // FIXME: SEND TO IKAROS KERNEL *********************
     },
 
-    changeClass(module, new_class)
+    changeModuleClass(module, new_class)
     {
         let old_module = deepCopy(network.dict[module]);
         replaceProperties(network.dict[module], network.classinfo[new_class]);
@@ -344,12 +342,29 @@ let network = {
         new_module.name = old_module.name;
         new_module._x = old_module._x;
         new_module._y = old_module._y;
-
         // TODO: Check that all properties are in the class
-
         network.dict[module] = new_module;
-        // Update existing connections of possible
+        // Update existing connections if possible
     },
+
+
+    changeWidgetClass(widget, new_class)
+    {
+        let old_widget = deepCopy(network.dict[widget]);
+        let new_widget  = {
+            "_tag": "widget",
+            "name": old_widget.name,
+            "title": old_widget.title,
+            "class": new_class,
+            '_x':old_widget._x,
+            '_y':old_widget._y,
+            'width': old_widget.width,
+            'height': old_widget.height
+        };
+        replaceProperties(network.dict[widget], new_widget);
+        //network.dict[widget] = new_widget;
+    },
+
 
     renameGroupOrModule(group, old_name, new_name)
     {
@@ -1157,7 +1172,7 @@ let inspector = {
         this.addTableRow(attribute,value);
     },
 
-    addMenu(name, value, opts, attribute, component) // SET ALSO VARIABLE AND LINK GROUP for EDITABLE
+    addMenu(name, value, opts, attribute) // SET ALSO VARIABLE AND LINK GROUP for EDITABLE
     {
         var s = '<select name="'+name+'" oninput="this">';
         for(var j in opts)
@@ -1170,11 +1185,7 @@ let inspector = {
         }
         s += '</select>';
 
-        inspector.addTableRow(name, s).addEventListener('change', function ()  
-        { 
-            network.changeClass(selector.selected_foreground[0], this.value); 
-            selector.selectItems(selector.selected_foreground);
-        });
+        return inspector.addTableRow(name, s);
     },
 
     createTemplate(component)
@@ -1433,7 +1444,11 @@ let inspector = {
             if(edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
-                inspector.addMenu("class", item.class, network.classes);
+                inspector.addMenu("class", item.class, network.classes).addEventListener('change', function ()  
+                { 
+                    network.changeModuleClass(selector.selected_foreground[0], this.value); 
+                    selector.selectItems(selector.selected_foreground);
+                });;
                 inspector.addDataRows(item, item.parameters||[], this);
             }
             else
@@ -1485,7 +1500,11 @@ let inspector = {
 
             inspector.addHeader("WIDGET");
 
-            inspector.addMenu("class", item.class, widget_types); // , network.classes
+            inspector.addMenu("class", item.class, widget_classes).addEventListener('change', function ()  
+            { 
+                network.changeWidgetClass(selector.selected_foreground[0], this.value); 
+                selector.selectItems(selector.selected_foreground);
+            });
 
             let template = widget_container.widget.parameter_template;
             inspector.addDataRows(item, template) // FIXME: , notify=null
@@ -1954,6 +1973,12 @@ let main =
         return newObject;
     },
 
+
+    deleteComponent()
+    {
+        alert("No, still not possible...");
+    },
+
     changeComponentPosition(c, dx,dy)
     {
         let e = document.getElementById(c);
@@ -2360,6 +2385,7 @@ let main =
 
     toggleEditMode()
     {
+        main.toggleGrid();
         let s = window.getComputedStyle(main.grid, null);
         if (s.display === 'none')
         {

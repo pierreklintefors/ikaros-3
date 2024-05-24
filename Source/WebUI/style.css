@@ -474,6 +474,14 @@ main[data-mode="edit"] {
 }
 
 
+#delete_commands {
+    position:absolute;
+    z-index: 1000;
+    top:12px;
+    left:515px;
+
+}
+
 
 /* Inspector Styles */
 

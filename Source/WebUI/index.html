@@ -69,7 +69,7 @@
             <div class="button" onclick="nav.toggle()" id="nav">&#8801;</div>
             <div class="stretch" ></div>
             <div class="button" onclick="main.toggleEditMode()" style="font-family:Arial">&#9998;</div>
-            <div class="button" onclick="main.toggleGrid()" style="font-family:Arial">#</div>
+           <!--  <div class="button" onclick="main.toggleGrid()" style="font-family:Arial">#</div> -->
             <div class="button" onclick="log.toggleLog()">&#x26A0;</div>
             <div class="button" onclick="inspector.toggleComponent()">&#9432;</divb></div>
             <div class="button large" onclick="inspector.toggleSystem()">&#x2699;</div>
@@ -95,6 +95,9 @@
                     <button onclick="main.newWidget()" style="border-radius:0 15px 15px 0;" >Widget</button>
                 </div>
 
+                <div class="group_commands" id="delete_commands">
+                    <button onclick="main.deleteComponent()" style="border-radius:15px 15px 15px 15px; margin-left: 0">Delete</button>
+                </div>
                 <canvas id="main_grid_canvas" width="3000" height="3000" ></canvas>
             </div>
             <div id="connections"> </div>
