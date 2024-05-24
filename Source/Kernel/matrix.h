@@ -696,14 +696,17 @@ namespace ikaros
 
         int size(int dim)
         {
+            if(dim  < 0)
+                return  size(info_->shape_.size()+dim);
+
             if(dim < info_->shape_.size()) 
                 return info_->shape_.at(dim); 
             else
                 return 0;
         }
 
-        int rows() { return size(0); } // FIXME: count from the back
-        int cols() { return size(1); }
+        int rows() { return size(-2); }
+        int cols() { return size(-1); }
         int size_x() { return cols(); }
         int size_y() { return rows(); }
 
