@@ -1,6 +1,6 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_subdirectory(InputVideoFile)
+#add_subdirectory(InputVideoFile)
 
 set(SOURCE ${SOURCE} PARENT_SCOPE)
 set(MODULES_INCLUDS ${MODULES_INCLUDS} PARENT_SCOPE)
