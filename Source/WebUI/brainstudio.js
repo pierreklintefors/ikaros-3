@@ -2006,6 +2006,18 @@ let main =
         network.dict[c]._y = new_y;
     },
 
+
+    changeComponentSize(dX, dY)
+    {
+        let w_id = selector.selected_foreground[0];
+        let w = document.getElementById(w_id);
+
+        let newWidth = main.grid_spacing*Math.round((main.startX + dX)/main.grid_spacing)+1;
+        let newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
+        w.style.width = newWidth + 'px';
+        w.style.height = newHeight + 'px';
+    },
+
     moveComponents(evt)
     {
     //    alert("moveComponents");
@@ -2022,12 +2034,9 @@ let main =
         main.addConnections();
     },
 
+
     releaseComponents(evt)
     {
-
- 
-        //  ***************SEND POSITION CHANGES TO KERNEL ***************
-
         main.view.removeEventListener('mousemove',main.moveComponents, true);
         main.view.removeEventListener('mouseup',main.releaseComponents, true);
         main.view.removeEventListener('mousemove',main.moveComponents, false);
@@ -2035,9 +2044,52 @@ let main =
         main.map = {};
     },
 
+    
+    releaseResizeComponent(evt)
+    {
+        main.view.removeEventListener('mousemove',main.resizeComponent, true);
+        main.view.removeEventListener('mouseup',main.releaseResizeComponent, true);
+        main.view.removeEventListener('mousemove',main.resizeComponent, false);
+        main.view.removeEventListener('mouseup',main.releaseResizeComponent, false);
+        main.map = {}; // just in case
+
+        let dX = evt.clientX - main.initialMouseX;
+        let dY = evt.clientY - main.initialMouseY;
+        main.changeComponentSize(dX,dY);
+
+        let w_id = selector.selected_foreground[0];
+        let w = document.getElementById(w_id);
+
+        let newWidth = main.grid_spacing*Math.round((main.startX + dX)/main.grid_spacing)+1;
+        let newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
+        w.style.width = newWidth + 'px';
+        w.style.height = newHeight + 'px';
+
+        network.dict[w_id].width = newWidth;
+        network.dict[w_id].height = newHeight;
+
+    },
+
     startResize(evt)
     {
-        alert("START RESIZE");
+        evt.stopPropagation();
+        main.startX = this.offsetLeft;
+        main.startY = this.offsetTop;
+        selector.selectItems([this.parentElement.id], null);
+        this.parentElement.classList.add("resized");
+
+        main.initialMouseX = evt.clientX;
+        main.initialMouseY = evt.clientY;
+        main.view.addEventListener('mousemove',main.resizeComponent,true);
+        main.view.addEventListener('mouseup',main.releaseResizeComponent,true);
+        return false;
+    },
+
+    resizeComponent: function (evt) {
+        let dX = evt.clientX - main.initialMouseX;
+        let dY = evt.clientY - main.initialMouseY;
+        main.changeComponentSize(dX,dY);
+        return false;
     },
 
     startDragComponents(evt)
@@ -2214,8 +2266,6 @@ let main =
         else
         {
             newObject.widget = new webui_widgets.constructors["webui-widget-"+w['class']];
-            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
-            // Add default parameters from CSS - possibly...
             for(let k in newObject.widget.parameters)
             if(w[k] === undefined)
             {
@@ -2489,14 +2539,14 @@ let main =
             evt.preventDefault();
             alert("Duplicate selected items and possibly connections. (NOT IMPLEMENTED YET)");
         }
-
+/*
         else if (evt.key=="g")
         {
             evt.preventDefault();
             main.toggleGrid();
             return;
         }
-
+*/
         else if (evt.key=="i")
         { 
             evt.preventDefault();
@@ -2504,7 +2554,8 @@ let main =
             return;
         }
     }
-}       
+}
+
 
 let brainstudio = {
 

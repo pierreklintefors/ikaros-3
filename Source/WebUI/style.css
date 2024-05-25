@@ -561,6 +561,12 @@ div.frame {
     /* background-color: none; */
     /* cursor: move; */
     border: none;
+
+    //display: flex;
+    flex-direction: column;
+    /* border: none;
+    background: none; */
+    overflow: hidden;
 }
 
 div.frame.visible {
@@ -578,7 +584,7 @@ div.title {
     line-height: calc(var(--widget-title-height) - 2px);
     vertical-align: middle;
 }
-
+/*
 div.frame {
     display: flex;
     flex-direction: column;
@@ -586,7 +592,7 @@ div.frame {
     background: none; */
     overflow: hidden;
 }
-
+*/
 
 .widget {
     flex-grow:1;
@@ -948,6 +954,7 @@ svg *{
     border-radius: 14px;
     font-size: 13.33333px;
     cursor: default;
+    background-color: var(--widget-title-background);
 }
 
 .group_output
@@ -962,6 +969,7 @@ svg *{
     border-radius: 14px;
     font-size: 13.33333px;
     cursor: default;
+    background-color: var(--widget-title-background);
 }
 
 
@@ -1004,7 +1012,9 @@ svg *{
 }
 
 .gi {
+    /*
     background-color: #383838;
+    */
     border: 3px solid #00000000;
 }
 
