@@ -665,6 +665,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
   
     }
 
+
+    bool
+    Module::Notify(int msg, std::string message)
+    {
+        kernel().log.push_back(Message(message));
+    }
+}
+
 INSTALL_CLASS(Module)
 
 // The following lines will create the kernel the first time it is accessed by one of the components

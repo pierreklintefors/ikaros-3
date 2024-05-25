@@ -228,7 +228,9 @@ class Module : public Component
 {
 public:
     Module();
-    ~Module() {}    
+    ~Module() {}
+
+    bool Notify(int msg, std::string message);
 };
 
 //
