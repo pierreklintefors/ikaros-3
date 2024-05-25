@@ -620,24 +620,58 @@ let controller = {
      },
     
     pause: function () {
+        main.cancelEditMode();
         controller.queueCommand('pause');
     },
     
     step: function ()
     {
+        if(network.network.filename=="")
+            controller.saveas();
+        else
+            controller.save();
+
         document.querySelector("#state").innerText = "step";
+        main.cancelEditMode();
         controller.queueCommand('step');
     },
     
     play: function () {
+        if(network.network.filename=="")
+        {
+            controller.saveas();
+            return;
+        }
+        else
+            controller.save();
+    
+            main.cancelEditMode()
         controller.queueCommand('play');
     },
     
     realtime: function () {
+        if(network.network.filename=="")
+        {
+            controller.saveas();
+            return;
+        }
+        else
+            controller.save();
+
+            main.cancelEditMode();
         controller.queueCommand('realtime');
     },
 
     start: function () {
+        if(network.network.filename=="")
+        {
+            controller.saveas();
+            return;
+        }
+        else
+            controller.save();
+
+
         controller.play();  // FIXME: possibly start selected mode play/fast-forward/realtime
     },
 
@@ -1344,7 +1378,7 @@ let inspector = {
     {
         if(inspector.item._tag == "connection")
         {
-            alert("Connection parameters cannot be edited yet");
+            // alert("Connection parameters cannot be edited yet");
         }
         else if(inspector.item._tag == "group" && selector.selected_foreground.length == 0) // background is selected
             {
@@ -2433,14 +2467,23 @@ let main =
             }
     },
 
+    cancelEditMode()
+    {
+        main.grid.style.display = 'none';
+        main.edit_mode = false;
+    },
+
     toggleEditMode()
     {
         main.toggleGrid();
         let s = window.getComputedStyle(main.grid, null);
         if (s.display === 'none')
         {
-             main.grid.style.display = 'block';
+            main.grid.style.display = 'block';
             main.edit_mode = true;
+
+            controller.run_mode = 'stop';
+            controller.get("stop", controller.update)
         }
         else
         {
@@ -2463,8 +2506,6 @@ let main =
             main.grid_canvas.style.display = 'none';
             main.grid_active = false;
         }
-
-
     },
 
     selectItem(foreground, background)
