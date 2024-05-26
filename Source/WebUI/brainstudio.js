@@ -2053,6 +2053,11 @@ let main =
         let newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
         w.style.width = newWidth + 'px';
         w.style.height = newHeight + 'px';
+
+        network.dict[w_id].width = newWidth;
+        network.dict[w_id].height = newHeight;
+
+        w.widget.parameterChangeNotification(network.dict[w_id]);
     },
 
     moveComponents(evt)
@@ -2104,7 +2109,6 @@ let main =
 
         network.dict[w_id].width = newWidth;
         network.dict[w_id].height = newHeight;
-
     },
 
     startResize(evt)
