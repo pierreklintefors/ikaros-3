@@ -2062,8 +2062,6 @@ let main =
 
     moveComponents(evt)
     {
-    //    alert("moveComponents");
-
         if(Object.keys(main.map).length == 0) // FIME: SHOULD NOT BE NEEDED
             return;
 
@@ -2135,6 +2133,9 @@ let main =
 
     startDragComponents(evt)
     {
+        if(!main.edit_mode)
+            return;
+
     //    alert("startDragComponents");
 
         if(evt.detail == 2) // ignore double clicks
