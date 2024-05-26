@@ -2475,12 +2475,13 @@ let main =
 
     toggleEditMode()
     {
-        main.toggleGrid();
         let s = window.getComputedStyle(main.grid, null);
         if (s.display === 'none')
         {
             main.grid.style.display = 'block';
             main.edit_mode = true;
+            main.grid_canvas.style.display = 'block';
+            main.grid_active = true;
 
             controller.run_mode = 'stop';
             controller.get("stop", controller.update)
@@ -2489,6 +2490,8 @@ let main =
         {
             main.grid.style.display = 'none';
             main.edit_mode = false;
+            main.grid_canvas.style.display = 'none';
+            main.grid_active = false;
         }
         inspector.showInspectorForSelection();
     },
