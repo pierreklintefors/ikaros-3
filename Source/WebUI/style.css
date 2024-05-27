@@ -575,6 +575,7 @@ div.frame.visible {
 }
 
 div.title {
+    flex:none;
     color: var(--widget-title-color);
     background-color: var(--widget-title-background);
     font-family: var(--widget-title-font);
@@ -588,8 +589,8 @@ div.title {
 div.frame {
     display: flex;
     flex-direction: column;
-    /* border: none;
-    background: none; */
+    border: none;
+    background: none;
     overflow: hidden;
 }
 */

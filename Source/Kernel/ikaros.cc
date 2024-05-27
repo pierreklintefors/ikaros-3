@@ -670,8 +670,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     Module::Notify(int msg, std::string message)
     {
         kernel().log.push_back(Message(message));
+        return true;
     }
-}
+
 
 INSTALL_CLASS(Module)
 
@@ -2341,7 +2342,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoUpdate(Request & request)
     {
-        if(request.parameters.empty() || request.session_id != session_id) // not a data request - send network
+        if(request.session_id != session_id) // request.parameters.empty() ||  ( WAS not a data request - send network)
         {
             DoSendNetwork(request);
         }

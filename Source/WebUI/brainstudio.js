@@ -500,7 +500,8 @@ let controller = {
     defer_reconnect()
     {
         clearInterval(controller.reconnect_timer);
-        controller.reconnect_timer = setInterval(controller.reconnect, controller.reconnect_interval);
+        //controller.reconnect_timer = setInterval(controller.reconnect, controller.reconnect_interval);
+        // AUTOMATIC RECONNECT TEMPORARILY TURNED OFF - should only happen in run mode **********
     },
 
         saveNetwork() // FIXME: Change to allow saving of fragments
@@ -1237,10 +1238,7 @@ let inspector = {
 
     addDataRows: function (item, template, notify=null) // TODO: Add exclude list - attributes already added or added afterward
     {
-        if(template == undefined)
-        {
-            console.log(1);
-        }
+
         //let widget = component.widget;
         //let parameters = widget.parameters;
 
@@ -1425,7 +1423,7 @@ let inspector = {
                 selector.selectItems([new_name], null);
             }
         }
-        network.rebuildDict(); // FIXME: Remove later when done in network functions
+        network.rebuildDict(); // FIXME: Remove later when done in network functions // ***** + breadcrumbs *************
         nav.populate();
     },
 
@@ -1441,7 +1439,7 @@ let inspector = {
         inspector.addHeader("Group");
         if(edit_mode)
         {
-            inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], inspector);
+            inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]); // , inspector
         }
         else
         {
@@ -1477,12 +1475,12 @@ let inspector = {
             inspector.addHeader("MODULE");
             if(edit_mode)
             {
-                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
+                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]); // , this
                 inspector.addMenu("class", item.class, network.classes).addEventListener('change', function ()  
                 { 
                     network.changeModuleClass(selector.selected_foreground[0], this.value); 
                     selector.selectItems(selector.selected_foreground);
-                });;
+                });
                 inspector.addDataRows(item, item.parameters||[], this);
             }
             else
@@ -1533,15 +1531,20 @@ let inspector = {
             let widget_container = document.getElementById(selector.selected_background+'.'+item.name);
 
             inspector.addHeader("WIDGET");
-
-            inspector.addMenu("class", item.class, widget_classes).addEventListener('change', function ()  
-            { 
-                network.changeWidgetClass(selector.selected_foreground[0], this.value); 
-                selector.selectItems(selector.selected_foreground);
-            });
-
-            let template = widget_container.widget.parameter_template;
-            inspector.addDataRows(item, template) // FIXME: , notify=null
+            if(edit_mode)
+                {
+                inspector.addMenu("class", item.class, widget_classes).addEventListener('change', function ()  
+                { 
+                        network.changeWidgetClass(selector.selected_foreground[0], this.value); 
+                        selector.selectItems(selector.selected_foreground);
+                    });
+                    let template = widget_container.widget.parameter_template;
+                    inspector.addDataRows(item, template, widget_container.widget);
+                }
+                else
+                {
+                    inspector.addAttributeValue("name", item.name);
+                }
         }
 
 
@@ -2050,12 +2053,15 @@ let main =
         let newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
         w.style.width = newWidth + 'px';
         w.style.height = newHeight + 'px';
+
+        network.dict[w_id].width = newWidth;
+        network.dict[w_id].height = newHeight;
+
+        w.widget.parameterChangeNotification(network.dict[w_id]);
     },
 
     moveComponents(evt)
     {
-    //    alert("moveComponents");
-
         if(Object.keys(main.map).length == 0) // FIME: SHOULD NOT BE NEEDED
             return;
 
@@ -2101,7 +2107,6 @@ let main =
 
         network.dict[w_id].width = newWidth;
         network.dict[w_id].height = newHeight;
-
     },
 
     startResize(evt)
@@ -2128,6 +2133,9 @@ let main =
 
     startDragComponents(evt)
     {
+        if(!main.edit_mode)
+            return;
+
     //    alert("startDragComponents");
 
         if(evt.detail == 2) // ignore double clicks
@@ -2475,12 +2483,13 @@ let main =
 
     toggleEditMode()
     {
-        main.toggleGrid();
         let s = window.getComputedStyle(main.grid, null);
         if (s.display === 'none')
         {
             main.grid.style.display = 'block';
             main.edit_mode = true;
+            main.grid_canvas.style.display = 'block';
+            main.grid_active = true;
 
             controller.run_mode = 'stop';
             controller.get("stop", controller.update)
@@ -2489,6 +2498,8 @@ let main =
         {
             main.grid.style.display = 'none';
             main.edit_mode = false;
+            main.grid_canvas.style.display = 'none';
+            main.grid_active = false;
         }
         inspector.showInspectorForSelection();
     },
