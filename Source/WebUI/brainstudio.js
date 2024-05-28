@@ -4,21 +4,21 @@
 
 const widget_classes = 
 [
-"bar-graph",
-"plot",
-"table",
-"marker",
-"path",
-"grid",
-"image",
-"text",
-"rectangle",
-"button",
-"slider-horizontal",
-"drop-down-menu",
-"control-grid",
-"canvas3d",
-"epi-head"
+    "bar-graph",
+    "plot",
+    "table",
+    "marker",
+    "path",
+    "grid",
+    "image",
+    "text",
+    "rectangle",
+    "button",
+    "slider-horizontal",
+    "drop-down-menu",
+    "control-grid",
+    "canvas3d",
+    "epi-head"
 ]
 
 function isEmpty(obj) 
@@ -76,7 +76,6 @@ function deepCopy(source) {
             array.splice(index, 1);
     });
   }
-
 
 
   function removeStringFromStart(mainString, stringToRemove)
@@ -439,6 +438,7 @@ let network = {
                 c.source = changeNameInPath(c.source, inspector.item.name);
             }
             network.rebuildDict();
+            nav.populate();
     },
 
     debug_json()
@@ -1009,7 +1009,7 @@ let breadcrumbs = {
             }
             else
             {
-                h += "<div class='bread dynamic' "+styleStr+" onclick='selector.selectItems([], \""+path+"\")'>"+g+"</div>";    
+                h += "<div class='bread dynamic' "+styleStr+" onclick='selector.selectItems([], \""+path+"\")'>"+g+"</div>";
             }
         }
         h += "</div>";
@@ -1250,6 +1250,10 @@ let inspector = {
         {
             {
                 let row = current_t_body.insertRow(-1);
+                if(p.name == undefined)
+                    {
+                        console.log("HELP!!!");
+                    }
                 let value = item[p.name];
                 let cell1 = row.insertCell(0);
                 let cell2 = row.insertCell(1);
@@ -1261,10 +1265,6 @@ let inspector = {
                     var text = e.clipboardData.getData("text/plain");
                     document.execCommand("insertHTML", false, text); // FIXME: uses deprecated functions
                 });
-
-                // MAP All TYPES HERE
-                if(p.type=="string" || p.type=="int" || p.type=="float")
-                    p.control = "textedit";
 
                 switch(p.control)
                 {
@@ -1439,7 +1439,7 @@ let inspector = {
         inspector.addHeader("Group");
         if(edit_mode)
         {
-            inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]); // , inspector
+            inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], inspector);
         }
         else
         {
@@ -1481,7 +1481,12 @@ let inspector = {
                     network.changeModuleClass(selector.selected_foreground[0], this.value); 
                     selector.selectItems(selector.selected_foreground);
                 });
-                inspector.addDataRows(item, item.parameters||[], this);
+                let template = item.parameters;
+                Object.keys(template).forEach(key => {
+                    template[key].control = "textedit";
+                  });
+
+                inspector.addDataRows(item, template, this);
             }
             else
             {
@@ -2084,7 +2089,6 @@ let main =
         main.map = {};
     },
 
-    
     releaseResizeComponent(evt)
     {
         main.view.removeEventListener('mousemove',main.resizeComponent, true);
