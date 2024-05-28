@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - 24 January, 2024
+## Ikaros 3 Status - 28 May, 2024
 
 | Component | State | Comments |
 | ----|----|----|
@@ -34,12 +34,12 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Input resizing    |<div style="color:green">🟢 OK |     |  |
 | Delays            |<div style="color:#green">🟢 OK | copy not completed |
 | WebUI             |<div style="color:green">🟢 OK | inconsistent modes |
-| API               |<div style="color:#c60">🟡 Partial | command & control missing |
-| BrainStudio       |<div style="color:#c60">🟡 Partial | templates & editing |
-| Message queue     |<div style="color:#c60">🟡 Partial |  |
-| Log               |<div style="color:#c60">🟡 Partial |Log types missing |  |
+| API               |<div style="color:green">🟢 OK | command & control missing |
+| BrainStudio       |<div style="color:green">🟢 OK | brain template missing |
+| Message queue     |<div style="color:green">🟢 OK |  |
+| Log               |<div style="color:green">🟢 OK |Log level not handled |  |
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
-| Editing           |<div style="color:#c60">🟡 Partial |Only for views |
+| Editing           |<div style="color:green">🟢 OK  | |
 | Sockets           |<div style="color:green">🟢 OK |  |
 | UtilityModules    |<div style="color:#c60">🟡 Partial | 9 modules |
 | Named Dimensions  |<div style="color:green">🟢 OK |  |
