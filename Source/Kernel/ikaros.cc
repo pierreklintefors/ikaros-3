@@ -1914,7 +1914,7 @@ INSTALL_CLASS(Module)
 
 
     void
-    Kernel::DoNew(Request & request)// FIXME: CHANGE FILENAME AND RESTART ***************
+    Kernel::DoNew(Request & request)
     {
         Pause(); // Probably not necessary
         New();
@@ -1923,11 +1923,11 @@ INSTALL_CLASS(Module)
 
 
     void
-    Kernel::DoOpen(Request & request) // FIXME: CHANGE FILENAME AND RESTART ***************
+    Kernel::DoOpen(Request & request)
     {
         std::string file = request.parameters["file"];
         Stop();
-        Clear();    // Remove all things
+        Clear();
         options_.filename = files.at(file);
         LoadFile();
         DoUpdate(request);
@@ -1941,25 +1941,15 @@ INSTALL_CLASS(Module)
 
         dictionary d; 
         d.parse_json(request.body);
-
-                // std::cout << "DICTIONARY: " << d.json() << std::endl;
-
-
         std::string data = d.xml("group");
-
-        // std::cout << data << std::endl;
-
         std::ofstream file;
         std::string filename = d["filename"];
         file.open (filename);
         file << data;
         file.close();
-
         Clear();
         options_.filename = filename;
         LoadFile();
-
-
         std::string s = "{\"status\":\"ok\"}"; 
         Dictionary rtheader;
         rtheader.Set("Session-Id", std::to_string(session_id).c_str());
