@@ -530,7 +530,8 @@ table {
 }
 */
 
-/*webui-widget-bar-graph {
+/*
+webui-widget-bar-graph {
 
 }
 */
@@ -540,7 +541,8 @@ webui-widget-button button {
     font-size: 14px;
 }
 
-webui-widget-button button:hover {
+webui-widget-button button:hover
+{
     /* cursor: pointer; */
 }
 
@@ -567,7 +569,7 @@ div.frame {
     /* cursor: move; */
     border: none;
 
-    //display: flex;
+    /*display: flex;*/
     flex-direction: column;
     /* border: none;
     background: none; */
@@ -838,7 +840,7 @@ div.module {
     position: absolute;
     /* z-index: 200; */
     overflow: hidden;
-    background-color: #38383;
+    background-color: #383838;
     border:2px solid #00000000;
     color: yellow;
     /*font-size: 12px;
