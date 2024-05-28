@@ -950,7 +950,7 @@ INSTALL_CLASS(Module)
             Pause();
             dictionary d;
 
-            d["_tag"] = "Group";
+            d["_tag"] = "group";
             d["name"] = "Untitled";
             d["groups"] = list();
             d["modules"] = list();
