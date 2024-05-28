@@ -489,6 +489,11 @@ aside {
     display: none;
 }
 
+#component_inspector
+{
+    padding-right:6px;
+}
+
 aside table {
     width: 100%;
 }
