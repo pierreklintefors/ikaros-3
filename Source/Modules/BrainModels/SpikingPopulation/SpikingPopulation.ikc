@@ -9,6 +9,8 @@
 	<input name="EXCITATION" description="The excitatory input" optional="yes" flatten="yes" />
 	<input name="INHIBITION" description="The excitatory input" optional="yes" flatten="yes" />
 	<input name="DIRECT_IN" description="The direct current input" optional="yes" flatten="yes" />
+	<input name="INTERNAL_TOPOLOGY" description="The internal topology input" optional="yes" flatten="no" />
+	<input name="EXCITATION_TOPOLOGY" description="The excitatory topology input" optional="yes" flatten="no" />
 	
 	<output name="OUTPUT" description="The output" size="@population_size"/>
 </class>

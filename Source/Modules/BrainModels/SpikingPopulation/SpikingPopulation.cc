@@ -13,6 +13,7 @@ class SpikingPopulation: public Module
     matrix resetvolt;
     matrix resetrecovery;
     matrix internal_topology;
+    matrix internal_topology_inp;
     matrix excitation_topology;
     matrix inhibition_topology;
 
@@ -54,6 +55,11 @@ class SpikingPopulation: public Module
         Bind(inhibition, "INHIBITION");
         Bind(output, "OUTPUT"); 
         Bind(direct_input, "DIRECT_IN"); // note has to be same size as pop size
+        Bind(excitation_topology, "EXCITATION_TOPOLOGY");
+        Bind(internal_topology_inp, "INTERNAL_TOPOLOGY");
+
+        internal_topology = matrix(population_size.as_int(), population_size.as_int());
+
         std::cout << "SpikingPopulation::Init() 2)\n";
         if(!direct_input.empty() && direct_input.size() != population_size.as_int()) {
             std::ostringstream oss;
@@ -75,7 +81,7 @@ class SpikingPopulation: public Module
         
         // initialise matrices
         internal_topology = matrix(population_size.as_int(), population_size.as_int());
-
+        internal_topology.set_name("internal topology");
         taurecovery = matrix(population_size.as_int());
         coupling = matrix(population_size.as_int());
         resetvolt = matrix(population_size.as_int());
@@ -141,7 +147,36 @@ class SpikingPopulation: public Module
 
     void Tick()
     {
+        // TODO implement topologies for excitation, inhibition, internal
+        matrix composed_ext_t;
+        matrix composed_inh_t;
         matrix dir_in_tmp (population_size.as_int()); 
+        matrix exc_syn_tmp; // excitatory synapse tmp
+        matrix inh_syn_tmp; // inhibitory synapse tmp
+        matrix int_exc_syn_tmp; // internal excitatory synapse tmp
+        matrix int_inh_syn_tmp; // internal inhibitory synapse tmp
+        int composed_ext_syn_length = 0;
+        int composed_inh_syn_length = 0;
+        
+        // excitation
+        if(!excitation.empty()){
+            exc_syn_tmp = matrix(population_size.as_int(), excitation.size());
+            excitation.apply([this](float c) {return c >= (float) this->threshold ? (float) this->threshold : c;});
+            tile(exc_syn_tmp, excitation, population_size.as_int());
+            if(!excitation_topology.empty()){
+                if(excitation_topology.size_y() == population_size.as_int()
+                && excitation_topology.size_x() == excitation.size())
+                    exc_syn_tmp.multiply(excitation_topology);
+                else
+                    std::cout << "Warning: SpikingPopulation::Tick(): excitation_topology wrong size, not used.\n";
+            }
+            composed_ext_syn_length += excitation.size();
+        } 
+
+        // inhibition
+
+        // direct in
+
         // std::cout << "ok 1\n" ;
         if(!direct_input.empty()){
             std::cout << "populationsize: " << population_size.as_int()
@@ -155,12 +190,51 @@ class SpikingPopulation: public Module
             // copy_array(dir_in_tmp, direct_input, population_size);
             dir_in_tmp.scale(cDirectCurrentScale);
         }
-        // std::cout << "ok 3\n" ;
+        std::cout << "ok 3\n" ;
+        internal_topology_inp.info();
+        std::cout << "--\n";
+        internal_topology.info();
+        // internal topology and synapse composition
+        if(!internal_topology_inp.empty())
+            internal_topology.copy(internal_topology_inp);
+        // always do internal topology even if its filled with 0
+        // because use it to compose synapses for excitation and inh
+        {
+            std::cout << "ok 3.1\n" ;
+            // excitation
+            int_exc_syn_tmp = matrix(population_size.as_int(), population_size.as_int());
+            int_exc_syn_tmp.copy(internal_topology);
+            int_exc_syn_tmp.apply([](float c) {return c > 0.f ? c : 0.f;});
+            std::cout << "ok 4\n" ;
+            matrix output_spikes = matrix(population_size.as_int());
+            output_spikes.copy(output);
+            output_spikes.apply([this](float c){return c >= (float)this->threshold ? (float)this->threshold : 0.f;});
+            std::cout << "ok 5\n" ;
+            matrix output_tiled = matrix(population_size.as_int(), population_size.as_int());
+            tile(output_tiled, output_spikes, population_size.as_int());
+            int_exc_syn_tmp.multiply(output_tiled);
+            composed_ext_syn_length += population_size.as_int();
+            std::cout << "ok 6\n" ;
+            // inhibition
+            int_inh_syn_tmp = matrix(population_size.as_int(), population_size.as_int()); 
+            int_inh_syn_tmp.copy(internal_topology);
+            int_inh_syn_tmp.apply([](float c) {return c < 0.f ? c : 0.f;});
+            int_inh_syn_tmp.multiply(output_tiled);
+            composed_inh_syn_length += population_size.as_int();
 
-        // TODO implement topologies for excitation, inhibition, internal
-        matrix composed_ext_t(direct_input.size(), population_size.as_int());
-        matrix composed_ext_syn_length(direct_input.size(), population_size.as_int());
-        matrix composed_inh_t(direct_input.size(), population_size.as_int());
+        }
+        std::cout << "ok 6\n" ;
+        composed_ext_t = int_exc_syn_tmp;
+        if(!exc_syn_tmp.empty()){
+            composed_ext_t = matrix(population_size.as_int(), composed_ext_syn_length);
+            hstack(composed_ext_t, exc_syn_tmp, int_exc_syn_tmp);
+        }
+        std::cout << "ok 7\n" ;
+        composed_inh_t = int_inh_syn_tmp;
+        if(!inh_syn_tmp.empty()){
+            composed_inh_t = matrix(population_size.as_int(), composed_inh_syn_length);
+            hstack(composed_inh_t, inh_syn_tmp, int_inh_syn_tmp);
+        }
         
         switch(model_type.as_int())
         {
@@ -180,9 +254,15 @@ class SpikingPopulation: public Module
                                 );
             }
         }
+        // vlt.info();
+        // std::cout << "---\n";
+        // output.info();
+        // std::cout << "--- (before)\n";
         output.copy(vlt);
+        // output.info();
+        // std::cout << "--- (after)\n";
 
-        if(static_cast<bool>(debugmode))
+        if((bool)(debugmode))
         {
             // print out debug info
             printf("\n\n---Module %s\n", "TODO get name");
@@ -212,6 +292,7 @@ class SpikingPopulation: public Module
             }
             
         }
+        std::cout << "SpikingPopulation::Tick(): complete\n";
     }
 
     void TimeStep_Iz(           matrix a_a, // tau recovery
@@ -225,7 +306,7 @@ class SpikingPopulation: public Module
                                 matrix &a_u  // recovery
                                 )
     {
-        // std::cout << "step 1)\n";
+        std::cout << "step 1)\n";
         matrix fired(population_size.as_int());
         fired.copy(a_v);
         fired.apply([this](float c){ return c >= (float) this->threshold ? 1.f : 0.f; });
@@ -237,31 +318,32 @@ class SpikingPopulation: public Module
         matrix i1 = matrix(population_size.as_int());
         matrix inputvlt = matrix(population_size.as_int());
 
-        // std::cout << "step 2)\n";
+        std::cout << "step 2)\n";
 
         for(int j = 0; j < population_size.as_int(); j++)
         {
             if(fired[j] == 1.f)
             {
                 a_v[j] = (float)threshold;
-                v1[j] = a_c[j];
+                v1[j] = a_c[j]; // reset voltage
                 u1[j] = a_u[j] + a_d[j];
             }
-            //std::cout << "step 2.1)\n";
+            std::cout << "step 2.1)\n";
             // sum up 
-            for(int i = 0; i < e_syn.size_x(); i++)
+
+            for(int i = 0; !e_syn.empty() && i < e_syn.size_x(); i++)
             {
                 //if(e_syn[j][i] >= threshold) // TAT 2022-09-26: removed since spikes already gated above; result is scaled by synaptic weights
                 inputvlt[j] += e_syn[j][i];
             }
-            //std::cout << "step 2.2)\n";
-            for(int i = 0; i< i_syn.size_x(); i++)
+            std::cout << "step 2.2)\n";
+            for(int i = 0; !i_syn.empty() && i< i_syn.size_x(); i++)
             {
                 //if(i_syn[j][i] >= threshold)
                 inputvlt[j]-= i_syn[j][i];
             }
         }
-        // std::cout << "step 3)\n";
+        std::cout << "step 3)\n";
 
         i1.add(inputvlt, a_i);
         float stepfact = 1.f/(float)substeps;
@@ -279,17 +361,42 @@ class SpikingPopulation: public Module
             // u1[i] += stepfact*(a_a[i]*(a_b[i]*v1[i] - u1[i]));
             u1[i] += (a_a[i]*(a_b[i]*v1[i] - u1[i]));
         }
-        //std::cout << "step 4)\n";
+        std::cout << "step 4)\n";
         
         v1.apply([this](float c) { return c >= (float) this->threshold? (float)this->threshold : c;});
         a_v.copy(v1);
         a_u.copy(u1);
-        a_v.info();
-        //std::cout << "step complete\n";
+        // a_v.info();
+        std::cout << "step complete\n";
 
     }
 
 
+    void tile(matrix &r, matrix &a, int n){
+        // TODO check sizes ok
+        if (r.size_y() != n)
+            std::cout << "SpikingPopulation::tile(): n != r.size_y\n";
+        if (r.size_x() != a.size())
+            std::cout << "SpikingPopulation::tile(): a.size != r.size_x\n";
+
+        for(int j=0; j<n; j++)
+            for(int i=0; i<r.size_x(); i++)
+                r[j][i] = a[i];
+    }
+    void hstack(matrix &target,
+            matrix &a,
+            matrix &b
+            ) {
+    
+        for (int j = 0; j < a.size_y(); ++j) {
+            for (int i = 0; i < a.size_x(); ++i) {
+                target[j][i] = a[j][i];
+            }
+            for (int i = 0; i < b.size_x(); ++i) {
+                target[j][i + a.size_x()] = b[j][i];
+            }
+        }
+    }
 };
 
 INSTALL_CLASS(SpikingPopulation)
