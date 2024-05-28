@@ -915,7 +915,7 @@ INSTALL_CLASS(Module)
         void
         Kernel::Clear()
         {
-            std::cout << "Kernel::Clear" << std::endl;
+            //std::cout << "Kernel::Clear" << std::endl;
             // FIXME: retain persistent components
             components.clear();
             connections.clear();
@@ -943,7 +943,7 @@ INSTALL_CLASS(Module)
         void
         Kernel::New()
         {
-            std::cout << "Kernel::New" << std::endl;
+            //std::cout << "Kernel::New" << std::endl;
             log.push_back(Message("New file"));
        
             Clear();
@@ -1340,7 +1340,7 @@ INSTALL_CLASS(Module)
 
     void Kernel::InitComponents()
     {
-             std::cout << "Running Kernel::InitComponents()" << std::endl;
+        //std::cout << "Running Kernel::InitComponents()" << std::endl;
         // Call Init for all modules (after CalcalateSizes and Allocate)
         for(auto & c : components)
             try
@@ -1390,7 +1390,7 @@ INSTALL_CLASS(Module)
 
     void Kernel::LoadFile()
     {
-            std::cout << "Kernel::LoadFile" << std::endl;
+            //std::cout << "Kernel::LoadFile" << std::endl;
             try
             {
                 dictionary d = dictionary(options_.filename);
@@ -1412,10 +1412,10 @@ INSTALL_CLASS(Module)
 
     void Kernel::Save() // Simple save function in present file
     {
-        std::cout << "Kernel::Save" << std::endl;
+        //std::cout << "Kernel::Save" << std::endl;
         std::string data = xml();
 
-        std::cout << data << std::endl;
+        //std::cout << data << std::endl;
 
         std::ofstream file;
         std::string filename = info_["filename"];
@@ -1937,7 +1937,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoSave(Request & request)
     {
-        std::cout << "SAVE: " << request.body << std::endl;
+        //std::cout << "SAVE: " << request.body << std::endl;
 
         dictionary d; 
         d.parse_json(request.body);
@@ -2199,7 +2199,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DeleteWidget(Request & request)
     {
-        std::cout << "DeleteWidget: "  << std::endl;
+        //std::cout << "DeleteWidget: "  << std::endl;
 /*
         int index = std::stoi(request.parameters["index"]);
         list view = list(GetView(request)["widgets"]);
@@ -2216,7 +2216,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::SetWidgetParameters(Request & request)
     {
-        std::cout << "SetWidgetParameters: " << std::endl;
+        //std::cout << "SetWidgetParameters: " << std::endl;
 
         int index = request.parameters.get_int("_index_");
         //list u = list(GetView(request)["widgets"]);
@@ -2229,7 +2229,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::WidgetToFront(Request & request)
     {
-        std::cout << "SetWidgetToFront: " << std::endl;
+        //std::cout << "SetWidgetToFront: " << std::endl;
 
         int index = request.parameters.get_int("index");
 /*
@@ -2252,7 +2252,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::WidgetToBack(Request & request)
     {
-        std::cout << "SetWidgetToBack: " << std::endl;
+        //std::cout << "SetWidgetToBack: " << std::endl;
 
         int index = request.parameters.get_int("index");
 /*
@@ -2285,7 +2285,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoAddGroup(Request & request)
     {
-        std::cout << "DoAddGroup: *** " << std::endl;
+        //std::cout << "DoAddGroup: *** " << std::endl;
 
         DoSendData(request);
     }
@@ -2294,7 +2294,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoAddModule(Request & request)
     {
-        std::cout << "DoAddModule: *** " << std::endl;
+       // std::cout << "DoAddModule: *** " << std::endl;
 
         DoSendData(request);
     }
@@ -2305,7 +2305,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoSetAttribute(Request & request)
     {
-        std::cout << "DoSetAttribute: " << std::endl;
+       // std::cout << "DoSetAttribute: " << std::endl;
 
         DoSendData(request);
     }
@@ -2314,7 +2314,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoAddConnection(Request & request)
     {
-        std::cout << "DoAddConnection: " << std::endl;
+        //std::cout << "DoAddConnection: " << std::endl;
 
         DoSendData(request);
     }
@@ -2323,7 +2323,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoSetRange(Request & request)
     {
-        std::cout << "DoSetRange: " << std::endl;
+        //std::cout << "DoSetRange: " << std::endl;
 
         DoSendData(request);
     }
