@@ -266,7 +266,8 @@ public:
     std::map<std::string, std::string>  parameters;
 
     Class() {};
-    Class(std::string n, std::string p); //  : module_creator(nullptr), name(n), path(p) { };
+    Class(std::string n, std::string p);
+    Class(std::string n, ModuleCreator mc);
 
     void print();
 };
@@ -478,7 +479,9 @@ class InitClass
 public:
     InitClass(const char * name, ModuleCreator mc)
     {
-        kernel().classes.at(name).module_creator = mc;
+        //kernel().classes.at(name).module_creator = mc;
+        kernel().classes[name].name = name;
+        kernel().classes[name].module_creator = mc;
     }
 };
 

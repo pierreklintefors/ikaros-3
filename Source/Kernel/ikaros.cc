@@ -884,6 +884,12 @@ INSTALL_CLASS(Module)
          //   info_ = dictionary(path);
         }
 
+        Class::Class(std::string n, ModuleCreator mc) : module_creator(mc), name(n)
+        {
+         //   info_ = dictionary(path);
+        }
+
+
         void 
         Class::print()
         {
@@ -1005,7 +1011,7 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ScanClasses(std::string path)
+    void Kernel::ScanClasses(std::string path) // FIXME: Add error handling
     {
         if(!std::filesystem::exists(path))
         {
@@ -1017,7 +1023,8 @@ INSTALL_CLASS(Module)
             if(std::string(p.path().extension())==".ikc")
             {
                 std::string name = p.path().stem();
-                classes[name] = Class(name, p.path());
+                classes[name].path = p.path();
+                classes[name].info_ = dictionary(p.path());
             }
     }
 
@@ -1230,8 +1237,8 @@ INSTALL_CLASS(Module)
         cpu_cores = std::thread::hardware_concurrency();
         std::cout << std::filesystem::current_path() << std::endl;
 
-            ScanClasses("../Source/Modules");
-            ScanFiles("../Source/Modules");
+           // ScanClasses("../Source/Modules");
+            //ScanFiles("../Source/Modules");
     }
 
     // Functions for creating the network
