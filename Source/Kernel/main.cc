@@ -37,7 +37,7 @@ bool debug_mode = false;
             return 0;
         }
 
-        k.webui_dir = o.ikaros_root+"/Source/WebUI/";   // FIXME: Use consistent tile paths without "/"
+        k.webui_dir = o.ikaros_root+"/Source/WebUI/";   // FIXME: Use consistent file paths without "/"
         k.ScanClasses(o.ikaros_root+"/Source/Modules");
         k.ScanFiles(o.ikaros_root+"/Source/Modules");
 
