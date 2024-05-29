@@ -2,7 +2,7 @@
 
 using namespace ikaros;
 
-class Add: public Module
+class Max: public Module
 {
     matrix      input1;
     matrix      input2;
@@ -27,5 +27,5 @@ class Add: public Module
 };
 
 
-INSTALL_CLASS(Add)
+INSTALL_CLASS(Max)
 
