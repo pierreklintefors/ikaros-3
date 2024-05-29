@@ -37,6 +37,9 @@ bool debug_mode = false;
             return 0;
         }
 
+        k.ScanClasses("../Source/Modules");
+
+
 #if DEBUG
         std::cout << "Ikaros 3.0 Starting (Debug)\n" << std::endl;
 #else
