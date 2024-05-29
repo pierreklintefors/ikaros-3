@@ -192,14 +192,17 @@ namespace ikaros
         return s;
     }
 
+    // FIXME: Use _tag for elememt name
+
     std::string  
     dictionary::xml(std::string name, int depth, std::string exclude)
     {
         std::string s = tab(depth)+"<"+name;
         for(auto & a : *dict_)
             if(!a.second.is_list())
-                if(!a.second.is_null()) // DO not include null attributes - but include empty strings
-            s += " "+a.first + "=\"" +std::string(a.second)+"\"";
+                if(!a.second.is_null()) // Do not include null attributes - but include empty strings
+                    if(a.first != "_tag") // Do not include tag attributes since the are used as element name
+                        s += " "+a.first + "=\"" +std::string(a.second)+"\"";
 
         std::string sep = ">\n";
         for(auto & e : *dict_)
