@@ -37,8 +37,9 @@ bool debug_mode = false;
             return 0;
         }
 
-        k.ScanClasses("../Source/Modules");
-
+        k.webui_dir = o.ikaros_root+"/Source/WebUI/";   // FIXME: Use consistent tile paths without "/"
+        k.ScanClasses(o.ikaros_root+"/Source/Modules");
+        k.ScanFiles(o.ikaros_root+"/Source/Modules");
 
 #if DEBUG
         std::cout << "Ikaros 3.0 Starting (Debug)\n" << std::endl;

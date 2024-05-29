@@ -13,6 +13,7 @@ namespace ikaros {
     class options
     {
     public:
+        std::string ikaros_root;    // Path to binary as indicated in argv
         std::string filename;                   // If only one, or empty string if none
         std::vector<std::string> filenames;
         std::map<std::string, std::string> d;
@@ -36,6 +37,10 @@ namespace ikaros {
                 throw std::runtime_error("Too many input parameters");
             if (argc < 1)
                 throw std::runtime_error("Too few input parameters");
+
+            std::filesystem::path p(argv[0]);
+            ikaros_root = std::filesystem::canonical(p.parent_path().string()+"/..");
+
             const std::vector<std::string> args(argv+1, argv+argc);
             for(auto & s: args)
             {

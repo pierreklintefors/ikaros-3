@@ -1231,14 +1231,10 @@ INSTALL_CLASS(Module)
         stop_after(-1),
         tick_duration(1),
         shutdown(false),
-        session_id(new_session_id()),
-        webui_dir("../Source/WebUI/") // FIXME: get from somewhere else
+        session_id(new_session_id())
+        //webui_dir("../Source/WebUI/") // FIXME: get from somewhere else
     {
         cpu_cores = std::thread::hardware_concurrency();
-        std::cout << std::filesystem::current_path() << std::endl;
-
-           // ScanClasses("../Source/Modules");
-            //ScanFiles("../Source/Modules");
     }
 
     // Functions for creating the network
@@ -1997,7 +1993,6 @@ INSTALL_CLASS(Module)
     Kernel::DoSendFile(std::string file)
     {
         //std::this_thread::sleep_for(milliseconds(200));
-        //std::cin.get(); 
 
         if(file[0] == '/')
             file = file.erase(0,1); // Remove initial slash
