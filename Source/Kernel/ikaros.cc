@@ -1944,9 +1944,10 @@ INSTALL_CLASS(Module)
 
         dictionary d; 
         d.parse_json(request.body);
+        std::string filename = d["filename"];
+        d["filename"] = null(); // FIXME: remove propery later
         std::string data = d.xml("group");
         std::ofstream file;
-        std::string filename = d["filename"];
         file.open (filename);
         file << data;
         file.close();
