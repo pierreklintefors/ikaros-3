@@ -459,6 +459,7 @@ class WebUIWidget extends HTMLElement
 
     parameterChangeNotification(p)
     {
+        //alert("parameterChangeNotification");
         this.updateAll();
         interaction.setWidgetParameter(p);
     }
