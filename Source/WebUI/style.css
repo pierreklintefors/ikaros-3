@@ -1017,6 +1017,7 @@ svg *{
 
 .gi.selected {
     border: 3px solid orange;
+    box-shadow: 5px 5px 5px grey;
 }
 
 .gi {
