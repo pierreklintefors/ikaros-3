@@ -308,7 +308,7 @@ namespace ikaros
         {
             if(value.isString())
             {
-                std::cout << key << ": " << value.asString() << std::endl;
+                //std::cout << key << ": " << value.asString() << std::endl;
                 d[key] = value.asString();
             }
             else if(value.isNull())
@@ -331,7 +331,7 @@ namespace ikaros
             }
             else if(value.isArray())
             {
-                std::cout << key << ": " << "ARRAY" << std::endl;
+                //std::cout << key << ": " << "ARRAY" << std::endl;
                 list l;
                 copy_from_json(l, value.asArray());
                 d[key] = l;
