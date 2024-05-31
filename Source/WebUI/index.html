@@ -54,15 +54,37 @@
     <script src="js/loaders/GLTFLoader.js" defer></script>
     <script src="js/libs/stats.min.js" defer></script>
 
+    <script>
+        function showSystemFileList()
+        {
+            document.getElementById('openDialogSystemItems').style.display='block';
+            document.getElementById('openDialogUserItems').style.display='none';
+        }
+    
+        function showUserFileList()
+        {
+            document.getElementById('openDialogSystemItems').style.display='none';
+            document.getElementById('openDialogUserItems').style.display='block';
+        }
+        </script>
+
     <dialog id="openDialog">
         <p id="openDialogTitle"></p>
-        <select size="14" id="openDialogItems" style="width:100%">
+        <p>
+                <button onclick="showSystemFileList()">System</button>&nbsp;&nbsp;
+                <button onclick="showUserFileList()">User</button>
+        </p>
+        <select size="14" id="openDialogSystemItems" style="width:100%; display:block"">
+        </select>
+        <select size="14" id="openDialogUserItems" style="width:100%; display:none">
         </select>
         <menu>
             <button  onclick="dialog.cancelOpen()">Cancel</button>
             <button onclick="dialog.confirmOpen()">Open</button>
         </menu>
     </dialog>
+
+
 
 	<header style="display:none">
         <div  class="breadcrumbs" id="breadcrumbs">

@@ -1029,21 +1029,25 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ScanFiles(std::string path)
+    void Kernel::ScanFiles(std::string path, bool system)
     {
         if(!std::filesystem::exists(path))
         {
             std::cout << "Could not scan for files in \""+path+"\". Directory not found." << std::endl;
             return;
         }
-        int i=0;
         for(auto& p: std::filesystem::recursive_directory_iterator(path))
             if(std::string(p.path().extension())==".ikg")
             {
                 std::string name = p.path().stem();
-                 files[name] = p.path();
+
+                if(system)
+                     system_files[name] = p.path();
+                else
+                     user_files[name] = p.path(); 
             }
     }
+
 
 
     void Kernel::ListClasses()
@@ -1132,8 +1136,8 @@ INSTALL_CLASS(Module)
         }
 
         //std::cout << "\nDelays:" << std::endl;
-        for(auto & o : buffers)
-            std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
+        //for(auto & o : buffers)
+        //    std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
     }
 
 
@@ -1144,7 +1148,7 @@ INSTALL_CLASS(Module)
         {
             if(it.second <= 1)
                 continue;
-            std::cout << "\t" << it.first << std::endl;
+            //std::cout << "\t" << it.first << std::endl;
             circular_buffers.emplace(it.first, CircularBuffer(buffers[it.first], it.second)); // FIXME: Change to initialization list in C++20
         }
     }
@@ -1929,9 +1933,13 @@ INSTALL_CLASS(Module)
     Kernel::DoOpen(Request & request)
     {
         std::string file = request.parameters["file"];
+        std::string where = request.parameters["where"];
         Stop();
         Clear();
-        options_.filename = files.at(file);
+        if(where == "system")
+            options_.filename = system_files.at(file);
+        else
+            options_.filename = user_files.at(file);
         LoadFile();
         DoUpdate(request);
     }
@@ -1944,7 +1952,8 @@ INSTALL_CLASS(Module)
 
         dictionary d; 
         d.parse_json(request.body);
-        std::string filename = d["filename"];
+        std::filesystem::path path = std::string(d["filename"]);
+        std::string filename = path.filename();
         d["filename"] = null(); // FIXME: remove propery later
         std::string data = d.xml("group");
         std::ofstream file;
@@ -2414,14 +2423,26 @@ INSTALL_CLASS(Module)
         header.Set("Pragma", "no-cache");
         socket->SendHTTPHeader(&header);
         std::string sep;
-    socket->Send("{\"files\":[\n\t\"");
-        for(auto & f: files)
+    socket->Send("{\"system_files\":[\n\t\"");
+        for(auto & f: system_files)
         {
             socket->Send(sep);
             socket->Send(f.first);
             sep = "\",\n\t\"";
         }
-    socket->Send("\"\n]\n}\n");
+    socket->Send("\"\n],\n");
+    
+    sep = "";
+    socket->Send("\"user_files\":[\n\t\"");
+        for(auto & f: user_files)
+        {
+            socket->Send(sep);
+            socket->Send(f.first);
+            sep = "\",\n\t\"";
+        }
+    socket->Send("\"\n]\n");
+
+    socket->Send("}\n");
     }
 
 

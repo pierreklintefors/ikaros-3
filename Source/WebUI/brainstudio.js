@@ -242,11 +242,30 @@ function resetCookies()
 let dialog = {
     confirmOpen: function()
     {
-        let sel = document.getElementById("openDialogItems");
-        let text= sel.options[sel.selectedIndex].text;
-        dialog.window.close(text);
-            if(dialog.callback)
-                dialog.callback(text);
+        try
+        {
+            let sys = document.getElementById("openDialogSystemItems");
+            if(sys.style.display=='block')
+            {
+                let sel = document.getElementById("openDialogSystemItems");
+                let text= sel.options[sel.selectedIndex].text;
+                dialog.window.close(text);
+                    if(dialog.callback)
+                        dialog.callback(text, 'system');
+            }
+            else
+            {
+                let sel = document.getElementById("openDialogUserItems");
+                let text= sel.options[sel.selectedIndex].text;
+                dialog.window.close(text);
+                    if(dialog.callback)
+                        dialog.callback(text, 'user');
+            }
+        }
+        catch(err)
+        {
+            alert("error opening file");
+        }
     },
         
     cancelOpen: function()
@@ -258,16 +277,29 @@ let dialog = {
     {
         dialog.callback = callback;
         dialog.window = document.getElementById('openDialog');
-        let sel = document.getElementById('openDialogItems');
+        let sel = document.getElementById('openDialogSystemItems');
         sel.innerHTML = '';
-        if(file_list)
-            for(i of file_list) // FIXME: TEST was .split(",")
+        let usel = document.getElementById('openDialogUserItems');
+        usel.innerHTML = '';
+
+        if(file_list.system_files)
+            for(i of file_list.system_files)
             {
                 var opt = document.createElement('option');
                 opt.value = i;
                 opt.innerHTML = i;
-                document.getElementById('openDialogItems').appendChild(opt);
+                document.getElementById('openDialogSystemItems').appendChild(opt);
             }
+
+            if(file_list.user_files)
+                for(i of file_list.user_files)
+                {
+                    var opt = document.createElement('option');
+                    opt.value = i;
+                    opt.innerHTML = i;
+                    document.getElementById('openDialogUserItems').appendChild(opt);
+                }
+
             if(message)
             {
                 document.getElementById('openDialogTitle').innerText = message;
@@ -576,9 +608,9 @@ let controller = {
         controller.queueCommand('new');
     },
 
-    openCallback: function(x)
+    openCallback: function(filename, where)
     {
-        controller.get("open?file="+x, controller.update);
+        controller.get("open?where="+where+"&file="+filename, controller.update);
     },
 
     open: function () {
@@ -951,7 +983,7 @@ let controller = {
             return response.json();
         })
         .then(json => {
-            controller.filelist = json.files || [];
+            controller.filelist = json;
         })
         .catch(function () {
             console.log("Could not get file list from server.");

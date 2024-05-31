@@ -302,8 +302,10 @@ public:
     dictionary                              info_;
     options                                 options_;
     std::string                             webui_dir;
+    std::string                             user_dir;
     std::map<std::string, Class>            classes;
-    std::map<std::string, std::string>      files;                  // ikg-files
+    std::map<std::string, std::string>      system_files; // ikg-files
+    std::map<std::string, std::string>      user_files;   // ikg-files  
     std::map<std::string, Component *>      components;
     std::vector<Connection>                 connections;
     std::map<std::string, matrix>           buffers;                // IO-structure    
@@ -362,7 +364,7 @@ public:
 
     bool Terminate();
     void ScanClasses(std::string path);
-    void ScanFiles(std::string path);
+    void ScanFiles(std::string path, bool system=true);
 
     void ListClasses();
     void ResolveParameter(parameter & p,  std::string & name,  std::string & default_value);
