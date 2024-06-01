@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - 28 May, 2024
+## Ikaros 3 Status - 1 June, 2024
 
 | Component | State | Comments |
 | ----|----|----|
@@ -41,7 +41,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Encryption        |<div style="color:#e00">🔴 Pending |  |
 | Editing           |<div style="color:green">🟢 OK  | |
 | Sockets           |<div style="color:green">🟢 OK |  |
-| UtilityModules    |<div style="color:#c60">🟡 Partial | 9 modules |
+| UtilityModules    |<div style="color:#c60">🟡 Partial | 16 modules |
 | Named Dimensions  |<div style="color:green">🟢 OK |  |
 
 ## Basic Start-up Parameters
