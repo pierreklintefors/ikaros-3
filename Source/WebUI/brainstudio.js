@@ -702,7 +702,7 @@ let controller = {
 
     init: function ()
     {
-        controller.getFiles();
+        //controller.getFiles();
         controller.getClasses();
         controller.getClassInfo();
         controller.requestUpdate();
@@ -1083,7 +1083,7 @@ let controller = {
         })
     },
 
-    getFiles() {
+    getFiles() { // not called
         fetch('/files', {method: 'GET', headers: {"Session-Id": controller.session_id, "Client-Id": controller.client_id}})
         .then(response => {
             if (!response.ok) {
