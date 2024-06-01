@@ -57,26 +57,26 @@
     <script>
         function showSystemFileList()
         {
-            document.getElementById('openDialogSystemItems').style.display='block';
-            document.getElementById('openDialogUserItems').style.display='none';
+            document.getElementById('open_dialog_system_items').style.display='block';
+            document.getElementById('open_dialog_user_items').style.display='none';
         }
     
         function showUserFileList()
         {
-            document.getElementById('openDialogSystemItems').style.display='none';
-            document.getElementById('openDialogUserItems').style.display='block';
+            document.getElementById('open_dialog_system_items').style.display='none';
+            document.getElementById('open_dialog_user_items').style.display='block';
         }
         </script>
 
-    <dialog id="openDialog">
-        <p id="openDialogTitle"></p>
+    <dialog id="open_dialog">
+        <p id="open_dialog_title"></p>
         <p>
                 <button onclick="showSystemFileList()">System</button>&nbsp;&nbsp;
                 <button onclick="showUserFileList()">User</button>
         </p>
-        <select size="14" id="openDialogSystemItems" style="width:100%; display:block"">
+        <select size="14" id="open_dialog_system_items" style="width:100%; display:block"">
         </select>
-        <select size="14" id="openDialogUserItems" style="width:100%; display:none">
+        <select size="14" id="open_dialog_user_items" style="width:100%; display:none">
         </select>
         <menu>
             <button  onclick="dialog.cancelOpen()">Cancel</button>

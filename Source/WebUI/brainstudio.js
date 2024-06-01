@@ -238,7 +238,7 @@ function resetCookies()
  *
  *
  */
-
+/*
 let dialog = {
     confirmOpen: function()
     {
@@ -307,6 +307,75 @@ let dialog = {
         dialog.window.showModal();
     }
 }
+
+*/
+
+let dialog = {
+    window: null,
+    callback: null,
+
+    confirmOpen: function() {
+        try {
+            let dialogType = this.getDialogType();
+            let sel = document.getElementById(`open_dialog_${dialogType}_items`);
+            let text = sel.options[sel.selectedIndex].text;
+            
+            this.window.close(text);
+            
+            if (this.callback) {
+                this.callback(text, dialogType);
+            }
+        } catch (err) {
+            alert("Error opening file");
+        }
+    },
+
+    cancelOpen: function() {
+        this.window.close(null);
+    },
+
+    showOpenDialog: function(file_list, callback, message) {
+        this.setupDialog(callback);
+        this.populateFileList(file_list);
+        this.displayMessage(message);
+        this.window.showModal();
+    },
+
+    getDialogType: function() {
+        let sys = document.getElementById("open_dialog_system_items");
+        return sys.style.display === 'block' ? 'system' : 'user';
+    },
+
+    setupDialog: function(callback) {
+        this.callback = callback;
+        this.window = document.getElementById('open_dialog');
+    },
+
+    populateFileList: function(file_list) {
+        this.populateOptions('system', file_list.system_files);
+        this.populateOptions('user', file_list.user_files);
+    },
+
+    populateOptions: function(type, files) {
+        if (files) {
+            let sel = document.getElementById(`open_dialog_${type}_items`);
+            sel.innerHTML = '';  // Clear previous options
+            files.forEach(file => {
+                let opt = document.createElement('option');
+                opt.value = file;
+                opt.text = file;
+                sel.appendChild(opt);
+            });
+        }
+    },
+
+    displayMessage: function(message) {
+        if (message) {
+            document.getElementById('open_dialog_title').innerText = message;
+        }
+    }
+};
+
 
 let network = {
     network: null,
