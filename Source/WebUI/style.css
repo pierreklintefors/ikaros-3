@@ -98,11 +98,12 @@ dialog::backdrop {
       padding:10px 20px 20px 20px;
   }
   
-  #open_dialog button {
+  #open_dialog .button {
       height:26px;
       width:80px;
       font-size:12px;
-  
+      padding: 8px;
+    cursor: pointer;
   }
   
   #open_dialog menu {
@@ -122,6 +123,11 @@ dialog::backdrop {
   #open_dialog select option:nth-child(odd) { 
   background: #efefef; 
   }
+
+  #open_dialog .button.selected {
+    border: 2px solid black;
+  }
+
 
 body {
     display: flex;

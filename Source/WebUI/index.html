@@ -54,25 +54,11 @@
     <script src="js/loaders/GLTFLoader.js" defer></script>
     <script src="js/libs/stats.min.js" defer></script>
 
-    <script>
-        function showSystemFileList()
-        {
-            document.getElementById('open_dialog_system_items').style.display='block';
-            document.getElementById('open_dialog_user_items').style.display='none';
-        }
-    
-        function showUserFileList()
-        {
-            document.getElementById('open_dialog_system_items').style.display='none';
-            document.getElementById('open_dialog_user_items').style.display='block';
-        }
-        </script>
-
     <dialog id="open_dialog">
         <p id="open_dialog_title"></p>
         <p>
-                <button onclick="showSystemFileList()">System</button>&nbsp;&nbsp;
-                <button onclick="showUserFileList()">User</button>
+                <span id="system_file_button" onclick="dialog.showSystemFileList()" class="button selected">System Files</span>&nbsp;&nbsp;
+                <span id="user_file_button" onclick="dialog.showUserFileList()" class="button">User Files</span>
         </p>
         <select size="14" id="open_dialog_system_items" style="width:100%; display:block"">
         </select>

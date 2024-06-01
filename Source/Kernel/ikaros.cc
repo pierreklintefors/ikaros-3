@@ -1018,7 +1018,6 @@ INSTALL_CLASS(Module)
             std::cout << "Could not scan for classes \""+path+"\". Directory not found." << std::endl;
             return;
         }
-        int i=0;
         for(auto& p: std::filesystem::recursive_directory_iterator(path))
             if(std::string(p.path().extension())==".ikc")
             {
@@ -2416,6 +2415,15 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoSendFileList(Request & request)
     {
+        // Scan for files
+
+        system_files.clear();
+        user_files.clear();
+        ScanFiles(options_.ikaros_root+"/Source/Modules");
+        ScanFiles(options_.ikaros_root+"/UserData", false);
+
+        // Send result
+
         Dictionary header;
         header.Set("Content-Type", "text/json");
         header.Set("Cache-Control", "no-cache");

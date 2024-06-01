@@ -40,8 +40,10 @@ bool debug_mode = false;
         k.webui_dir = o.ikaros_root+"/Source/WebUI/";   // FIXME: Use consistent file paths without "/" at end
         k.user_dir = o.ikaros_root+"/UserData/";    // FIXME: Use consistent file paths without "/" at end
         k.ScanClasses(o.ikaros_root+"/Source/Modules");
-        k.ScanFiles(o.ikaros_root+"/Source/Modules");
-        k.ScanFiles(o.ikaros_root+"/UserData", false);
+        k.ScanClasses(o.ikaros_root+"/Source/UserModules");
+
+        //k.ScanFiles(o.ikaros_root+"/Source/Modules");
+        //k.ScanFiles(o.ikaros_root+"/UserData", false);
 
         std::filesystem::current_path(k.user_dir);
 

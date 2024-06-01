@@ -334,11 +334,33 @@ let dialog = {
         this.window.close(null);
     },
 
-    showOpenDialog: function(file_list, callback, message) {
-        this.setupDialog(callback);
-        this.populateFileList(file_list);
-        this.displayMessage(message);
-        this.window.showModal();
+    showOpenDialog: function(callback, message) {
+
+
+
+        fetch('/files', {method: 'GET', headers: {"Session-Id": controller.session_id, "Client-Id": controller.client_id}})
+        .then(response => {
+            if (!response.ok) {
+                alert("ould not get file list from server.");
+                throw new Error("HTTP error " + response.status);
+            }
+            return response.json();
+        })
+        .then(json => {
+            controller.filelist = json;
+            this.setupDialog(callback);
+            this.populateFileList(controller.filelist);
+            this.displayMessage(message);
+            this.window.showModal();
+        })
+        .catch(function () {
+            alert("ould not get file list from server.");
+            console.log("Could not get file list from server.");
+        })
+
+
+
+
     },
 
     getDialogType: function() {
@@ -373,6 +395,24 @@ let dialog = {
         if (message) {
             document.getElementById('open_dialog_title').innerText = message;
         }
+    },
+
+    showSystemFileList: function() {
+
+        system_file_button
+
+        document.getElementById('system_file_button').classList.add("selected");
+        document.getElementById('user_file_button').classList.remove("selected");
+        document.getElementById('open_dialog_system_items').style.display='block';
+        document.getElementById('open_dialog_user_items').style.display='none';
+
+    },
+
+    showUserFileList: function() {
+        document.getElementById('system_file_button').classList.remove("selected");
+        document.getElementById('user_file_button').classList.add("selected");
+        document.getElementById('open_dialog_system_items').style.display='none';
+        document.getElementById('open_dialog_user_items').style.display='block';
     }
 };
 
@@ -684,7 +724,7 @@ let controller = {
 
     open: function () {
 
-        dialog.showOpenDialog(controller.filelist, controller.openCallback, "Select file to open");
+        dialog.showOpenDialog(controller.openCallback, "Select file to open");
     },
 
     save: function () {
