@@ -95,6 +95,18 @@ namespace ikaros
             return  list_->at(i);
         }
 
+
+list list::deepCopy() const
+{
+    list new_list;
+    for (const auto& v : *list_)
+    {
+        new_list.push_back(v.deepCopy());
+    }
+    return new_list;
+}
+
+
         std::ostream& 
         operator<<(std::ostream& os, const list & v)
         {
@@ -361,7 +373,15 @@ namespace ikaros
 
 
 
-
+    dictionary dictionary::deepCopy() const
+    {
+        dictionary new_dict;
+        for (const auto& [key, val] : *dict_)
+        {
+            new_dict[key] = val.deepCopy();
+        }
+        return new_dict;
+    }
 
 
 
@@ -449,8 +469,9 @@ namespace ikaros
                 return std::get<bool>(value_) ? "true" : "false";
             if(std::holds_alternative<int>(value_))
                 return std::to_string(std::get<int>(value_));
-            if(std::holds_alternative<float>(value_))
-                return std::to_string(std::get<float>(value_));
+            if(std::holds_alternative<double>(value_))
+                return formatNumber(std::get<double>(value_));
+                //return std::to_string(std::get<double>(value_));
             if(std::holds_alternative<std::string>(value_))
                 return std::get<std::string>(value_);
             else if(std::holds_alternative<list>(value_))
@@ -458,9 +479,9 @@ namespace ikaros
             else if(std::holds_alternative<dictionary>(value_))
                 return std::string(std::get<dictionary>(value_));
             else if(std::holds_alternative<null>(value_))
-                return "null";                                              // FIXME: return rempty string???
+                return "null";
             else
-                return "*";
+                return "*"; // FIXME: Throw exception
         }
 
         std::string  
@@ -518,6 +539,22 @@ namespace ikaros
         }
 
 
+    value value::deepCopy() const
+{
+        if(std::holds_alternative<null>(value_))
+            return value(null());
+        if(std::holds_alternative<bool>(value_))
+            return value(std::get<bool>(value_));
+        if(std::holds_alternative<double>(value_))
+            return value(static_cast<double>(std::get<double>(value_)));
+        if(std::holds_alternative<std::string>(value_))
+            return value(std::get<std::string>(value_));
+        if(std::holds_alternative<list>(value_))
+            return value(std::get<list>(value_).deepCopy());
+        if(std::holds_alternative<dictionary>(value_))
+            return value(std::get<dictionary>(value_).deepCopy());    
+        return value();
+    }
 /*
 
         void  
@@ -527,5 +564,200 @@ namespace ikaros
         }
 */
 
-};
 
+
+//
+// EXPERIMENTAL JSON PARSING
+//
+
+#include <cctype>
+#include <stdexcept>
+
+// Helper functions for parsing
+namespace
+{
+    void skip_whitespace(const std::string& s, size_t& pos)
+    {
+        while (pos < s.length() && std::isspace(s[pos]))
+            ++pos;
+    }
+
+    std::string parse_string(const std::string& s, size_t& pos)
+    {
+        if(s[pos] != '"')
+            throw std::runtime_error("Expected '\"' at the beginning of string");
+
+        ++pos; // Skip the opening quote
+        std::string result;
+        while (pos < s.length() && s[pos] != '"')
+        {
+            if(s[pos] == '\\')
+            {
+                ++pos; // Skip the escape character
+                if(pos >= s.length())
+                    throw std::runtime_error("Unexpected end of string");
+                switch (s[pos])
+                {
+                    case '"': result += '"'; break;
+                    case '\\': result += '\\'; break;
+                    case '/': result += '/'; break;
+                    case 'b': result += '\b'; break;
+                    case 'f': result += '\f'; break;
+                    case 'n': result += '\n'; break;
+                    case 'r': result += '\r'; break;
+                    case 't': result += '\t'; break;
+                    default:
+                        throw std::runtime_error("Invalid escape sequence");
+                }
+            }
+            else
+            {
+                result += s[pos];
+            }
+            ++pos;
+        }
+        if(pos >= s.length() || s[pos] != '"')
+            throw std::runtime_error("Expected '\"' at the end of string");
+
+        ++pos; // Skip the closing quote
+        return result;
+    }
+
+    value parse_value(const std::string& s, size_t& pos);
+
+    list parse_array(const std::string& s, size_t& pos)
+    {
+        if(s[pos] != '[')
+            throw std::runtime_error("Expected '[' at the beginning of array");
+
+        ++pos; // Skip the opening bracket
+        list result;
+        skip_whitespace(s, pos);
+        if(s[pos] == ']')
+        {
+            ++pos; // Skip the closing bracket
+            return result;
+        }
+
+        while (pos < s.length())
+        {
+            result.push_back(parse_value(s, pos));
+            skip_whitespace(s, pos);
+            if(s[pos] == ']')
+            {
+                ++pos; // Skip the closing bracket
+                return result;
+            }
+            if(s[pos] != ',')
+                throw std::runtime_error("Expected ',' in array");
+            ++pos; // Skip the comma
+            skip_whitespace(s, pos);
+        }
+
+        throw std::runtime_error("Unexpected end of array");
+    }
+
+    dictionary parse_object(const std::string& s, size_t& pos)
+    {
+        if(s[pos] != '{')
+            throw std::runtime_error("Expected '{' at the beginning of object");
+
+        ++pos; // Skip the opening brace
+        dictionary result;
+        skip_whitespace(s, pos);
+        if(s[pos] == '}')
+        {
+            ++pos; // Skip the closing brace
+            return result;
+        }
+
+        while (pos < s.length())
+        {
+            skip_whitespace(s, pos);
+            std::string key = parse_string(s, pos);
+            skip_whitespace(s, pos);
+            if(s[pos] != ':')
+                throw std::runtime_error("Expected ':' in object");
+            ++pos; // Skip the colon
+            skip_whitespace(s, pos);
+            result[key] = parse_value(s, pos);
+            skip_whitespace(s, pos);
+            if(s[pos] == '}')
+            {
+                ++pos; // Skip the closing brace
+                return result;
+            }
+            if(s[pos] != ',')
+                throw std::runtime_error("Expected ',' in object");
+            ++pos; // Skip the comma
+            skip_whitespace(s, pos);
+        }
+
+        throw std::runtime_error("Unexpected end of object");
+    }
+
+    value parse_value(const std::string& s, size_t& pos)
+    {
+        skip_whitespace(s, pos);
+        if(pos >= s.length())
+            throw std::runtime_error("Unexpected end of JSON");
+
+        if(s[pos] == 'n')
+        {
+            if(s.compare(pos, 4, "null") == 0)
+            {
+                pos += 4;
+                return value(null());
+            }
+        }
+        else if(s[pos] == 't')
+        {
+            if(s.compare(pos, 4, "true") == 0)
+            {
+                pos += 4;
+                return value(true);
+            }
+        }
+        else if(s[pos] == 'f')
+        {
+            if(s.compare(pos, 5, "false") == 0)
+            {
+                pos += 5;
+                return value(false);
+            }
+        }
+        else if(s[pos] == '"')
+        {
+            return value(parse_string(s, pos));
+        }
+        else if(s[pos] == '[')
+        {
+            return value(parse_array(s, pos));
+        }
+        else if(s[pos] == '{')
+        {
+            return value(parse_object(s, pos));
+        }
+        else if(std::isdigit(s[pos]) || s[pos] == '-')
+        {
+            size_t end_pos = pos;
+            while (end_pos < s.length() && (std::isdigit(s[end_pos]) || s[end_pos] == '.' || s[end_pos] == 'e' || s[end_pos] == 'E' || s[end_pos] == '+' || s[end_pos] == '-'))
+            {
+                ++end_pos;
+            }
+            value num_value = std::stod(s.substr(pos, end_pos - pos));
+            pos = end_pos;
+            return num_value;
+        }
+
+        throw std::runtime_error("Invalid JSON value");
+    }
+}
+
+value parse_json(const std::string& json_str)
+{
+    size_t pos = 0;
+    return parse_value(json_str, pos);
+}
+
+}; // namespace

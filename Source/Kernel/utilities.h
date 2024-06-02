@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-
+#include <sstream>
 
 namespace ikaros
 {
@@ -56,6 +56,8 @@ namespace ikaros
     void print_attribute_value(const std::string & name, const std::vector<std::vector<std::string>> &  values, int indent=0, int max_items=0);
 
     char * base64_encode(const unsigned char * data, size_t size_in, size_t *size_out);
+
+    std::string formatNumber(double value, int decimals=10); // remove trailing zeros
 };
 
 #endif

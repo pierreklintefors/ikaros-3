@@ -12,6 +12,8 @@
 #include <variant>
 #include <iterator>
 #include <iostream>
+#include <cctype>
+#include <stdexcept>
 
 #include "utilities.h"
 #include "xml.h"
@@ -23,7 +25,7 @@ namespace ikaros
     struct list;
     struct value;
 
-    using valueVariant = std::variant<bool, int, float, null, std::string, list, dictionary>;
+    using valueVariant = std::variant<bool, int, double, null, std::string, list, dictionary>;
     using mapPtr = std::shared_ptr<std::map<std::string, value>>;
     using listPtr = std::shared_ptr<std::vector<value>>;
 
@@ -69,6 +71,8 @@ namespace ikaros
 
         void parse_url(std::string s);
         void parse_json(std::string s);
+
+        dictionary deepCopy() const;
     };
 
 
@@ -90,6 +94,8 @@ namespace ikaros
         std::string json();
         std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const list & v);
+
+        list deepCopy() const;
     };
 
 
@@ -99,7 +105,7 @@ namespace ikaros
 
         value(bool v)                { value_ = v; }
         value(int v)                 { value_ = v; }
-        value(float v)               { value_ = v; }
+        value(double v)               { value_ = v; }
         value(null n=null())         { value_ = null(); }
         value(const char * s)        { value_ = s; }
         value(const std::string & s) { value_ = s; }
@@ -108,8 +114,8 @@ namespace ikaros
 
         value & operator =(bool v) { value_ = v; return *this; }
         value & operator =(int v) { value_ = v; return *this; }
-        //value & operator =(float v) { value_ = v; return *this; }
-        value & operator =(double v) { value_ = float(v); return *this; }
+        //value & operator =(double v) { value_ = v; return *this; }
+        value & operator =(double v) { value_ = double(v); return *this; }
         value & operator =(null n) { value_ = null(); return *this; };
         value & operator =(const std::string & s) { value_ = s; return *this; }
         value & operator =(const char * s) { value_ = s; return *this; }
@@ -144,6 +150,8 @@ namespace ikaros
         operator dictionary ();
 
         //void print();
+
+        value deepCopy() const;
     };
 };
 #endif

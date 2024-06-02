@@ -501,4 +501,24 @@ base64_encode(const unsigned char * data,
     return encoded_data;
 }
 
+
+    std::string formatNumber(double value, int decimals)
+    {
+        std::ostringstream oss;
+        oss.precision(decimals); // Set precision to handle floating-point accuracy
+        oss << std::fixed << value;
+        std::string str = oss.str();
+
+        // Remove trailing zeros
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+
+        // Remove the decimal point if it's the last character
+        if (str.back() == '.') {
+            str.pop_back();
+        }
+
+        return str;
+    }
+
+
 };

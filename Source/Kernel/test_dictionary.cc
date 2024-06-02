@@ -145,6 +145,14 @@ std::cout << xmldict.xml("group") << std::endl;
         std::cout << p << std::endl;
 */
 
+   std::string json_str = R"({"key": "value", "number": 123, "array": [true, false, null]})";
+    ikaros::value parsed_value = ikaros::parse_json(json_str);
+    std::cout << parsed_value.json() << std::endl; // Output the JSON representation
+
+
+    value x = "Hello!";
+    std::cout << x.json() << std::endl;
+
     return 0;
 }
 
