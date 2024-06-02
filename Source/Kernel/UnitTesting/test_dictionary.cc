@@ -1,17 +1,19 @@
 // dictionary_test.cc
 
+//
+// Test and demonstration code for dictionary
+//
+
+// Everything is included here to allow compilation of this file on its own
 
 #include <string>
 #include <iostream>
 
-#include "dictionary.h"
-#include "xml.h"
-
-// To allow compilation directly from editor
-#include "xml.cc"
-#include "dictionary.cc"
-#include "utilities.cc"
-
+#include "../dictionary.h"
+#include "../xml.h"
+#include "../xml.cc"
+#include "../dictionary.cc"
+#include "../utilities.cc"
 
 using namespace ikaros;
 
