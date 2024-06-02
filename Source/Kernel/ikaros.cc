@@ -599,7 +599,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::vector<int> 
     Component::EvaluateSizeList(std::string & s) // return list of size from size list in string
     {
-        s = Evaluate(s, true); // FIXME: evaluate as string fir s shold probably be used in more places
+        //s = Evaluate(s, true); // FIXME: evaluate as string fir s shold probably be used in more places
         std::vector<int> shape;
         for(std::string e : split(s, ","))
         shape.push_back(EvaluateIntExpression(e));
@@ -609,7 +609,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::vector<int> 
     Component::EvaluateSize(std::string & s) // Evaluate size/shape string
     {
-        if(ends_with(s, ".size")) // special case: use shape function on input
+        if(ends_with(s, ".size")) // special case: use shape function on input // FIXME: Move to EvaluateSizeList
         {
             auto & x = rsplit(s, ".", 1); // FIXME: rhead ???
             matrix m;
@@ -1406,6 +1406,9 @@ INSTALL_CLASS(Module)
                 session_id = new_session_id(); 
                 SetUp();
                 log.push_back(Message("Loaded "s+options_.filename));
+
+                ListBuffers();
+                
             }
             catch(const exception& e)
             {
