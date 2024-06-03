@@ -134,3 +134,8 @@ The json-function can be use to generate a string with the json-representation o
     std::string s = d.json()
     std::cout << s << std::endl;
 ```
+## More
+
+```C++
+    d.contains("x");
+```

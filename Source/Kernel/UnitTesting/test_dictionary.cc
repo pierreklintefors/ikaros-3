@@ -20,6 +20,81 @@ using namespace ikaros;
 int
 main()
 {
+    std::string s =  R"({"name": "John Doe", "age": 30, "is_student": false, "scores": [85.5, 90.2, 78], "address": {"city": "New York", "zip": "10001"}})";
+  
+    dictionary d = parse_json(s);
+    d.print();
+
+/**
+    dictionary d;
+    dictionary e;
+
+    d["a"] = "AAA";
+    d["b"] = true;
+
+
+    e["c"] = 3.14;
+    e["d"] = d.copy();
+
+    d["b"] = false; // Changes value in e as well.
+
+    e.print();      // {"b": false, "c": 3.14, "d": {"a": "AAA", "b": true}}
+
+    list l;
+    l.push_back("x");
+    l.push_back("y");
+    l.push_back("z");
+    l.print();
+
+    // Iterating over key and value:
+
+      for (const auto& [key, val] : d)
+        std::cout << "Key: " << key << ", Value: " << val << std::endl;
+
+    // Iterating over items in a list
+
+      for (const auto& val : l)
+        std::cout << "Value: " << val << std::endl;
+*/
+
+    /*
+    dictionary d;
+
+    d["a"] = "AAA"; // string value
+    d["b"] = true;  // bool value
+    d["c"] = 3.14;  // double value
+    d["d"] = 32;    // double value
+
+   list l;
+
+    l[0] = "First";
+    l[1] = 2;
+    l[5] = 5; // list will be padded with null values to hold 6 elements
+    l.push_back(6); // add value to the back of list
+
+    dictionary e;
+
+    e["x"] = "XXX";
+    e["y"] = d;     // dictionary value
+    e["z"] = l;     // list value
+
+    d.print();
+    l.print();
+    e.print();
+
+
+    value v;
+    v = 22;
+    v.print();
+
+
+    dictionary x;
+
+    x["a"]["b"][3]["W"] = "c";
+    x.print();
+
+
+
         dictionary xx;
         xx.parse_url("a=123&b=XXX&xxx=oiuy");
         std::cout << xx.json() << std::endl;
@@ -40,7 +115,7 @@ main()
  std::cout <<  d << std::endl;
  std::cout <<  e.json() << std::endl;
 
-/*
+
 dictionary xmldict = dictionary("../Modules/TestModules/Test1.ikc");
 //std::cout << xmldict.json() << std::endl;
 std::cout <<  std::endl;
@@ -145,7 +220,7 @@ std::cout << xmldict.xml("group") << std::endl;
     p.merge(q, true);
 
         std::cout << p << std::endl;
-*/
+
 
    std::string json_str = R"({"key": "value", "number": 123, "array": [true, false, null]})";
     ikaros::value parsed_value = ikaros::parse_json(json_str);
@@ -154,7 +229,7 @@ std::cout << xmldict.xml("group") << std::endl;
 
     value x = "Hello!";
     std::cout << x.json() << std::endl;
-
+*/
     return 0;
 }
 

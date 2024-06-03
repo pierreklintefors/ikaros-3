@@ -4,7 +4,7 @@
 #include "dictionary.h"
 
 
-#include "json.cc"  // TEMPORARY EXTERNAL JSON FUNCTIONS
+// #include "json.cc"  // TEMPORARY EXTERNAL JSON FUNCTIONS
 
 #include <cctype>
 #include <stdexcept>
@@ -266,7 +266,7 @@ namespace ikaros
         }
     }
 
-
+/*
     static void 
     copy_from_json(dictionary & d, const std::unordered_map<std::string, JSON>& json);
     
@@ -360,7 +360,7 @@ namespace ikaros
         }
     }
 
-
+*/
 /*
     void
     dictionary::parse_json(std::string s)
