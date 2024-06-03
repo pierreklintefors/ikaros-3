@@ -46,8 +46,16 @@ namespace ikaros
     {
         mapPtr dict_;
 
-        std::map<std::string, value>::iterator begin()  { return dict_->begin(); };
-        std::map<std::string, value>::iterator end()   { return dict_->end(); };
+    using iterator = std::map<std::string, value>::iterator;
+    using const_iterator = std::map<std::string, value>::const_iterator;
+
+
+        iterator begin() { return dict_->begin(); }
+        iterator end() { return dict_->end(); }
+        const_iterator begin() const { return dict_->begin(); }
+        const_iterator end() const { return dict_->end(); }
+        const_iterator cbegin() const { return dict_->cbegin(); }
+        const_iterator cend() const { return dict_->cend(); }
 
         dictionary();
         dictionary(XMLElement * xml);
@@ -87,8 +95,15 @@ namespace ikaros
 
         list();
     
-        std::vector<value>::iterator begin() { return list_->begin(); };
-        std::vector<value>::iterator end()   { return list_->end(); };
+        using iterator = std::vector<value>::iterator;
+        using const_iterator = std::vector<value>::const_iterator;
+
+        iterator begin() { return list_->begin(); }
+        iterator end() { return list_->end(); }
+        const_iterator begin() const { return list_->begin(); }
+        const_iterator end() const { return list_->end(); }
+        const_iterator cbegin() const { return list_->cbegin(); }
+        const_iterator cend() const { return list_->cend(); }
 
         value & operator[] (int i);
         int size() { return list_->size(); };
