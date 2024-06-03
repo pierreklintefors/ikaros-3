@@ -14,7 +14,7 @@ namespace ikaros {
     {
     public:
         std::string ikaros_root;    // Path to binary as indicated in argv
-        std::string filename;                   // If only one, or empty string if none
+        std::string filename;       // If only one, or empty string if none
         std::vector<std::string> filenames;
         std::map<std::string, std::string> d;
         std::map<std::string, std::string> full;
