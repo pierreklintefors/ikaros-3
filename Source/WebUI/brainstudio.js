@@ -1504,9 +1504,9 @@ let inspector = {
                                 item[p.name] = evt.target.value; if(inspector.notify) inspector.notify.parameterChangeNotification(p);});
                         }
                     break;
-                    
+
                     default:
-                    
+
                     break;
                 }
             }
