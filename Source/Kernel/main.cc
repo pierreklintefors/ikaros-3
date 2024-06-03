@@ -2,15 +2,16 @@
 
 #include <string>
 
-
 #include "ikaros.h"
+#include "dictionary.h"
 
 using namespace ikaros;
 
 int
 main(int argc, char *argv[])
 {
-bool debug_mode = false;
+    
+    bool debug_mode = false;
 #if DEBUG
     debug_mode = true;
 #endif
