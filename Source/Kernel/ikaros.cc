@@ -394,7 +394,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::string 
     Component::GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component
     {        
-        if(dictionary(info_).contains(name))
+        if(info_.contains(name))
             return Evaluate(info_[name]);
         if(parent_)
             return parent_->GetValue(name);
@@ -405,9 +405,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
   std::string 
     Component::GetBind(const std::string & name)
     {
-         if(dictionary(info_).contains(name))
+        if(info_.contains(name))
             return ""; // Value set in attribute - do not bind
-        if(dictionary(info_).contains(name+".bind")) 
+        if(info_.contains(name+".bind")) 
             return info_[name+".bind"];
         if(parent_)
             return parent_->GetBind(name);
@@ -825,8 +825,8 @@ INSTALL_CLASS(Module)
         for(auto d : info_["inputs"])
             if(k.buffers[path_+"."+std::string(d["name"])].empty())
             {   
-                if(InputsReady(dictionary(d), ingoing_connections))
-                    SetInputSize(dictionary(d), ingoing_connections);
+                if(InputsReady(d, ingoing_connections))
+                    SetInputSize(d, ingoing_connections);
             }
 
         // Set output sizes // FIXME: Move to separate function
