@@ -96,3 +96,21 @@ When the data should not be shared, the copy-function can be used. It makes a de
  
 ```
 
+## Iteration
+
+Iterating over key and value.
+
+```C++
+
+      for (const auto& [key, val] : d)
+        std::cout << "Key: " << key << ", Value: " << val << std::endl;
+```
+
+Iterating over items in a list
+
+```C++
+      for (const auto& val : l)
+        std::cout << "Value: " << val << std::endl;
+```
+
+
