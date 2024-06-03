@@ -361,18 +361,17 @@ namespace ikaros
     }
 
 
+/*
     void
     dictionary::parse_json(std::string s)
     {
-        JSON json = JSON::parse(s);
-       // std::cout << "Parsed JSON successfully." << std::endl;
+    // JSON json = JSON::parse(s);
+    // std::cout << "Parsed JSON successfully." << std::endl;
+    // copy_from_json(*this, json.asObject());
 
-        // 
-
-        copy_from_json(*this, json.asObject());
+    (*this) = parse_json(s);
     }
-
-
+*/
 
 
     dictionary dictionary::copy() const

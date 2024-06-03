@@ -599,7 +599,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     std::vector<int> 
     Component::EvaluateSizeList(std::string & s) // return list of size from size list in string
     {
-        //s = Evaluate(s, true); // FIXME: evaluate as string fir s shold probably be used in more places
+        //s = Evaluate(s, true); // FIXME: evaluate as string fir s should probably be used in more places
         std::vector<int> shape;
         for(std::string e : split(s, ","))
         shape.push_back(EvaluateIntExpression(e));
@@ -1952,8 +1952,7 @@ INSTALL_CLASS(Module)
     {
         //std::cout << "SAVE: " << request.body << std::endl;
 
-        dictionary d; 
-        d.parse_json(request.body);
+        dictionary d = parse_json(request.body);
         std::filesystem::path path = std::string(d["filename"]);
         std::string filename = path.filename();
         d["filename"] = null(); // FIXME: remove propery later
@@ -2109,6 +2108,7 @@ INSTALL_CLASS(Module)
     }
 
 
+
     void
     Kernel::DoControl(Request & request) // FIXME: No indices right now ************** NOT IMPLEMENTED
     {
@@ -2143,6 +2143,7 @@ INSTALL_CLASS(Module)
         */
     }
 
+#if FALSE
 /*
     dictionary
     Kernel::GetView(std::string component, std::string view_name)   // FIXME: Remove later on
@@ -2295,6 +2296,7 @@ INSTALL_CLASS(Module)
         DoSendData(request);
     }
 */
+#endif
 
     void
     Kernel::DoAddGroup(Request & request)

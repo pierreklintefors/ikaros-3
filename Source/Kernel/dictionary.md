@@ -120,10 +120,10 @@ A string containing JSON can be parsed using the function parse_json.
 
 ```C++
      
-    dictionary d;
+
     std::string s =  R"({"name": "John Doe", "age": 30, "is_student": false, "scores": [85.5, 90.2, 78], "address": {"city": "New York", "zip": "10001"}})";
   
-    d.parse_json(s);
+    dictionary d = parse_json(s);
     d.print();
 
 ```

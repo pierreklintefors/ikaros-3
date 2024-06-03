@@ -46,9 +46,8 @@ namespace ikaros
     {
         mapPtr dict_;
 
-    using iterator = std::map<std::string, value>::iterator;
-    using const_iterator = std::map<std::string, value>::const_iterator;
-
+        using iterator = std::map<std::string, value>::iterator;
+        using const_iterator = std::map<std::string, value>::const_iterator;
 
         iterator begin() { return dict_->begin(); }
         iterator end() { return dict_->end(); }
@@ -62,8 +61,6 @@ namespace ikaros
         dictionary(std::string filename);
         //dictionary(const dictionary & d);
     
-
-
         value & operator[](std::string s);
         bool contains(std::string s);
         size_t count(std::string s);
@@ -80,7 +77,7 @@ namespace ikaros
         //void print();
 
         void parse_url(std::string s);
-        void parse_json(std::string s);
+        // void parse_json(std::string s);
         // void parse_xml(std::string s); // TODO
 
         dictionary copy() const;
@@ -125,14 +122,14 @@ namespace ikaros
     {
         valueVariant    value_;
 
-        value(bool v)                { value_ = v; }
-        //value(int v)                 { value_ = v; }
-        value(double v)               { value_ = v; }
-        value(null n=null())         { value_ = null(); }
-        value(const char * s)        { value_ = s; }
-        value(const std::string & s) { value_ = s; }
-        value(const list & v)        { value_ = v; }
-        value(const dictionary & d)  { value_ = d; }
+        value(bool v)               { value_ = v; }
+        //value(int v)              { value_ = v; }
+        value(double v)             { value_ = v; }
+        value(null n=null())        { value_ = null(); }
+        value(const char * s)       { value_ = s; }
+        value(const std::string & s){ value_ = s; }
+        value(const list & v)       { value_ = v; }
+        value(const dictionary & d) { value_ = d; }
 
         value & operator =(bool v) { value_ = v; return *this; }
         //value & operator =(int v) { value_ = v; return *this; }
@@ -162,8 +159,6 @@ namespace ikaros
         std::vector<value>::iterator begin();   // value iterator ******* over what?? **********
         std::vector<value>::iterator end();
 
- 
-
         operator std::string () const;
         std::string json();
         std::string xml(std::string name, int depth=0, std::string exclude = "");
@@ -176,7 +171,6 @@ namespace ikaros
 
         value copy() const;
     };
-
 
     value parse_json(const std::string& json_str);
 };
