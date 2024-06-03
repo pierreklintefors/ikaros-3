@@ -37,7 +37,7 @@ namespace ikaros
         void clear();
         
         range trim();  // move range to 0..
-        range tail(); // drop first dimension // FIXME: pop_front?
+        range tail();  // drop first dimension // FIXME: pop_front?
 
         bool is_delay_0(); // FIXME: rename
         bool is_delay_1();
@@ -53,7 +53,8 @@ namespace ikaros
 
         friend void operator|=(range & r, range & s);
 
-        void print_index();
+        void print();
+        void print_index(); // Print the current index position during a loop
 
         operator std::string();
         std::string curly(); // empty string or range within curly brackets

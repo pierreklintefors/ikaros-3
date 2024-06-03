@@ -1,6 +1,12 @@
 # Ranges
 
-Ranges are used to iterate over indices in one or several dimensions.
+Ranges are used to iterate over indices in one or several dimensions. 
+
+A range in a single dimension defines start and and end to a sequence as well as the increment.
+
+If the increment is negative, the sequence will be generated in reverse.
+
+Ranges are used in connections in Ikaros. They are also used to copy data between matrices while transforming them.
 
 ```C++
 range(n) // range of a single value n
@@ -37,7 +43,7 @@ Print a range in bracket style by converting to a string:
 std::cout << std::string(r) << std::endl; // will print [0:5][2:4]
 ```
 
-Set a range from a string:
+Initialize a range from a string:
 
 ```C++
 range r("[0:5][2:4:-1]");
@@ -49,7 +55,7 @@ Examples:
 
 ```C++
 range r(0,16,7); // generates 0, 7, 14
-range r(0,16,-7); // generates 14, 7, 0
+range r(0,16,-7); // generates 14, 7, 0 (the same sequence as above, but backwards)
 ```
 
 Print numbers 0 to 4.
@@ -58,3 +64,29 @@ Print numbers 0 to 4.
 for(range r=range(0,5);r.more();r++)
    std::cout << r << std::endl;
 ```
+
+Generate a multidimensional loop.
+
+```C++
+range r;
+r.push(1,4,2);
+r.push(1,4);
+
+for(;r.more();r++)
+   std::cout << r << std::endl;
+```
+
+To generate the same sequence again, the range must first be reset:
+
+```C++
+for(r.reset();r.more();r++)
+   std::cout << r << std::endl;
+```
+
+Or define the range directly in the for loop:
+
+```C++
+for(auto s = range(1,4,2).push(1,4);s.more();s++)
+   std::cout << s << std::endl;
+```
+

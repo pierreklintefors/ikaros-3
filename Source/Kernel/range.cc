@@ -222,6 +222,10 @@ namespace ikaros
         }
     }
 
+    void range::print()
+    {
+        std::cout << *this << std::endl;
+    }
     void range::print_index()
     {
         for(auto x: index_)

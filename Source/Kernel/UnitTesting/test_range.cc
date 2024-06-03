@@ -1,5 +1,13 @@
 
-#include "range.h"
+//
+
+// Everything is included here to allow compilation of this file on its own
+
+#include <string>
+#include <iostream>
+#include "../utilities.cc"
+#include "../range.h"
+#include "../range.cc"
 
 using namespace ikaros;
 
@@ -69,6 +77,21 @@ main()
     range d("[23:88:9]");
 
        std::cout << std::string(d) << std::endl; 
+
+    range r;
+    r.push(1,4,2);
+    r.push(1,4);
+
+    for(;r.more();r++)
+        std::cout << r << std::endl;
+    std::cout << std::endl;
+
+    for(r.reset();r.more();r++)
+        std::cout << r << std::endl;
+    std::cout << std::endl;
+    
+    for(auto s = range(1,4,2).push(1,4);s.more();s++)
+        std::cout << s << std::endl;
 };
 
 
