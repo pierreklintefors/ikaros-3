@@ -90,7 +90,7 @@ When the data should not be shared, the copy-function can be used. It makes a de
     e["c"] = 3.14;
     e["d"] = d.copy();
 
-    d["b"] = false; // Does NOT value of e["d"]["b"].
+    d["b"] = false; // Does NOT change the value of e["d"]["b"].
 
     e.print();      // {"c": 3.14, "d": {"a": "AAA", "b": true}}
  

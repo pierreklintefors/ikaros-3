@@ -6,6 +6,8 @@
 
 #include "json.cc"  // TEMPORARY EXTERNAL JSON FUNCTIONS
 
+#include <cctype>
+#include <stdexcept>
 
 using namespace ikaros;
 namespace ikaros 
@@ -96,15 +98,15 @@ namespace ikaros
         }
 
 
-list list::copy() const
-{
-    list new_list;
-    for (const auto& v : *list_)
+    list list::copy() const
     {
-        new_list.push_back(v.copy());
+        list new_list;
+        for (const auto& v : *list_)
+        {
+            new_list.push_back(v.copy());
+        }
+        return new_list;
     }
-    return new_list;
-}
 
 
         std::ostream& 
@@ -467,8 +469,8 @@ list list::copy() const
         {
             if(std::holds_alternative<bool>(value_))
                 return std::get<bool>(value_) ? "true" : "false";
-            if(std::holds_alternative<int>(value_))
-                return std::to_string(std::get<int>(value_));
+            //if(std::holds_alternative<int>(value_))
+            //    return std::to_string(std::get<int>(value_));
             if(std::holds_alternative<double>(value_))
                 return formatNumber(std::get<double>(value_));
                 //return std::to_string(std::get<double>(value_));
@@ -556,7 +558,6 @@ list list::copy() const
         return value();
     }
 /*
-
         void  
         value::print()
         {
@@ -570,18 +571,16 @@ list list::copy() const
 // EXPERIMENTAL JSON PARSING
 //
 
-#include <cctype>
-#include <stdexcept>
+
 
 // Helper functions for parsing
-namespace
-{
+/*
     void skip_whitespace(const std::string& s, size_t& pos)
     {
         while (pos < s.length() && std::isspace(s[pos]))
             ++pos;
     }
-
+*/
     std::string parse_string(const std::string& s, size_t& pos)
     {
         if(s[pos] != '"')
@@ -752,7 +751,7 @@ namespace
 
         throw std::runtime_error("Invalid JSON value");
     }
-}
+
 
 value parse_json(const std::string& json_str)
 {
@@ -760,4 +759,4 @@ value parse_json(const std::string& json_str)
     return parse_value(json_str, pos);
 }
 
-}; // namespace
+};

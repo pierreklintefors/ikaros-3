@@ -435,6 +435,7 @@ public:
     //dictionary GetView(std::string component, std::string view_name);
     //dictionary GetView(Request & request);
 
+/*
     //void AddView(Request & request);
     void AddWidget(Request & request);
     void DeleteWidget(Request & request);
@@ -442,6 +443,7 @@ public:
     void WidgetToFront(Request & request);
     void WidgetToBack(Request & request);
     //void RenameView(Request & request);
+*/
 
     void DoAddGroup(Request & request);
     void DoAddModule(Request & request);

@@ -25,7 +25,7 @@ namespace ikaros
     struct list;
     struct value;
 
-    using valueVariant = std::variant<bool, int, double, null, std::string, list, dictionary>;
+    using valueVariant = std::variant<bool, double, null, std::string, list, dictionary>; // int, 
     using mapPtr = std::shared_ptr<std::map<std::string, value>>;
     using listPtr = std::shared_ptr<std::vector<value>>;
 
@@ -126,7 +126,7 @@ namespace ikaros
         valueVariant    value_;
 
         value(bool v)                { value_ = v; }
-        value(int v)                 { value_ = v; }
+        //value(int v)                 { value_ = v; }
         value(double v)               { value_ = v; }
         value(null n=null())         { value_ = null(); }
         value(const char * s)        { value_ = s; }
@@ -135,7 +135,7 @@ namespace ikaros
         value(const dictionary & d)  { value_ = d; }
 
         value & operator =(bool v) { value_ = v; return *this; }
-        value & operator =(int v) { value_ = v; return *this; }
+        //value & operator =(int v) { value_ = v; return *this; }
         //value & operator =(double v) { value_ = v; return *this; }
         value & operator =(double v) { value_ = double(v); return *this; }
         value & operator =(null n) { value_ = null(); return *this; };
@@ -148,20 +148,21 @@ namespace ikaros
         bool is_list()          { return std::holds_alternative<list>(value_); }
         bool is_null()          { return std::holds_alternative<null>(value_); }
 
-        int as_int()            { return double(*this); };
+        int as_int()            { return double(*this); };  // FIXME: CHECK THIS ONE
 
-        value & operator[] (const char * s); // Captures literals as argument
+        value & operator[] (const char * s); // Captures literals as argument ***************
         value & operator[] (const std::string & s);
+        value & operator[] (int i); // list shortcut ***************
 
         value & push_back(const value & v);
 
         friend std::ostream& operator<<(std::ostream& os, const value & v);
         int size();
 
-        std::vector<value>::iterator begin();
+        std::vector<value>::iterator begin();   // value iterator ******* over what?? **********
         std::vector<value>::iterator end();
 
-        value & operator[] (int i);
+ 
 
         operator std::string () const;
         std::string json();
@@ -175,6 +176,12 @@ namespace ikaros
 
         value copy() const;
     };
+
+
+    value parse_json(const std::string& json_str);
 };
+
+
+
 #endif
 
