@@ -37,6 +37,8 @@ namespace ikaros
         std::string json();
         std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const null & v);
+
+        void print() { std::cout << "null" << std::endl; };
     };
 
 
@@ -71,8 +73,11 @@ namespace ikaros
 
         void parse_url(std::string s);
         void parse_json(std::string s);
+        // void parse_xml(std::string s);
 
-        dictionary deepCopy() const;
+        dictionary copy() const;
+
+        void print() { std::cout << this->json() << std::endl; };
     };
 
 
@@ -95,7 +100,9 @@ namespace ikaros
         std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const list & v);
 
-        list deepCopy() const;
+        list copy() const;
+
+        void print() { std::cout << this->json() << std::endl; };
     };
 
 
@@ -149,9 +156,9 @@ namespace ikaros
         operator list ();
         operator dictionary ();
 
-        //void print();
+        void print() { std::cout << this->json() << std::endl; };
 
-        value deepCopy() const;
+        value copy() const;
     };
 };
 #endif

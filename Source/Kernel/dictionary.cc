@@ -96,12 +96,12 @@ namespace ikaros
         }
 
 
-list list::deepCopy() const
+list list::copy() const
 {
     list new_list;
     for (const auto& v : *list_)
     {
-        new_list.push_back(v.deepCopy());
+        new_list.push_back(v.copy());
     }
     return new_list;
 }
@@ -373,12 +373,12 @@ list list::deepCopy() const
 
 
 
-    dictionary dictionary::deepCopy() const
+    dictionary dictionary::copy() const
     {
         dictionary new_dict;
         for (const auto& [key, val] : *dict_)
         {
-            new_dict[key] = val.deepCopy();
+            new_dict[key] = val.copy();
         }
         return new_dict;
     }
@@ -539,7 +539,7 @@ list list::deepCopy() const
         }
 
 
-    value value::deepCopy() const
+    value value::copy() const
 {
         if(std::holds_alternative<null>(value_))
             return value(null());
@@ -550,9 +550,9 @@ list list::deepCopy() const
         if(std::holds_alternative<std::string>(value_))
             return value(std::get<std::string>(value_));
         if(std::holds_alternative<list>(value_))
-            return value(std::get<list>(value_).deepCopy());
+            return value(std::get<list>(value_).copy());
         if(std::holds_alternative<dictionary>(value_))
-            return value(std::get<dictionary>(value_).deepCopy());    
+            return value(std::get<dictionary>(value_).copy());    
         return value();
     }
 /*
