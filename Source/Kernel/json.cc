@@ -1,4 +1,4 @@
-// Temporary JSON library - will be integrated with dictionary in the future
+// Temporary JSON library - not used - only here for reference
 
 #include <iostream>
 #include <string>
