@@ -81,7 +81,7 @@ namespace ikaros
 
         void parse_url(std::string s);
         void parse_json(std::string s);
-        // void parse_xml(std::string s);
+        // void parse_xml(std::string s); // TODO
 
         dictionary copy() const;
 

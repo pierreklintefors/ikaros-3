@@ -113,4 +113,24 @@ Iterating over items in a list
         std::cout << "Value: " << val << std::endl;
 ```
 
+## Serialization
 
+A string containing JSON can be parsed using the function parse_json.
+
+
+```C++
+     
+    dictionary d;
+    std::string s =  R"({"name": "John Doe", "age": 30, "is_student": false, "scores": [85.5, 90.2, 78], "address": {"city": "New York", "zip": "10001"}})";
+  
+    d.parse_json(s);
+    d.print();
+
+```
+
+The json-function can be use to generate a string with the json-representation of the dictionary or list.
+
+```C++
+    std::string s = d.json()
+    std::cout << s << std::endl;
+```
