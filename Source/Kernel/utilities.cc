@@ -521,4 +521,44 @@ base64_encode(const unsigned char * data,
     }
 
 
+    prime::prime(): last_prime(1) {}
+
+    bool 
+    prime::test(long n)
+    {
+        if (n <= 1) return false;
+        if (n <= 3) 
+            return true;
+        if (n % 2 == 0 || n % 3 == 0) 
+            return false;
+        for (int i = 5; i * i <= n; i += 6)
+        {
+            if (n % i == 0 || n % (i + 2) == 0) 
+                return false;
+        }
+        return true;
+    }
+
+
+    long 
+    prime::next()
+    {
+
+        long candidate = last_prime + 1;
+
+        while(!test(candidate))
+            candidate++;
+
+        last_prime = candidate;
+        return last_prime;
+    }
+
+    long
+    character_sum(std::string s)
+    {
+        long sum = 0;
+        for(char c : s)
+            sum += c;
+        return sum;
+    }
 };

@@ -58,7 +58,19 @@ namespace ikaros
     char * base64_encode(const unsigned char * data, size_t size_in, size_t *size_out);
 
     std::string formatNumber(double value, int decimals=10); // remove trailing zeros
-};
+
+    class prime
+    {
+        public:
+            long last_prime;
+            bool test(long);    // test if number is a prime
+            long next();        // generate next prime number
+            prime();
+    };
+
+    long character_sum(std::string s); // sums the character codes interpreded as numbers
+
+};  
 
 #endif
 
