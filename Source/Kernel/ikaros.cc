@@ -669,8 +669,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     bool
     Module::Notify(int msg, std::string message)
     {
-        kernel().log.push_back(Message(message));
-        return true;
+        return kernel().Notify(msg, message);
     }
 
 
@@ -852,6 +851,36 @@ INSTALL_CLASS(Module)
             return 0; // needs to be called again - FIXME: Report progress later on
     }
 
+    void
+    Component::CalculateCheckSum(long & check_sum, prime & prime_number) // Calculates a value that depends on all parameters and output sizes; used for integrity testing of kernel and module
+    {
+        // Iterate over all outputs
+
+        for(auto & d : info_["outputs"])
+        {
+            matrix output;
+            Bind(output, d["name"]);
+            //output.info();
+            for(long d : output.shape())
+                check_sum += prime_number.next() * d;
+        } 
+
+        // Iterate obver all parameters
+    
+        for(auto & d : info_["parameters"])
+        {
+            parameter p;
+            Bind(p, d["name"]);
+            //std::cout << "Parameter: " << d["name"] << std::endl;
+
+            if(p.type == string_type)
+                check_sum += prime_number.next() * character_sum(p);
+            else
+                check_sum += prime_number.next() *  p.as_int(); // FIXME: convert to long later 
+        }
+
+        // std::cout << "Check sum: " << check_sum << std::endl;
+    }
 
     // Connection
 
@@ -1407,8 +1436,8 @@ INSTALL_CLASS(Module)
                 SetUp();
                 log.push_back(Message("Loaded "s+options_.filename));
 
+                CalculateCheckSum();
                 ListBuffers();
-                
             }
             catch(const exception& e)
             {
@@ -1416,6 +1445,26 @@ INSTALL_CLASS(Module)
                 log.push_back(Message("E", "Load file failed for "s+options_.filename));
                 New();
             }
+    }
+
+
+    void Kernel::CalculateCheckSum()
+    {
+        if(!info_.contains("check_sum"))
+            return;
+
+        long correct_check_sum = info_["check_sum"];
+        long calculated_check_sum = 0;
+        prime prime_number;
+        for(auto & [n,c] : components)      
+            c->CalculateCheckSum(calculated_check_sum, prime_number);
+        if(correct_check_sum == calculated_check_sum)
+            std::cout << "Correct Check Sum: " << calculated_check_sum << std::endl;
+        else
+        {
+            std::string msg = "Incorrect Check Sum: "+std::to_string(calculated_check_sum)+" != "+std::to_string(correct_check_sum);
+            Notify(msg_fatal_error, msg);
+        }
     }
 
 
@@ -1531,62 +1580,72 @@ INSTALL_CLASS(Module)
     }
 
 
-    void
-    Kernel::Run()
-    {
-        if(options_.filename.empty())
-            New();
-        else
-            LoadFile();
-        //SetUp(); // PROBABLY WRONG
-        timer.Restart();
-        tick = -1; // To make first tick 0 after increment
-
-        if(run_mode == run_mode_restart_realtime)
-            Realtime();
-        else if(run_mode == run_mode_restart_play)
-            Play();
-        else
-            Pause();
-
-        // Main loop
-        while(run_mode > run_mode_quit)  // Not quit or restart
+        void
+        Kernel::Run()
         {
-            while (!Terminate() && run_mode > run_mode_quit)
+            if(options_.filename.empty())
+                New();
+            else
+                LoadFile();
+            timer.Restart();
+            tick = -1; // To make first tick 0 after increment
+
+            if(run_mode == run_mode_restart_realtime)
+                Realtime();
+            else if(run_mode == run_mode_restart_play)
+                Play();
+            else
+                Pause();
+
+            // Main loop
+            while(run_mode > run_mode_quit)  // Not quit or restart
             {
-                while(sending_ui_data)
-                    {}
-                while(handling_request)
-                    {}
-
-                if(run_mode == run_mode_realtime)
-                    lag = timer.WaitUntil(double(tick+1)*tick_duration);
-                else if(run_mode == run_mode_play)
+                while (!Terminate() && run_mode > run_mode_quit)
                 {
-                    timer.SetTime(double(tick+1)*tick_duration); // Fake time increase
-                    Sleep(0.01);
+                    while(sending_ui_data)
+                        {}
+                    while(handling_request)
+                        {}
+
+                    if(run_mode == run_mode_realtime)
+                        lag = timer.WaitUntil(double(tick+1)*tick_duration);
+                    else if(run_mode == run_mode_play)
+                    {
+                        timer.SetTime(double(tick+1)*tick_duration); // Fake time increase
+                        Sleep(0.01);
+                    }
+                    else
+                        Sleep(0.01); // Wait 10 ms to avoid wasting cycles if there are no requests
+
+
+                    // Run_mode may have changed during the delay - needs to be checked again
+
+                    if(run_mode == run_mode_realtime || run_mode == run_mode_play) 
+                    {
+                        actual_tick_duration = intra_tick_timer.GetTime();
+                        intra_tick_timer.Restart();
+                        Tick();
+                        tick_time_usage = intra_tick_timer.GetTime();
+                        idle_time = tick_duration - tick_time_usage;
+                    }                    
                 }
-                else
-                    Sleep(0.01); // Wait 10 ms to avoid wasting cycles if there are no requests
 
 
-                // Run_mode may have changed during the delay - needs to be checked again
-
-                if(run_mode == run_mode_realtime || run_mode == run_mode_play) 
-                {
-                    actual_tick_duration = intra_tick_timer.GetTime();
-                    intra_tick_timer.Restart();
-                    Tick();
-                    tick_time_usage = intra_tick_timer.GetTime();
-                    idle_time = tick_duration - tick_time_usage;
-                }                    
+                Sleep(0.1);
             }
-
-
-            Sleep(0.1);
         }
-    }
 
+        bool
+        Kernel::Notify(int msg, std::string message)
+        {
+            log.push_back(Message(message));
+            if(msg <= msg_fatal_error)
+            {
+                    std::cout << message << std::endl;
+                    run_mode = run_mode_quit;
+            }
+            return true;
+        }
 
     //
     //  Serialization

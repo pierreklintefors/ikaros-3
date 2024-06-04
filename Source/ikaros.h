@@ -42,6 +42,17 @@ const int run_mode_play = 3;        // Kernel runs as fast as possible
 const int run_mode_realtime = 4;    // Kernel runs in real-time mode
 const int run_mode_restart = 5;     // Kernel is restarting
 
+// Messages to use with Notify
+
+const int    msg_exception		=    1;
+const int    msg_end_of_file	=    2;
+const int    msg_terminate		=    3;
+const int    msg_fatal_error	=    4;
+const int    msg_warning		=    5;
+const int    msg_print			=    6;
+const int    msg_debug          =    7;
+const int    msg_trace          =    8;
+
 
 using tick_count = long long int;
 
@@ -212,6 +223,8 @@ public:
     void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias);
     void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
     virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+
+    void CalculateCheckSum(long & check_sum, prime & prime_number); // Calculates a value that depends on all parameters and buffer sizes
 };
 
 typedef std::function<Module *()> ModuleCreator;
@@ -230,7 +243,7 @@ public:
     Module();
     ~Module() {}
 
-    bool Notify(int msg, std::string message);
+    bool Notify(int msg, std::string message); // FIXME: Move to component
 };
 
 //
@@ -362,6 +375,7 @@ public:
     double GetLag() { return (run_mode == run_mode_realtime) ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
     void CalculateCPUUsage();
 
+    bool Notify(int msg, std::string message);
     bool Terminate();
     void ScanClasses(std::string path);
     void ScanFiles(std::string path, bool system=true);
@@ -416,6 +430,8 @@ public:
     void Play();
     void Realtime();
     void Restart(); // Save and reload
+
+    void CalculateCheckSum();
 
     void DoNew(Request & request);
     void DoOpen(Request & request);
