@@ -1,6 +1,7 @@
 # Ranges
 
-Ranges are used to iterate over indices in one or several dimensions. 
+The range class provides a robust interface for managing and iterating over multidimensional ranges. It includes various constructors for initialization, member functions for manipulating and querying the range, and operators for convenience. The class supports both integer and string-based initialization, allowing for flexible usage in different contexts.
+
 
 A range in a single dimension defines start and and end to a sequence as well as the increment.
 
