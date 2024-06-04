@@ -1,7 +1,7 @@
-<group name="Outer" xyz="77" q="12">
+<group name="Outer" xyz="77" q="12" check_sum="1485">
  
      
-    <group name="image" sx="10" sy="20">
+    <group name="image" sx="11" sy="22">
         <parameter name="sx" type="int" default="10" />
         <parameter name="sx" type="int" default="20" />
 
