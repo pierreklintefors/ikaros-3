@@ -121,7 +121,14 @@ public:
         std::cout << std::string(*this) << std::endl;
     }
 
-    // FIXME: Add info
+    void info()
+    {
+        std::cout << "type: " << type << std::endl;
+        std::cout << "timebase: " << timebase << std::endl;
+        std::cout << "default: " << default_value << std::endl;
+        //std::cout << "options: " << options << std::endl;
+        std::cout << "value: " << std::string(*this) << std::endl;
+    }
 
     int as_int();
     const char* c_str() const noexcept;

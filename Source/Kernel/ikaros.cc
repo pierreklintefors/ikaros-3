@@ -210,7 +210,7 @@ namespace ikaros
         {
             case no_type: throw exception("Uninitialized parameter."); // return "uninitialized_parameter";
             case int_type: if(int_value) return std::to_string(*int_value);            
-            case options_type: if(int_value) return std::to_string(*int_value); // FIXME: get options string and bool
+            case options_type: if(int_value) return options.at(*int_value);
             case float_type: if(float_value) return std::to_string(*float_value);
             case rate_type: if(float_value) return std::to_string(*float_value);
             case bool_type: if(int_value) return std::to_string(*int_value==1);
