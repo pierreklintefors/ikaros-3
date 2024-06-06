@@ -1,0 +1,16 @@
+<group name="Untitled" stop="-1" webui_port="8000">
+   <module _x="100" _y="100" class="SpikingPopulation" description="Simulates a population of spiking neurons" name="Untitled_2">
+      <input description="The excitatory input" flatten="yes" name="EXCITATION" optional="yes"/>
+      <input description="The excitatory input" flatten="yes" name="INHIBITION" optional="yes"/>
+      <input description="The direct current input" flatten="yes" name="DIRECT_IN" optional="yes"/>
+      <input description="The internal topology input" flatten="no" name="INTERNAL_TOPOLOGY" optional="yes"/>
+      <input description="The excitatory topology input" flatten="no" name="EXCITATION_TOPOLOGY" optional="yes"/>
+      <output description="The output" name="OUTPUT" size="@population_size"/>
+      <parameter control="textedit" default="1" description="Number of units in population" name="population_size" type="int"/>
+      <parameter control="textedit" default="2" description="Number of substeps when calculating voltage" name="substeps" type="int"/>
+      <parameter control="textedit" default="Izhikevich" name="model_type" options="Izhikevich" type="options"/>
+      <parameter control="textedit" default="regular_spiking" name="neuron_type" options="regular_spiking, intrinsically_bursting, chattering, fast_spiking, low_threshold, resonator" type="options"/>
+      <parameter control="textedit" default="30" description="Threshold value for firing" name="threshold" type="float"/>
+      <parameter control="textedit" default="false" name="debugmode" type="bool"/>
+   </module>
+</group>
