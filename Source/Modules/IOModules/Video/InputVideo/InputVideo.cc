@@ -443,7 +443,7 @@ class InputVideo : public Module
         av_dict_set(&options, "pixel_format", "1", 0); // AV_PIX_FMT_YUYV422
         av_dict_set(&options, "framerate", frameRateString.c_str(), 0);
 
-        if (avformat_open_input(&input_format_context, "0", ifmt, &options) != 0)
+        if (avformat_open_input(&input_format_context, idString.c_str(), ifmt, &options) != 0)
         {
             printf("Couldn't open input stream.\n");
             // Notify(msg_fatal_error, "Couldn't open input stream.\n");
