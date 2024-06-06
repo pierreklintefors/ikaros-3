@@ -210,13 +210,12 @@ namespace ikaros
         {
             case no_type: throw exception("Uninitialized parameter."); // return "uninitialized_parameter";
             case int_type: if(int_value) return std::to_string(*int_value);            
-            // FIXME: get options string and bool
+            case options_type: if(int_value) return std::to_string(*int_value); // FIXME: get options string and bool
             case float_type: if(float_value) return std::to_string(*float_value);
             case rate_type: if(float_value) return std::to_string(*float_value);
             case bool_type: if(int_value) return std::to_string(*int_value==1);
             case string_type: if(string_value) return *string_value;
-
-            //case matrix_type: return "MATRIX-FIX-ME"; //FIXME: Get matrix string - add to matrix class to also be used by print *****
+            case matrix_type: return matrix_value->json(); // FIXME: use separate string conversion
             default: ;
         }
         throw exception("Type conversion error for parameter.");
@@ -381,8 +380,12 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::string v = GetValue(name);
         if(!v.empty())
         {
-            SetParameter(name, Evaluate(v, p.type == string_type));
-            return true;
+            std::string val = Evaluate(v, p.type == string_type);
+            if(!val.empty())
+            {
+                SetParameter(name, val);
+                return true;
+            }
         }
 
         SetParameter(name, Evaluate(default_value, p.type == string_type));

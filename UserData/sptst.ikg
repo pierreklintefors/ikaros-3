@@ -14,3 +14,4 @@
       <parameter control="textedit" default="false" name="debugmode" type="bool"/>
    </module>
 </group>
+@

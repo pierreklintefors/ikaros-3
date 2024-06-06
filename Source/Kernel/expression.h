@@ -134,6 +134,8 @@ public:
                                 return 0;
                             else if(vars.count(str))
                                 str = vars[str];
+                            if(str.empty()) // FIXME: throw parameter is not set; should get deafult if possible
+                                return 0;
                             return std::stof(str);
                 
 
