@@ -116,6 +116,13 @@ public:
     //explicit operator int(); // Do not convert to int explicitly
     operator float();
 
+    void print()
+    {
+        std::cout << std::string(*this) << std::endl;
+    }
+
+    // FIXME: Add info
+
     int as_int();
     const char* c_str() const noexcept;
 
