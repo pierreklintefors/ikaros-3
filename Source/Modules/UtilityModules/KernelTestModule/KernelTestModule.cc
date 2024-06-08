@@ -13,6 +13,7 @@ class KernelTestModule: public Module
     parameter g;
 
     parameter data;
+    parameter mdata;
 
     parameter x;
     parameter y;
@@ -37,9 +38,24 @@ class KernelTestModule: public Module
         Bind(f, "f");
         Bind(g, "g");
         Bind(data, "data");
+        Bind(mdata, "mdata");
         Bind(x, "x");
         Bind(y, "y");
 
+
+        a.print("a");
+        b.print("b");
+        c.print("c");
+        d.print("d");
+        e.print("e");
+        f.print("f");
+        g.print("g");
+        data.print("data");
+        mdata.print("mdata");
+        x.print("x");
+        y.print("t");
+
+/*
         Bind(output1, "OUTPUT1");
         Bind(output2, "OUTPUT2");
         Bind(output3, "OUTPUT3");
@@ -50,17 +66,6 @@ class KernelTestModule: public Module
         Bind(output8, "OUTPUT8");
         Bind(output9, "OUTPUT9");
 
-        a.print();
-        b.print();
-        c.print();
-        d.print();
-        e.print();
-        f.print();
-        g.print();
-        data.print();
-        x.print();
-        y.print();
-
         output1.print();
         output2.print();
         output3.print();
@@ -70,6 +75,7 @@ class KernelTestModule: public Module
         output7.print();
         output8.print();
         output9.print();
+        */
     }
 
 

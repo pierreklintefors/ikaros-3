@@ -26,6 +26,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Expressions       |<div style="color:green">🟢 OK |  |
 | XML               |<div style="color:green">🟢 OK | |
 | Kernel            |<div style="color:green">🟢 OK |
+| Exception handling    |<div style="color:#c60">🟡 Partial | not yet consistent |
 | Shared dict       |<div style="color:green">🟢  OK |  |
 | Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
 | Task sorting      |<div style="color:#e00">🔴 Pending |  |

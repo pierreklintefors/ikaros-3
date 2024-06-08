@@ -1,20 +1,9 @@
-<group name="Outer" xyz="77" q="12">
- 
-     
-    <group name="image" sx="10" sy="20">
-        <parameter name="sx" type="int" default="10" />
-        <parameter name="sx" type="int" default="20" />
+<group name="Test_1"  check_sum = "27413" description="Test that all parameter default values are found">
 
-        <output name="OUTPUT" size="30, 40" />
-    </group>
+    <module name="Const" class="Constant" data="9, 8, 7" />
+    <module name="Test" class="KernelTestModule"/>
 
-     <group name="image2" sx="101" sy="20">
-        <output name="OUTPUT" size="@xyz,@q" />
-    </group>
-
-    <group name="image3" sx="10" sy="20">
-        <output name="OUTPUT" size="@sx" />
-    </group>
+    <connection source="Const.OUTPUT" target="Test.INPUT" />
 
 </group>
 

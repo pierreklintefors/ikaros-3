@@ -9,6 +9,8 @@
 	<parameter name="g" type="rate" default="0.1"  description="parameter g" />
 
 	<parameter name="data" type="matrix" default="1, 2, 3, 4"  description="parameter data" />
+	<parameter name="mdata" type="matrix" default="1, 2; 3, 4"  description="parameter data" />
+
 	<parameter name="x" type="int" default="7" description="parameter x" />
 	<parameter name="y" type="int" default="9" description="parameter y" />
 
@@ -23,7 +25,7 @@
 	<output name="OUTPUT5" description="The output" size="@y,@x"/>
 
 	<output name="OUTPUT6" description="The output" size="3*@a+2"/>
-	<output name="OUTPUT7" description="The output" size="2*@y+1,5*(@x+2)"/>
+	<output name="OUTPUT7" description="The output" size="2*@y-1,5*(@x+2)"/>
 
 	<output name="OUTPUT8" description="The output" size="data.size"/>
 	<output name="OUTPUT9" description="The output" size="INPUT.size"/>

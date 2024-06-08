@@ -1,0 +1,28 @@
+<group name="Test_1"  check_sum = "146133" description="Test that all parameter values are found in module element">
+
+    <module name="Const" class="Constant" data="9, 8, 7" />
+
+    <module 
+        name="Test" 
+        class="KernelTestModule"
+
+        a = "111"
+        b = "false"
+        c = "333"
+        d = "FourFourFour"
+        e = "5, 5, 5; 5, 5, 5"
+        f = "C" 
+        g = "77.77"
+
+        data = "8, 8, 8"
+        mdata = "9, 9; 9, 9"
+
+        x = "10"
+        y = "11"
+        
+    />
+
+    <connection source="Const.OUTPUT" target="Test.INPUT" />
+
+</group>
+

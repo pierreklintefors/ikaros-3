@@ -116,8 +116,10 @@ public:
     //explicit operator int(); // Do not convert to int explicitly
     operator float();
 
-    void print()
+    void print(std::string name="")
     {
+        if(!name.empty())
+            std::cout << name << " = ";
         std::cout << std::string(*this) << std::endl;
     }
 
@@ -204,7 +206,9 @@ public:
 
     virtual ~Component() {};
 
-    void print();
+    bool Notify(int msg, std::string message);
+
+
     void AddInput(dictionary parameters);
     void AddOutput(dictionary parameters);
     void AddParameter(dictionary parameters);
@@ -217,6 +221,8 @@ public:
     virtual void Tick() {}
     virtual void Init() {}
 
+    void print();
+    void info();
     std::string json();
     std::string xml();
 
@@ -256,8 +262,6 @@ class Module : public Component
 public:
     Module();
     ~Module() {}
-
-    bool Notify(int msg, std::string message); // FIXME: Move to component
 };
 
 //

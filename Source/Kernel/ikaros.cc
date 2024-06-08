@@ -213,7 +213,7 @@ namespace ikaros
             case options_type: if(int_value) return options.at(*int_value);
             case float_type: if(float_value) return std::to_string(*float_value);
             case rate_type: if(float_value) return std::to_string(*float_value);
-            case bool_type: if(int_value) return std::to_string(*int_value==1);
+            case bool_type: if(int_value) return (*int_value==1? "true" : "false");
             case string_type: if(string_value) return *string_value;
             case matrix_type: return matrix_value->json(); // FIXME: use separate string conversion
             default: ;
@@ -250,6 +250,7 @@ namespace ikaros
         {
             case no_type: throw exception("Uninitialized_parameter.");
             case int_type: if(int_value) return *int_value;
+            case bool_type: if(int_value) return *int_value;
             case options_type: if(int_value) return *int_value;
             case float_type: if(float_value) return *float_value;
             case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base
@@ -354,6 +355,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         std::cout << "Component: " << info_["name"]  << '\n';
     }
 
+        void 
+        Component::info()
+        {
+            std::cout << "Component: " << info_["name"]  << '\n';
+            std::cout << "Path: " << path_  << '\n';
+            std::cout << "Path: " << info_  << '\n';
+        }
+
     bool 
     Component::BindParameter(parameter & p,  std::string & name) // Handle parameter sharing
     {
@@ -368,34 +377,47 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     bool 
     Component::ResolveParameter(parameter & p,  std::string & name,   std::string & default_value)
     {
-        // Look for binding
-        std::string bind_to = GetBind(name);
-        if(!bind_to.empty())
+        try
         {
-          if(LookupParameter(p, bind_to))
-                return true;
-        }
-
-        // Lookup normal value in current component-context
-        std::string v = GetValue(name);
-        if(!v.empty())
-        {
-            std::string val = Evaluate(v, p.type == string_type);
-            if(!val.empty())
+            // Look for binding
+            std::string bind_to = GetBind(name);
+            if(!bind_to.empty())
             {
-                SetParameter(name, val);
-                return true;
+            if(LookupParameter(p, bind_to))
+                    return true;
             }
-        }
 
-        SetParameter(name, Evaluate(default_value, p.type == string_type));
-        return true; // IF refault value ******
+            // Lookup normal value in current component-context
+            std::string v = GetValue(name);
+            if(!v.empty())
+            {
+                std::string val = Evaluate(v, p.type == string_type);
+                if(!val.empty())
+                {
+                    SetParameter(name, val);
+                    return true;
+                }
+            }
+
+            SetParameter(name, Evaluate(default_value, p.type == string_type));
+            return true; // IF refault value ******
+        }
+        catch(exception & e)
+        {
+            //std::cout << e.what() << std::endl; 
+            Notify(msg_fatal_error, e.message);
+        }
+        catch(std::exception & e)
+        {
+            Notify(msg_fatal_error, "ERROR: Could not resolve parameter \""s +name + "\" .");  
+        }
+        return false;
     }
 
 
 
     std::string 
-    Component::GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component
+    Component::GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component ***** CHECK PARAMETERS FIRST *******
     {        
         if(info_.contains(name))
             return Evaluate(info_[name]);
@@ -663,17 +685,21 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         parent_ = kernel().components.at(path_.substr(0, p));
 }
 
+
+    bool
+    Component::Notify(int msg, std::string message)
+    {
+        return kernel().Notify(msg, message);
+    }
+
+
+
   Module::Module()
     {
   
     }
 
 
-    bool
-    Module::Notify(int msg, std::string message)
-    {
-        return kernel().Notify(msg, message);
-    }
 
 
 INSTALL_CLASS(Module)
@@ -844,6 +870,13 @@ INSTALL_CLASS(Module)
             if(o.rank() != 0)
                 outputs_with_size++; // Count number of buffers that are set
             
+            for(int i=0; i < shape.size(); i++)
+                if(shape[i]<0)
+                {
+                    kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i)); // FIXME: throw
+                    return 0;
+                }
+
             o.realloc(shape);
             outputs_with_size++;
         }
@@ -878,6 +911,9 @@ INSTALL_CLASS(Module)
 
             if(p.type == string_type)
                 check_sum += prime_number.next() * character_sum(p);
+            else
+            if(p.type == matrix_type)
+                check_sum += prime_number.next() * p.matrix_value->size();
             else
                 check_sum += prime_number.next() *  p.as_int(); // FIXME: convert to long later 
         }
@@ -982,7 +1018,8 @@ INSTALL_CLASS(Module)
         Kernel::New()
         {
             //std::cout << "Kernel::New" << std::endl;
-            log.push_back(Message("New file"));
+            //log.push_back(Message("New file"));
+            Notify(msg_print, "New file");
        
             Clear();
             Pause();
@@ -1005,7 +1042,7 @@ INSTALL_CLASS(Module)
             BuildGroup(d);
             info_ = d;
             session_id = new_session_id(); 
-            SetUp();
+            SetUp(); // FIXME: Catch exceptions if new failes
         }
 
 
@@ -1093,16 +1130,17 @@ INSTALL_CLASS(Module)
     {
         std::size_t i = name.rfind(".");
         if(i == std::string::npos)
-            return;
+            return; // FIXME: Is this an error?
 
-         auto c = components.at(name.substr(0, i));
+        auto c = components.at(name.substr(0, i));
         std::string parameter_name = name.substr(i+1, name.size());
         c->ResolveParameter(p, parameter_name, default_value);
     }
 
 
-    void Kernel::ResolveParameters() // Find and evaluate value or default
+    void Kernel::ResolveParameters() // Find and evaluate value or default // FIXME: return success
     {
+        bool ok = true;
         for (auto p=parameters.rbegin(); p!=parameters.rend(); p++) // Reverse order equals outside in in groups
         {
             std::size_t i = p->first.rfind(".");
@@ -1112,9 +1150,11 @@ INSTALL_CLASS(Module)
             {
                 auto c = components.at(p->first.substr(0, i));
                 std::string parameter_name = p->first.substr(i+1, p->first.size());
-                  c->ResolveParameter(p->second, parameter_name, p->second.default_value);
+                  ok &= c->ResolveParameter(p->second, parameter_name, p->second.default_value);
             }
         }
+        if(!ok)
+            throw fatal_error("All parameters could not be resolved");
     }
 
 
@@ -1297,10 +1337,18 @@ INSTALL_CLASS(Module)
 
     void Kernel::SetParameter(std::string name, std::string value)
     {
-        if(parameters.count(name))
+
+        if(!parameters.count(name))
+            throw exception("Parameter \""+name+"\" could not be set because it doees not exist.");
+
+        try
         {
             parameters[name] = value;
             parameters[name].info_["value"] = value;
+        }
+        catch(...)
+        {
+            throw exception("Parameter \""+name+"\" could not be set. Check that parameter exist and that the data type and value is correct.");
         }
     }
 
@@ -1440,12 +1488,14 @@ INSTALL_CLASS(Module)
                 log.push_back(Message("Loaded "s+options_.filename));
 
                 CalculateCheckSum();
-                ListBuffers();
+               // ListBuffers();
             }
             catch(const exception& e)
             {
-                log.push_back(Message("E", e.what()));
-                log.push_back(Message("E", "Load file failed for "s+options_.filename));
+                //log.push_back(Message("E", e.what()));
+               // log.push_back(Message("E", "Load file failed for "s+options_.filename));
+               //Notify(msg_fatal_error, e.what());
+               Notify(msg_fatal_error, "Load file failed for "s+options_.filename);
                 New();
             }
     }
@@ -1560,26 +1610,36 @@ INSTALL_CLASS(Module)
     void
     Kernel::SetUp()
     {
-        ResolveParameters();
-        CalculateDelays();
-        CalculateSizes();
-        InitCircularBuffers();
-        InitComponents();
-        /*
-        InitComponents();
-        ListComponents();
-        ListConnections();
+        try
+        {
+            ResolveParameters();
+            CalculateDelays();
+            CalculateSizes();
+            InitCircularBuffers();
+            InitComponents();
+            /*
+            InitComponents();
+            ListComponents();
+            ListConnections();
 
-        //ListInputs();
-        //ListOutputs();
+            //ListInputs();
+            //ListOutputs();
 
-        ListBuffers();
-        ListCircularBuffers();
+            ListBuffers();
+            ListCircularBuffers();
 
-        ListParameters();
-        PrintLog();
-        */
-        //ListInputs();
+            ListParameters();
+            PrintLog();
+            */
+            //ListInputs();
+        }
+        catch(exception & e)
+        {
+            Notify(msg_fatal_error, e.message);
+            Notify(msg_fatal_error, "SetUp Failed");
+            //std::cout << "SetUp Failed" << std::endl;
+            throw fatal_error("SetUp Failed");
+        }
     }
 
 
@@ -1644,7 +1704,7 @@ INSTALL_CLASS(Module)
             log.push_back(Message(message));
             if(msg <= msg_fatal_error)
             {
-                    std::cout << message << std::endl;
+                    std::cout << "ikaros: " << message << std::endl;
                     run_mode = run_mode_quit;
             }
             return true;
@@ -1914,7 +1974,6 @@ INSTALL_CLASS(Module)
     {
         socket->Send(sep +line.json());
         sep = ",";
-        //std::cout << "LOG: " << line.json() << std::endl;
     }
     socket->Send("]");
     log.clear();
