@@ -57,27 +57,36 @@ namespace ikaros
 
 // Parameter
 
-    parameter::parameter(std::string type_string, std::string default_val, std::string options_string): type(no_type), timebase(1)
+    parameter::parameter(dictionary info):
+        info_(info), type(no_type)
     {
-        default_value = default_val;
+        std::string type_string = info_["type"];
+
+        if(type_string=="float")
+                type_string = "double";
+        if(type_string=="int")
+            type_string = "double";
+
+        //default_value = std::string(info_["default"]);   // FIXME: use value in dictionary directly later
+        //std::string options = info_["options"];
+
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
         if(type_index == parameter_strings.end())
             throw exception("Unkown parameter type: "+type_string+".");
+
         type = parameter_type(std::distance(parameter_strings.begin(), type_index));
-        // Inits shared pointer
+
+        // Init shared pointers: Use only for matrices in the future *********** check parameter type in info_ dictionary and use these instad of separate shared pointers
         switch(type)
         {
-            case int_type: int_value = std::make_shared<int>(0); break;
-            case bool_type: int_value = std::make_shared<int>(0); break;
-            case float_type: float_value = std::make_shared<float>(0); break;
+            case double_type: double_value = std::make_shared<double>(0); break;
+            case bool_type: bool_value = std::make_shared<bool>(false); break;
             case string_type: string_value = std::make_shared<std::string>(""); break;
             case matrix_type: matrix_value = std::make_shared<matrix>(); break;
-            case rate_type: float_value = std::make_shared<float>(0); break;
-            case options_type:
-                int_value = std::make_shared<int>(0);
-                options = split(options_string,",");
-                break;
-            // TODO: bool
+            case rate_type: double_value = std::make_shared<double>(0); break;
+            case options_type: double_value = std::make_shared<double>(0); break;
+            //options = split(info_["options"],","); // FIXME: put in dict later, but consider potential XML saving problems; or split every time it is needed
+            
             default: break;
         } 
     }
@@ -85,147 +94,112 @@ namespace ikaros
     void 
     parameter::operator=(parameter & p) // this shares data with p
     {
+        info_ = p.info_;
         type = p.type;
-        default_value = p.default_value;
-        int_value = p.int_value;
-        float_value = p.float_value;
+        double_value = p.double_value;
+        bool_value = p.bool_value;
         matrix_value = p.matrix_value;
         string_value = p.string_value;
-        options = p.options;
     }
 
     int 
     parameter::operator=(int v)
     {
-        switch(type)
-        {
-            case int_type: if(int_value) *int_value = v; break;
-            case float_type: if(float_value) *float_value = float(v); break;
-            case rate_type: if(float_value) *float_value = float(v); break;
-            case string_type: if(string_value) *string_value = std::to_string(v); break;
-            // TODO: options and bool
-            default: break;
-        }
-
+        if(double_value) 
+            *double_value = double(v);
+        else if(bool_value) 
+            *bool_value = bool(v);
+        else if(string_value) 
+            *string_value = std::to_string(v);
         return v;
     }
 
-    float 
-    parameter::operator=(float v)
+    double 
+    parameter::operator=(double v)
     {
-        switch(type)
-        {
-            case int_type: if(int_value) *int_value = int(v); break;
-            case float_type: if(float_value) *float_value = v; break;
-            case rate_type: if(float_value) *float_value = v; break;
-            case string_type: if(string_value) *string_value = std::to_string(v); break;
-            case bool_type: if(int_value) *int_value = int(v); break;
-            case options_type: if(int_value) *int_value = int(v); break; // FIXME: check range
-            default: break;
-        }
-        //is_set = true;
+       if(double_value) 
+            *double_value = v;
+        else if(bool_value) 
+            *bool_value = bool(v);
+        else if(string_value) 
+            *string_value = std::to_string(v);
         return v;
-    }
-
-    float 
-    parameter::operator=(double v) 
-    { 
-        return operator=(float(v));
     }
 
 
     std::string 
-    parameter::operator=(std::string v) // FIXME: ADD ALL TYPE HERE!!! *** 
+    parameter::operator=(std::string v)
     {
-        switch(type)
-        {
-            case no_type: type=string_type;  string_value = std::make_shared<std::string>(v); break; 
-        
-            case int_type: 
-                if(int_value) 
-                    *int_value = std::stoi(v); 
-                else
-                    int_value = std::make_shared<int>(std::stoi(v));
-                break;
-
-            case bool_type:
-                if(int_value)
-                {
-                    if(is_true(v))
-                        *int_value = 1;
-                    else
-                        *int_value = 0;
-                }
-                break;
-
-            case options_type:
-            {
-                auto ix = find(options.begin(), options.end(), v);
-                if (ix==options.end())
-                    throw exception("option \""+v+"\" not defined."); // FIXME: Should be able to recover if the value came from WEBUI
-                int_value = std::make_shared<int>(ix - options.begin());
-            }
-            break;
-
-            case float_type:
-            case rate_type:
-                if(float_value) 
-                    *float_value = std::stof(v);
-                else
-                    float_value = std::make_shared<float>(std::stof(v));
-                break;
-
-
-            case string_type:
-                if(string_value)
-                    *string_value = v;
-                else
-                    string_value = std::make_shared<std::string>(v);
-                    break;
-            case matrix_type: 
-                if(matrix_value) 
-                    *matrix_value = matrix(v);
-                else
-                    matrix_value = std::make_shared<matrix>(matrix(v));
-                break;
-
-            default: 
-                break;
-        }
+        if(type==options_type) // FIXME: DO STUFF
+            ;
+        else if(double_value) 
+            *double_value = stod(v);
+        else if(bool_value) 
+            *bool_value = is_true(v);
+        else if(string_value) 
+            *string_value = v;
+        else if(matrix_value)
+            *matrix_value = v;
         return v;
     }
 
 
     parameter::operator matrix & ()
     {
-        if(type==matrix_type && matrix_value) 
+        if(matrix_value) 
             return *matrix_value;
-
-        throw exception("Not a matrix value.");
+        else
+            throw exception("Not a matrix value.");
     }
+
 
     parameter::operator std::string()
     {
         switch(type)
         {
-            case no_type: throw exception("Uninitialized parameter."); // return "uninitialized_parameter";
-            case int_type: if(int_value) return std::to_string(*int_value);            
-            case options_type: if(int_value) return options.at(*int_value);
-            case float_type: if(float_value) return std::to_string(*float_value);
-            case rate_type: if(float_value) return std::to_string(*float_value);
-            case bool_type: if(int_value) return (*int_value==1? "true" : "false");
+            case no_type: throw exception("Uninitialized or unbound parameter.");
+            case double_type: if(double_value) return std::to_string(*double_value);
+            case bool_type: if(bool_value) return (*bool_value? "true" : "false");
+            case rate_type: if(double_value) return std::to_string(*double_value);
             case string_type: if(string_value) return *string_value;
-            case matrix_type: return matrix_value->json(); // FIXME: use separate string conversion
-            default: ;
+            case matrix_type: return matrix_value->json();
+            case options_type: return "**OPTIONS**";
+            default:  throw exception("Type conversion error for parameter.");
         }
-        throw exception("Type conversion error for parameter.");
     }
 
+
+    parameter::operator double()
+    {
+        if(double_value) 
+            return *double_value;
+        else if(bool_value) 
+            return *bool_value;
+        else if(string_value) 
+            return stod(*string_value); // FIXME: may fail ************
+        else if(matrix_value)
+            return 0;// FIXME check 1x1 matrix ************
+        else
+            throw exception("Type conversion error. Parameter does not have a type. Bind?");
+    }
+
+
+
+/*
     parameter::operator bool()
     {
-        return *int_value!=0;   // FIXME: Check all types here
+        if(double_value) 
+            return (*double_value!= 0);
+        else if(bool_value) 
+            return *bool_value;
+        else if(string_value) 
+            return is_true(*string_value);
+        else if(matrix_value)
+            return !(*matrix_value).empty();
+        else
+            throw exception("Type conversion error for parameter.");
     }
-
+*/
 /*
     parameter::operator int()
     {
@@ -234,8 +208,8 @@ namespace ikaros
             case no_type: throw exception("Uninitialized_parameter.");
             case int_type: if(int_value) return *int_value;
             case options_type: if(int_value) return *int_value;
-            case float_type: if(float_value) return *float_value;
-            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base
+            case double_type: if(double_value) return *double_value;
+            case rate_type: if(double_value) return *double_value;    // FIXME: Take care of time base
             case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
             case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
             default: ;
@@ -244,25 +218,26 @@ namespace ikaros
     }
 */
 
-    int parameter::as_int()
+    int
+    parameter::as_int()
     {
         switch(type)
         {
             case no_type: throw exception("Uninitialized_parameter.");
-            case int_type: if(int_value) return *int_value;
-            case bool_type: if(int_value) return *int_value;
-            case options_type: if(int_value) return *int_value;
-            case float_type: if(float_value) return *float_value;
-            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base
-            case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
-            case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
+            case double_type: if(double_value) return *double_value;
+            case rate_type: if(double_value) return *double_value;    // FIXME: Take care of time base
+            case bool_type: if(bool_value) return *bool_value;
+            case options_type: if(double_value) return *double_value;
+            case string_type: if(string_value) return stoi(*string_value); // FIXME: Check that it is a number
+            case matrix_type: throw exception("Could not convert matrix to int"); // FIXME check 1x1 matrix
             default: ;
         }
         throw exception("Type conversion error for  parameter");
     }
 
 
-    const char* parameter::c_str() const noexcept
+    const char* 
+    parameter::c_str() const noexcept
     {
         if(string_value)
             return string_value->c_str();
@@ -271,81 +246,37 @@ namespace ikaros
     }
 
 
-    parameter::operator float()
-    {
-        switch(type)
-        {
-            case no_type: throw exception("uninitialized_parameter.");
-            case int_type: if(int_value) return *int_value;
-            case options_type: if(int_value) return *int_value;
-            case float_type: if(float_value) return *float_value;
-            case rate_type: if(float_value) return *float_value;    // FIXME: Take care of time base here *******************
-            case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
-            //case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
-            default: ;
-        }
-     throw exception("Type conversion error for  parameter.");
-    }
-
-
-
     std::string 
     parameter::json()
     {
         switch(type)
         {
-            case int_type:      if(int_value)       return "[["+std::to_string(*int_value)+"]]";
-            case options_type:  if(int_value)       return "[["+std::to_string(*int_value)+"]]";
-            case float_type:    if(float_value)     return "[["+std::to_string(*float_value)+"]]";
-            case rate_type:     if(float_value)     return "[["+std::to_string(*float_value)+"]]";  // FIXME: print timebase as well??? Probably not here.
-            case bool_type:     if(int_value)       return (int_value ? "true" : "false");
+            case double_type:    if(double_value)   return "[["+std::to_string(*double_value)+"]]";   // FIXME: remove if statements and use exception handling
+            case bool_type: if(bool_value)          return (*bool_value? "[[true]]" : "[[false]]");
+            case rate_type:     if(double_value)    return "[["+std::to_string(*double_value)+"]]";
             case string_type:   if(string_value)    return "\""+*string_value+"\"";
             case matrix_type:   if(matrix_value)    return matrix_value->json();
-            default:            return "";
+            default:            throw exception("Cannot convert parameter to string");
         }
     }
+
 
     std::ostream& operator<<(std::ostream& os, parameter p)
     {
         switch(p.type)
         {
-            case int_type:      if(p.int_value) os << *p.int_value; break;
-            case options_type:  if(p.int_value) os << *p.int_value; break;
-            case float_type:    if(p.float_value) os <<  *p.float_value; break;
-            case rate_type:    if(p.float_value) os <<  *p.float_value; break;  // FIXME: print timebase as well???
-            case bool_type:     if(p.int_value) os <<  (*p.int_value==1? "true" : "false"); break;
+            case options_type:  os << "OPTIONS"; break; // FIXME: *********** OPTIONS
+            case double_type:    if(p.double_value) os <<  *p.double_value; break;
+            case bool_type:     if(p.double_value) os <<  (*p.double_value == 0 ? "false" : "true"); break;
+            case rate_type:    if(p.double_value) os <<  *p.double_value; break; 
             case string_type:   if(p.string_value) os <<  *p.string_value; break;
             case matrix_type:   if(p.matrix_value) os <<  *p.matrix_value; break;
-            default:            os << "unkown-parameter-type"; break;
+            default:            throw exception("Cannot convert parameter to string for printing");
         }
 
         return os;
     }
 
-float operator+(parameter p, float x) { return (float)p+x; }
-float operator+(float x, parameter p) { return (float)p+x; }
-float operator+(parameter p, double x) { return (float)p+x; }
-float operator+(double x, parameter p) { return (float)p+x; }
-float operator+(parameter x, parameter p) { return (float)p+(float)x; }
-
-float operator-(parameter p, float x) { return (float)p-x; }
-float operator-(float x, parameter p) { return x-(float)p; }
-float operator-(parameter p, double x) { return (float)p-x; }
-float operator-(double x, parameter p) { return x-(float)p; }
-float operator-(parameter x, parameter p) { return (float)x-(float)p; }
-
-float operator*(parameter p, float x) { return (float)p*x; }
-float operator*(float x, parameter p) { return (float)p*x; }
-float operator*(parameter p, double x) { return (float)p*x; }
-float operator*(double x, parameter p) { return (float)p*x; }
-float operator*(parameter x, parameter p) { return (float)p*(float)x; }
-
-
-float operator/(parameter p, float x) { return (float)p*x; }
-float operator/(float x, parameter p) { return x/(float)p; }
-float operator/(parameter p, double x) { return (float)p*x; }
-float operator/(double x, parameter p) { return x/(float)p; }
-float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 // Component
 
@@ -374,8 +305,11 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
+
+
+
     bool 
-    Component::ResolveParameter(parameter & p,  std::string & name,   std::string & default_value)
+    Component::ResolveParameter(parameter & p,  std::string & name)
     {
         try
         {
@@ -383,15 +317,16 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             std::string bind_to = GetBind(name);
             if(!bind_to.empty())
             {
-            if(LookupParameter(p, bind_to))
+                if(LookupParameter(p, bind_to))
                     return true;
             }
 
             // Lookup normal value in current component-context
+
             std::string v = GetValue(name);
-            if(!v.empty())
+            if(!v.empty())  // ****************** this does dot work for string that are allowed to be empty
             {
-                std::string val = Evaluate(v, p.type == string_type);
+                std::string val = v; // Evaluate(v, p.type == string_type); ***********
                 if(!val.empty())
                 {
                     SetParameter(name, val);
@@ -399,7 +334,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
                 }
             }
 
-            SetParameter(name, Evaluate(default_value, p.type == string_type));
+            SetParameter(name, p.info_["default"]); //******************* Evaluate(default_value, p.type == string_type)
             return true; // IF refault value ******
         }
         catch(exception & e)
@@ -416,18 +351,103 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
 
 
-    std::string 
-    Component::GetValue(const std::string & name)    // Get value of a attribute/variable in the context of this component ***** CHECK PARAMETERS FIRST *******
+    bool 
+    Component::KeyExists(const std::string & key)
     {        
-        if(info_.contains(name))
-            return Evaluate(info_[name]);
+        if(info_.contains(key))
+            return true;
         if(parent_)
-            return parent_->GetValue(name);
-        return "";
+            return parent_->KeyExists(key);
+        else
+            return false;
     }
 
 
-  std::string 
+    std::string 
+    Component::LookupKey(const std::string & key)
+    {        
+        if(info_.contains(key))
+            return info_[key];
+        if(parent_)
+            return parent_->LookupKey(key);
+        else
+            throw exception("Name not found"); // throw not_found_exception instead
+    }
+
+
+
+    static std::string
+    exchange_before_dot(const std::string& original, const std::string& replacement)
+    {
+        size_t pos = original.find('.');
+        if (pos == std::string::npos) // No dot found, replace the whole string
+            return replacement;
+     else  // Replace up to the first dot
+            return replacement + original.substr(pos);
+    }
+
+
+
+    static std::string
+    before_dot(const std::string& original)
+    {
+        size_t pos = original.find('.');
+        if (pos == std::string::npos)
+            return original;
+     else 
+            return original.substr(0,pos);
+    }
+
+
+//
+// GetValue
+//
+// Get value of a key/variable in the context of this component (ignores current parameter values)
+// Throws and eception if value cannot be found
+// Does not handle default values - this is done by parameters
+
+    std::string 
+    Component::GetValue(const std::string & path) 
+    {     
+        if(path.empty())
+            throw exception("Name not found"); // throw not_found_exception instead
+
+        if(path[0]=='@')
+            return GetValue(exchange_before_dot(path, LookupKey( before_dot(path).substr(1))));
+        
+        if(path[0]=='.')
+            return kernel().components.begin()->second->GetValue(path.substr(1)); // Absolute path // FIXME: Scary - main_group -
+
+        size_t pos = path.find('.');
+        if(pos != std::string::npos)
+        {
+            std::string head = path.substr(0, pos);
+            std::string tail = path.substr(pos + 1);
+
+            if(head[0]=='@')
+                head = LookupKey(head.substr(1));
+
+            std::string local_path = path_+'.'+head;
+            if(kernel().components.count(local_path))
+                return kernel().components[local_path]->GetValue(tail);
+            else if(std::string(parent_->info_["name"]) == head)
+                return parent_->GetValue(tail);
+            else
+                throw exception("Name not found"); // throw not_found_exception instead 
+        }
+
+        std::string value = LookupKey(path);
+        if(value.find('@') != std::string::npos && value.find('.') != std::string::npos) // A new indirect 'path' - start over
+            return GetValue(value);
+        else if(value.find('@') != std::string::npos) // A new indirect 'key' - start over
+            return GetValue(value.substr(1));
+        else
+            return value;
+    }
+
+
+
+    std::string 
     Component::GetBind(const std::string & name)
     {
         if(info_.contains(name))
@@ -456,7 +476,6 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
         }
         return var;
     }
-
 
 
     void Component::Bind(parameter & p, std::string name)
@@ -526,13 +545,9 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 
     void Component::SetParameter(std::string name, std::string value)
     {
-        //if(name=="name")
-        //    return;
-        //if(name=="class")
-        //    return;  
         std::string parameter_name = path_+"."+validate_identifier(name);
         kernel().SetParameter(parameter_name, value);
-      }
+    }
 
 
     bool Component::LookupParameter(parameter & p, const std::string & name)
@@ -549,8 +564,14 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
             return false;
     }
 
+//
+// GetComponent
+//
+// sensitive to variables and indirection
+// does local substitution of vaiables unlike GetValue() / FIXME: is this correct?
+//
 
-    Component * Component::GetComponent(const std::string & s) // Get component; sensitive to variables and indirection - changed to peek versions
+    Component * Component::GetComponent(const std::string & s) 
     {
         std::string path = SubstituteVariables(s);
         try
@@ -646,6 +667,48 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     }
 
 
+// NEW EVALUATION FUNCTIONS
+
+    double 
+    Component::EvaluateNumber(std::string v)
+    {
+        return stod(v); // FIXME: Add full parding of expressions and variables *************
+    }
+
+
+    bool 
+    Component::EvaluateBool(std::string v)
+    {
+        return false;
+    }
+
+
+
+    std::string 
+    Component::EvaluateString(std::string v)
+    {
+        return "";
+    }
+
+
+
+    std::string 
+    Component::EvaluateMatrix(std::string v)
+    {
+        return "";
+    }
+
+
+
+    int 
+    Component::EvaluateOptions(std::string v, std::vector<std::string> & options)
+    {
+        return 0;
+    }
+
+
+
+
   Component::Component():
     parent_(nullptr),
     info_(kernel().current_component_info),
@@ -653,21 +716,20 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
 {
           // FIXME: Make sure there are empty lists. None of this should be necessary when dictionary is fixed
 
-        if(info_["inputs"].is_null())
-            info_["inputs"] = list();
+    if(info_["inputs"].is_null())
+        info_["inputs"] = list();
 
-      if(info_["outputs"].is_null())
-            info_["outputs"] = list();
+    if(info_["outputs"].is_null())
+        info_["outputs"] = list();
 
-        if(info_["parameters"].is_null())
-            info_["parameters"] = list();
+    if(info_["parameters"].is_null())
+        info_["parameters"] = list();
 
-        if(info_["groups"].is_null())
-            info_["groups"] = list();
+    if(info_["groups"].is_null())
+        info_["groups"] = list();
 
-            if(info_["modules"].is_null())
-            info_["modules"] = list();
-        // FIXME: End
+    if(info_["modules"].is_null())
+        info_["modules"] = list();
 
     for(auto p: info_["parameters"])
         AddParameter(p);
@@ -678,7 +740,7 @@ float operator/(parameter x, parameter p) { return (float)x/(float)p; }
     for(auto output: info_["outputs"])
         AddOutput(output);
 
-    // Set parent
+   // Set parent
 
     auto p = path_.rfind('.');
     if(p != std::string::npos)
@@ -1126,7 +1188,7 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ResolveParameter(parameter & p,  std::string & name,  std::string & default_value)
+    void Kernel::ResolveParameter(parameter & p,  std::string & name)
     {
         std::size_t i = name.rfind(".");
         if(i == std::string::npos)
@@ -1134,7 +1196,7 @@ INSTALL_CLASS(Module)
 
         auto c = components.at(name.substr(0, i));
         std::string parameter_name = name.substr(i+1, name.size());
-        c->ResolveParameter(p, parameter_name, default_value);
+        c->ResolveParameter(p, parameter_name);
     }
 
 
@@ -1150,7 +1212,7 @@ INSTALL_CLASS(Module)
             {
                 auto c = components.at(p->first.substr(0, i));
                 std::string parameter_name = p->first.substr(i+1, p->first.size());
-                  ok &= c->ResolveParameter(p->second, parameter_name, p->second.default_value);
+                  ok &= c->ResolveParameter(p->second, parameter_name);
             }
         }
         if(!ok)
@@ -1322,22 +1384,16 @@ INSTALL_CLASS(Module)
     void Kernel::AddOutput(std::string name, dictionary parameters)
     {
         buffers[name] = matrix().set_name(parameters["name"]);
-      }
+    }
 
     void Kernel::AddParameter(std::string name, dictionary params)
     {
-        std::string type_string = params["type"];
-        std::string default_value = params["default"];
-        std::string options = params["options"];
-        parameter p(type_string, default_value, options);
-        p.info_ = params;
-        parameters.emplace(name, p);
+         parameters.emplace(name, parameter(params));
     }
 
 
     void Kernel::SetParameter(std::string name, std::string value)
     {
-
         if(!parameters.count(name))
             throw exception("Parameter \""+name+"\" could not be set because it doees not exist.");
 
@@ -1493,9 +1549,10 @@ INSTALL_CLASS(Module)
             catch(const exception& e)
             {
                 //log.push_back(Message("E", e.what()));
-               // log.push_back(Message("E", "Load file failed for "s+options_.filename));
-               //Notify(msg_fatal_error, e.what());
-               Notify(msg_fatal_error, "Load file failed for "s+options_.filename);
+                // log.push_back(Message("E", "Load file failed for "s+options_.filename));
+                //Notify(msg_fatal_error, e.what());
+                Notify(msg_fatal_error, "Load file failed for "s+options_.filename);
+                CalculateCheckSum();
                 New();
             }
     }
@@ -1503,6 +1560,7 @@ INSTALL_CLASS(Module)
 
     void Kernel::CalculateCheckSum()
     {
+        return; // ****************************TEMPORARY *****************
         if(!info_.contains("check_sum"))
             return;
 
@@ -1617,21 +1675,16 @@ INSTALL_CLASS(Module)
             CalculateSizes();
             InitCircularBuffers();
             InitComponents();
-            /*
-            InitComponents();
+ /*
             ListComponents();
             ListConnections();
-
             //ListInputs();
             //ListOutputs();
-
             ListBuffers();
             ListCircularBuffers();
-
             ListParameters();
             PrintLog();
-            */
-            //ListInputs();
+*/
         }
         catch(exception & e)
         {
@@ -2249,7 +2302,7 @@ INSTALL_CLASS(Module)
                 {
                     (*p.matrix_value)(x,y)= value;
                 }
-                else // if(p.type == float_type) // FIXME: scalar type
+                else // if(p.type == double_type) // FIXME: scalar type
                 {
                     p = value;
                 }
