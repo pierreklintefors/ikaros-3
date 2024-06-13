@@ -1446,7 +1446,7 @@ Dictionary::KeyValue::KeyValue(const char * k, const float v, KeyValue * first)
 {
     type = 2;
     key = create_string(k);
-    float_value = v;
+    double_value = v;
     next = first;
     prev = NULL;
 	
@@ -1526,7 +1526,7 @@ Dictionary::Set(const char * k, const float v)
             destroy_string(kv->value);
             kv->type = 2;
             kv->value = create_formatted_string("%.4f", v);
-            kv->float_value = v;
+            kv->double_value = v;
             return;
         }
 	
@@ -1556,7 +1556,7 @@ Dictionary::GetFloat(const char * k)
 {
     for(KeyValue * kv = first; kv != NULL; kv = kv->next)
         if(equal_strings(k, kv->key))
-            return kv->float_value;
+            return kv->double_value;
     return 0;
 }
 
@@ -1575,7 +1575,7 @@ Dictionary::Print()
                 break;
 
             case 2:
-                printf("\"%s\" : \"%.4f\"\n", kv->key, kv->float_value);
+                printf("\"%s\" : \"%.4f\"\n", kv->key, kv->double_value);
                 break;
 
         }
@@ -1596,7 +1596,7 @@ Dictionary::GetInt(Dictionary::Iterator i)
 const float
 Dictionary::GetFloat(Dictionary::Iterator i)
 {
-	return i.kv->float_value;
+	return i.kv->double_value;
 }
 
 char *
@@ -1611,7 +1611,7 @@ Dictionary::GetString(Iterator i)
             return create_formatted_string("%d", i.kv->int_value);
 
         case 2:
-            return create_formatted_string("%.4f", i.kv->float_value);
+            return create_formatted_string("%.4f", i.kv->double_value);
     }
     
     return create_string("");

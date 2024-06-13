@@ -375,19 +375,8 @@ bool is_integer(std::string & s)
 
 bool is_true(const std::string & s)
 {
-    if(s.empty())
-        return false;
-    if(s[0] == 'T')
-        return true;
-     if(s[0] == 't')
-        return true;
-    if(s[0] == 'Y')
-        return true;
-    if(s[0] == 'y')
-        return true;
-    if(s=="1")
-        return true;
-    return false;
+    static std::vector<std::string> true_list = {"true", "True", "yes", "YES", "1"};
+    return std::find(true_list.begin(), true_list.end(), s) != true_list.end();
 }
 
 std::ostream& operator<<(std::ostream& os, const std::vector<int> & v)

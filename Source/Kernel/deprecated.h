@@ -285,7 +285,7 @@ class Dictionary
             int     type;
 			char *  value;
             int     int_value;
-            float   float_value;
+            float   double_value;
 			
 			KeyValue(const char * k, const char * v, KeyValue * first);
 			KeyValue(const char * k, const int v, KeyValue * first);

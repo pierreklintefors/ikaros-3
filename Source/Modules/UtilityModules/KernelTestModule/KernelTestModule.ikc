@@ -1,6 +1,6 @@
 <class name="KernelTestModule" description="tests all parameter and io-functionality">
 
-	<parameter name="a" type="int" default="3" description="parameter a" />
+	<parameter name="a" type="string" default="3" description="parameter a" />
 	<parameter name="b" type="bool" default="true" description="parameter b" />
 	<parameter name="c" type="float" default="6" description="parameter c" />
 	<parameter name="d" type="string" default="text" description="parameter d" />
@@ -11,8 +11,8 @@
 	<parameter name="data" type="matrix" default="1, 2, 3, 4"  description="parameter data" />
 	<parameter name="mdata" type="matrix" default="1, 2; 3, 4"  description="parameter data" />
 
-	<parameter name="x" type="int" default="7" description="parameter x" />
-	<parameter name="y" type="int" default="9" description="parameter y" />
+	<parameter name="x" type="double" default="7" description="parameter x" />
+	<parameter name="y" type="double" default="9" description="parameter y" />
 
 
 	<input name="INPUT" />

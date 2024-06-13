@@ -30,6 +30,35 @@ class KernelTestModule: public Module
 
     void Init()
     {
+        Bind(b, "b");
+        if(b)
+            std::cout << "b: true" << std::endl;
+        else
+            std::cout << "b: false" << std::endl;
+
+          std::cout << GetValue("p") << std::endl;  // => 333
+
+
+          std::cout << GetValue("a") << std::endl;
+        std::cout << GetValue("b") << std::endl;
+        std::cout << GetValue("c") << std::endl;
+        std::cout << GetValue("d") << std::endl;
+        std::cout << GetValue("e") << std::endl;
+        std::cout << GetValue("f") << std::endl;
+        std::cout << GetValue("g") << std::endl;
+        std::cout << GetValue("data") << std::endl;
+
+        std::cout << GetValue("z") << std::endl;
+        std::cout << GetValue("Test_2.check_sum") << std::endl;
+        std::cout << GetValue(".check_sum") << std::endl;
+        std::cout << GetValue(".Const.data") << std::endl;
+
+            std::cout << GetValue("Test_2.Const.Test_2.Test.Test_2.Test.g") << std::endl;
+            std::cout << GetValue("Test_2.Const.Test_2.Test.Test_2.g") << std::endl;
+            std::cout << GetValue("Test_2.Const.Test_2.Test.z") << std::endl;
+    
+
+
         Bind(a, "a");
         Bind(b, "b");
         Bind(c, "c");
@@ -55,7 +84,7 @@ class KernelTestModule: public Module
         x.print("x");
         y.print("t");
 
-/*
+
         Bind(output1, "OUTPUT1");
         Bind(output2, "OUTPUT2");
         Bind(output3, "OUTPUT3");
@@ -65,17 +94,17 @@ class KernelTestModule: public Module
         Bind(output7, "OUTPUT7");
         Bind(output8, "OUTPUT8");
         Bind(output9, "OUTPUT9");
-
-        output1.print();
-        output2.print();
-        output3.print();
-        output4.print();
-        output5.print();
-        output6.print();
-        output7.print();
-        output8.print();
-        output9.print();
-        */
+/*
+        output1.info();
+        output2.info();
+        output3.info();
+        output4.info();
+        output5.info();
+        output6.info();
+        output7.info();
+        output8.info();
+        output9.info();
+*/
     }
 
 

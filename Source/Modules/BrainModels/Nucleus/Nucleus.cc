@@ -39,6 +39,9 @@ class Nucleus: public Module
         x = 0;
     }
 
+    static double max(double x, double y) { return x>y ? x : y; } // std::max does not work since it is a template function that requitres identical types of x and y
+    
+    
     void Tick()
     {
         float a = 0;
@@ -58,7 +61,7 @@ class Nucleus: public Module
         }
 
         x += epsilon * (a - x);
-        output = std::max(0.0f, alpha + beta * atan(x)/tan(1));
+        output = max(0, alpha + beta * atan(x)/tan(1));
     }
 };
 
