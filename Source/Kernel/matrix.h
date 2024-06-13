@@ -955,7 +955,7 @@ namespace ikaros
 
         friend std::ostream& operator<<(std::ostream& os, matrix & m)
         {
-            if(m.empty())
+            if(m.rank()==0) // !empty()
             {
                 if(m.info_->size_ == 0)
                     os << "{}";
