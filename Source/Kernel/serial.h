@@ -25,13 +25,14 @@
 
 #define DEFAULT_MAX_FAILED_READS 100
 
-#include "ikaros.h"
-using namespace ikaros;
+//#include "ikaros.h"
+//using namespace ikaros;
 
+#include <string>
 #include <cstdlib>
 #include <cstdio>
 
-
+#include "timing.h"
 
 class SerialException
 {
