@@ -25,7 +25,7 @@ namespace ikaros
     struct list;
     struct value;
 
-    using valueVariant = std::variant<bool, double, null, std::string, list, dictionary>; // int, 
+    using valueVariant = std::variant<bool, double, null, std::string, list, dictionary>;
     using mapPtr = std::shared_ptr<std::map<std::string, value>>;
     using listPtr = std::shared_ptr<std::vector<value>>;
 
@@ -123,7 +123,6 @@ namespace ikaros
         valueVariant    value_;
 
         value(bool v)               { value_ = v; }
-        //value(int v)              { value_ = v; }
         value(double v)             { value_ = v; }
         value(null n=null())        { value_ = null(); }
         value(const char * s)       { value_ = s; }
@@ -132,8 +131,6 @@ namespace ikaros
         value(const dictionary & d) { value_ = d; }
 
         value & operator =(bool v) { value_ = v; return *this; }
-        //value & operator =(int v) { value_ = v; return *this; }
-        //value & operator =(double v) { value_ = v; return *this; }
         value & operator =(double v) { value_ = double(v); return *this; }
         value & operator =(null n) { value_ = null(); return *this; };
         value & operator =(const std::string & s) { value_ = s; return *this; }
