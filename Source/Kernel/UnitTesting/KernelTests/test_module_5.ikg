@@ -6,7 +6,7 @@
         name="Test" 
         class="KernelTestModule"
 
-        a = "@z"
+        a = "abc/def:ghi"
         b = "true"
         c = "333"
         d = "FourFourFour"
