@@ -1,4 +1,4 @@
-<group name="Test_2"  check_sum = "146133" description="Test that all parameter values are found in module element">
+<group name="Test_4"  check_sum = "0" description="Test selection of correct parameter type">
 
     <module name="Const" class="Constant" data="9, 8, 7" />
 
