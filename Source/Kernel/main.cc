@@ -10,7 +10,6 @@ using namespace ikaros;
 int
 main(int argc, char *argv[])
 {
-    
     bool debug_mode = false;
 #if DEBUG
     debug_mode = true;
