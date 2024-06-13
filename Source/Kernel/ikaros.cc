@@ -1115,7 +1115,8 @@ INSTALL_CLASS(Module)
             try
             {
                 //std::cout <<" Tick: " << m.second->info_["name"] << std::endl;
-                m.second->Tick();
+                if(m.second != nullptr)  // Allow classes without code
+                    m.second->Tick();   
             }
             catch(const empty_matrix_error& e)
             {
@@ -1434,8 +1435,8 @@ INSTALL_CLASS(Module)
          info.merge(dictionary(classes[classname].path));  // merge with class data structure
 
         if(classes[classname].module_creator == nullptr)
-            throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
-        components[current_component_path] = classes[classname].module_creator(); // throws bad function call if not defined *** should be only difference from Group/Component
+            std::cout << "Class \""<< classname << "\" has no installed code." << std::endl; // throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
+        components[current_component_path] = classes[classname].module_creator();
     }
 
 
