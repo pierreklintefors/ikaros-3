@@ -306,8 +306,6 @@ namespace ikaros
 
 
 
-
-
     bool 
     Component::ResolveParameter(parameter & p,  std::string & name)
     {
@@ -371,7 +369,7 @@ namespace ikaros
         if(parent_)
             return parent_->LookupKey(key);
         else
-            throw exception("Name not found"); // throw not_found_exception instead
+            return ""; // throw exception("Name not found"); // throw not_found_exception instead
     }
 
 
@@ -410,7 +408,7 @@ namespace ikaros
     Component::GetValue(const std::string & path) 
     {     
         if(path.empty())
-            throw exception("Name not found"); // throw not_found_exception instead
+            return ""; // throw exception("Name not found"); // throw not_found_exception instead
 
         if(path[0]=='@')
             return GetValue(exchange_before_dot(path, LookupKey( before_dot(path).substr(1))));
@@ -433,7 +431,7 @@ namespace ikaros
             else if(std::string(parent_->info_["name"]) == head)
                 return parent_->GetValue(tail);
             else
-                throw exception("Name not found"); // throw not_found_exception instead 
+                return ""; // throw exception("Name not found"); // throw not_found_exception instead 
         }
 
         std::string value = LookupKey(path);
