@@ -1033,8 +1033,8 @@ INSTALL_CLASS(Module)
             session_id = sid;
             uri.erase(0, 1);
             std::string params = tail(uri, "?");
+            std::cout << params << std::endl;
             command = head(uri, "/"); 
-            //view_name = tail(uri, "/"); 
             component_path = uri;
             parameters.parse_url(params);
         }
@@ -1436,7 +1436,8 @@ INSTALL_CLASS(Module)
 
         if(classes[classname].module_creator == nullptr)
             std::cout << "Class \""<< classname << "\" has no installed code." << std::endl; // throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
-        components[current_component_path] = classes[classname].module_creator();
+        else
+            components[current_component_path] = classes[classname].module_creator();
     }
 
 
@@ -2283,95 +2284,52 @@ INSTALL_CLASS(Module)
 
 
     void
-    Kernel::DoControl(Request & request) // FIXME: No indices right now ************** NOT IMPLEMENTED
+    Kernel::DoControl(Request & request)
     {
-        /*
         try
         {
-            auto cmd = split(uri, "/");
-            if(cmd.size() == 6)
-            {
-                auto param_name = cmd[2];
-                int x = std::stoi(cmd[3]);
-                int y = std::stoi(cmd[4]);
-                float value = std::stof(cmd[5]);
+            int x = 0;
+            int y = 0;
+            double value = 1;
 
-                parameter & p = parameters.at(param_name);
-                if(p.type == matrix_type)
-                {
-                    (*p.matrix_value)(x,y)= value;
-                }
-                else // if(p.type == double_type) // FIXME: scalar type
-                {
-                    p = value;
-                }
+            if(request.parameters.contains("x"))
+                x = request.parameters["x"];
+
+            if(request.parameters.contains("y"))
+                x = request.parameters["y"];
+            
+            if(request.parameters.contains("value"))
+                value = request.parameters["value"];
+
+            if(!parameters.count(request.component_path))
+            {
+                Notify(msg_warning, "Parameter '"+request.component_path+"' could not be found.");
+                DoSendData(request);
+                return;
             }
-            DoSendData(request);
+
+            parameter & p = parameters.at(request.component_path);
+            if(p.type == matrix_type)
+            {
+                (*p.matrix_value)(x,y)= value;
+            }
+            else
+            {
+                p = value;
+            }
         }
         catch(const std::exception& e)
         {
             std::cerr << e.what() << '\n';
             DoSendData(request);
         }
-        */
     }
 
-#if FALSE
 /*
-    dictionary
-    Kernel::GetView(std::string component, std::string view_name)   // FIXME: Remove later on
-    {
-        Component * c = components.at(component);
-        dictionary cd = c->info_;
-        list vs = cd["views"];
-        dictionary v;
-
-        for(auto u : vs) // Find view
-            if(std::string(u["name"]) == view_name)
-                return u;
-
-        return dictionary();
-    }
-
-
-    dictionary 
-    Kernel::GetView(Request & request)
-    {
-        Component * c = components.at(request.component_path);
-        dictionary cd = c->info_;
-        list vs = cd["views"];
-        dictionary v;
-
-        for(auto u : vs) // Find view
-            if(std::string(u["name"]) == request.view_name)
-                return u;
-
-        return dictionary();
-    }
-
-
-    void
-    Kernel::AddView(Request & request) // FIXME: Local exception handling
-    {
-        std::cout << "AddView: " << std::endl;
-
-        Component * c = components.at(request.component_path);
-
-        dictionary d;
-        d["name"] = request.parameters["name"];
-        d["widgets"] = list();
-        c->info_["views"].push_back(d);
-
-        DoSendData(request);
-    }
-*/
-
-
     void
     Kernel::AddWidget(Request & request) // FIXME: Local exception handling
     {
         std::cout << "AddWidget: " << std::endl;
-/*
         auto view = GetView(request);
         if(view["widgets"].is_null())
             view["widgets"] = list();
@@ -2379,7 +2337,7 @@ INSTALL_CLASS(Module)
         list u = list(view["widgets"]);
         u.push_back(request.parameters);
 
-*/
+
         DoSendData(request);
     }
 
@@ -2388,7 +2346,7 @@ INSTALL_CLASS(Module)
     Kernel::DeleteWidget(Request & request)
     {
         //std::cout << "DeleteWidget: "  << std::endl;
-/*
+
         int index = std::stoi(request.parameters["index"]);
         list view = list(GetView(request)["widgets"]);
         view.erase(index);
@@ -2396,7 +2354,7 @@ INSTALL_CLASS(Module)
         int i=0;
         for(auto & w : view)
             w["_index_"] = i++;
-*/
+
         DoSendData(request);
     }
 
@@ -2420,7 +2378,7 @@ INSTALL_CLASS(Module)
         //std::cout << "SetWidgetToFront: " << std::endl;
 
         int index = request.parameters.get_int("index");
-/*
+
         //list u = list(GetView(request)["widgets"]);
 
         dictionary d = u[index];
@@ -2431,7 +2389,7 @@ INSTALL_CLASS(Module)
         for(auto & item : u)
             item["_index_"] = i++;
 
-*/
+
         DoSendData(request);
      }
 
@@ -2443,7 +2401,7 @@ INSTALL_CLASS(Module)
         //std::cout << "SetWidgetToBack: " << std::endl;
 
         int index = request.parameters.get_int("index");
-/*
+
         list u = list(GetView(request)["widgets"]);
 
         dictionary d = u[index];
@@ -2453,11 +2411,9 @@ INSTALL_CLASS(Module)
         int i=0;
         for(auto & item : u)
             item["_index_"] = i++;
-*/
+
         DoSendData(request);
     }
-
-/*
     void
     Kernel::RenameView(Request & request)
     {
@@ -2469,7 +2425,7 @@ INSTALL_CLASS(Module)
         DoSendData(request);
     }
 */
-#endif
+
 
     void
     Kernel::DoAddGroup(Request & request)

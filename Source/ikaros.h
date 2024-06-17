@@ -301,7 +301,6 @@ struct Request
         dictionary parameters;
         std::string url;
         std::string command; 
-        //std::string view_name; 
         std::string component_path;
         std::string body;
 
