@@ -469,10 +469,11 @@ class WebUIWidget extends HTMLElement
     send_control_change(parameter, value=0, index_x=0, index_y=0)
     {
         if(this.groupName)
-            controller.queueCommand("control/"+this.groupName+"."+parameter+"/"+index_x+"/"+index_y+"/"+value);
+            controller.queueCommand("control/"+this.groupName+"?parameter="+parameter+"&x="+index_x+"&y="+index_y+"&value?"+value);
+//          controller.queueCommand("control/"+this.groupName+"."+parameter+"/"+index_x+"/"+index_y+"/"+value);
         else
-            controller.queueCommand("control/"+parameter+"/"+index_x+"/"+index_y+"/"+value);
-        
+            controller.queueCommand("control?parameter="+parameter+"&x="+index_x+"&y="+index_y+"&value="+value);
+ //           controller.queueCommand("control/"+parameter+"/"+index_x+"/"+index_y+"/"+value);       
     }
 
     send_command(command, value=0, index_x=0, index_y=0)
