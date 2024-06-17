@@ -277,7 +277,7 @@ ServerSocket::ServerSocket(int port)
     int yes = 1;
 //    data->argcnt = 0;
 
-    int xxx = data->sockfd;
+    //int xxx = data->sockfd;
     if ((data->sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         throw SocketException(strerror(errno), 1);
 	
