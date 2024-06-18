@@ -8,7 +8,7 @@ not useful.
 
 API requests have the following syntax:
 
-    host:port/command[/path[/view]][?(attribute=value)*]
+    host:port/command[/path[?(attribute=value)*]
 
 _Path_ is the path to the current component - a group or a module.
 
@@ -194,31 +194,30 @@ Execute a command in a module. A dictionary with hall parameters are sent to the
 
 Example:
 
-    /command?cmd=mycommand&x=42
+    /command/a.b.x?cmd=mycommand&x=42
 
 
 
-### /control (not implemented yet)
+### /control
 
 Change a parameter value in a module.
 
 Parameters:
 
 - path. 
-
 - value. The new value.
-
-Old syntax:
-
-/control/path/x/y/value
+x. x-index for matrix value.
+y. y-index for matrix value.
 
 Example:
 
-    /control/a.b.c.p?p=96
+To set parameter p in module at a.b.c_
+
+    /control/a.b.c.p?value=96
 
 Example with index into matrix parameter:
 
-    /control/a.b.c.p?X[0][2]=96
+    /control/a.b.c.p?x=2&y=3&value=96
 
 ## View Editing Requests
 
