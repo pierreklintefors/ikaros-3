@@ -1,0 +1,15 @@
+<group name="Test_No_Code_Class"  check_sum = "0" description="Test of module uses a class file with no code">
+
+    <module class="NoCodeClass" name="NC" />
+
+     <module name="Const" class="Constant" data="9, 8, 7" />
+     <module name="Print" class="Print" />
+
+    <connection source="Const.OUTPUT" target="NC.INPUT" />
+    <connection source="NC.OUTPUT" target="Print.INPUT" />
+
+</group>
+
+
+
+
