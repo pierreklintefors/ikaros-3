@@ -18,6 +18,9 @@ class KernelTestModule: public Module
     parameter x;
     parameter y;
 
+    matrix input;
+    matrix output;
+
     matrix output1;
     matrix output2;
     matrix output3;
@@ -84,6 +87,8 @@ class KernelTestModule: public Module
         x.print("x");
         y.print("t");
 
+        Bind(input, "INPUT");
+        Bind(output, "OUTPUT");
 
         Bind(output1, "OUTPUT1");
         Bind(output2, "OUTPUT2");
@@ -110,7 +115,7 @@ class KernelTestModule: public Module
 
     void Tick()
     {
-        //output.copy(data);
+        output.copy(input);
     }
 };
 
