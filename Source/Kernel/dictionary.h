@@ -34,11 +34,11 @@ namespace ikaros
     struct null
     {
         operator std::string () const;
-        std::string json();
+        std::string json() const;
         std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const null & v);
 
-        void print() { std::cout << "null" << std::endl; };
+        void print() const { std::cout << "null" << std::endl; };
     };
 
 
@@ -71,7 +71,7 @@ namespace ikaros
         
         int get_int(std::string s);
 
-        std::string json();
+        std::string json() const;
         std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const dictionary & v);
         //void print();
@@ -82,7 +82,7 @@ namespace ikaros
 
         dictionary copy() const;
 
-        void print() { std::cout << this->json() << std::endl; };
+        void print() const { std::cout << this->json() << std::endl; };
     };
 
 
@@ -108,13 +108,13 @@ namespace ikaros
         list & insert_front(const value & v) { list_->insert(list_->begin(), v);  return *this; }
         list & erase(int index);
         operator std::string ()  const;
-        std::string json();
+        std::string json() const;
         std::string xml(std::string name, int depth=0, std::string exclude = "");
         friend std::ostream& operator<<(std::ostream& os, const list & v);
 
         list copy() const;
 
-        void print() { std::cout << this->json() << std::endl; };
+        void print() const { std::cout << this->json() << std::endl; };
     };
 
 
@@ -157,14 +157,14 @@ namespace ikaros
         std::vector<value>::iterator end();
 
         operator std::string () const;
-        std::string json();
+        std::string json() const;
         std::string xml(std::string name, int depth=0, std::string exclude = "");
 
         operator double ();                                        // FIXME: Add other types - both from and to
         operator list ();
         operator dictionary ();
 
-        void print() { std::cout << this->json() << std::endl; };
+        void print() const { std::cout << this->json() << std::endl; };
 
         value copy() const;
     };

@@ -13,6 +13,14 @@ using namespace ikaros;
 namespace ikaros 
 {
 
+        static std::string escape_json_string(std::string str) // FIXME: Do this correctly later
+        {
+            std::replace(str.begin(), str.end(), '\n', ' ');
+            std::replace(str.begin(), str.end(), '\t', ' ');
+            return str;
+        }
+
+
         static void skip_whitespace(const std::string& s, size_t& pos)
         {
             while (pos<s.length() && std::isspace(s[pos]))
@@ -27,7 +35,7 @@ namespace ikaros
     }
 
     std::string 
-    null::json()
+    null::json() const
     {
         return "null";
     }
@@ -74,7 +82,7 @@ namespace ikaros
         }
 
     std::string 
-    list::json()
+    list::json() const
     {
         std::string s = "[";
         std::string sep = "";
@@ -179,7 +187,7 @@ namespace ikaros
 
 
     std::string  
-    dictionary::json()
+    dictionary::json() const
     {
         std::string s = "{";
         std::string sep = "";
@@ -486,10 +494,10 @@ namespace ikaros
         }
 
         std::string  
-        value::json()
+        value::json() const
         {
             if(std::holds_alternative<std::string>(value_))
-                return "\""+std::get<std::string>(value_)+"\"";
+                return "\""+escape_json_string(std::get<std::string>(value_))+"\"";
             else if(std::holds_alternative<list>(value_))
                 return std::get<list>(value_).json();
             else if(std::holds_alternative<dictionary>(value_))
