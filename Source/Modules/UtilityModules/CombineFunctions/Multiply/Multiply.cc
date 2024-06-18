@@ -17,12 +17,7 @@ class Multiply: public Module
 
 
     void Tick()
-    {
-
-        input1.print();
-        input2.print();
-
-        output.multiply(input1, input2);
+    {        output.multiply(input1, input2);
     }
 };
 
