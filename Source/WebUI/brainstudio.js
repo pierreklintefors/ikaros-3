@@ -2029,7 +2029,7 @@ let main =
         let m =
         {
             'name':name,
-            'size':"1",
+            //'size':"1",
             '_tag':"output",
             '_x':main.new_position_x,
             '_y':main.new_position_y
@@ -2037,7 +2037,6 @@ let main =
         let full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].outputs.push(m);
         network.dict[full_name]=m;
-        // TODO: SEND TO KERNEL **********************************************
         main.new_position_x += 30;
         main.new_position_y += 30;
 
