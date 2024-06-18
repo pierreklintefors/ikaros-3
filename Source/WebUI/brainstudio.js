@@ -1622,7 +1622,7 @@ let inspector = {
                     network.changeModuleClass(selector.selected_foreground[0], this.value); 
                     selector.selectItems(selector.selected_foreground);
                 });
-                let template = item.parameters;
+                let template = item.parameters || [];
                 Object.keys(template).forEach(key => {
                     template[key].control = "textedit";
                   });
