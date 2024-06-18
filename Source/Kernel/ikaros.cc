@@ -923,29 +923,55 @@ INSTALL_CLASS(Module)
         for(auto & d : info_["outputs"])
         {
             std::string n = d["name"];  // FIXME: Throw if not set
-            std::string s = d["size"];
-            std::vector<int> shape = EvaluateSize(s);
-            matrix o;
-            Bind(o, n); // FIXME: Get directly?
-            if(o.rank() != 0)
-                outputs_with_size++; // Count number of buffers that are set
-            
-            for(int i=0; i < shape.size(); i++)
-                if(shape[i]<0)
-                {
-                    kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i)); // FIXME: throw
-                    return 0;
-                }
 
-            o.realloc(shape);
-            outputs_with_size++;
+            if(dictionary(d).contains("size")) // FIXME: use automatic conversions
+            {
+                std::string s = d["size"];
+                std::vector<int> shape = EvaluateSize(s);
+                matrix o;
+                Bind(o, n); // FIXME: Get directly?
+                if(o.rank() != 0)
+                    outputs_with_size++; // Count number of buffers that are set
+                
+                for(int i=0; i < shape.size(); i++)
+                    if(shape[i]<0)
+                    {
+                        kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i)); // FIXME: throw
+                        return 0;
+                    }
+
+                o.realloc(shape);
+            }
+            else // Group output: look for connection - only one-to-one right now // FIXME: combine connections to this output
+            {
+                std::string full_name = path_ +"."+n;
+                if(ingoing_connections.count(full_name))
+                {
+                    auto c = ingoing_connections[full_name];
+                    if(c.size() != 1)
+                        throw exception("Cannot set group output size. There must be exactly one connection to an output.");// FIXME: add proper error handling that continues with the others
+                    matrix s = kernel().buffers[c[0]->source];
+                    if(s.rank() != 0)
+                    {
+                        kernel().buffers[full_name].realloc(s.shape());
+                        c[0]->source_range = kernel().buffers[full_name].get_range(); // FIME: use range from shape
+                        c[0]->target_range = kernel().buffers[full_name].get_range();
+                        outputs_with_size++; // Count number of buffers that are set
+                    }
+                int i = 0;
+                }
+            }
+
+         outputs_with_size++;
         }
+
 
         if(outputs_with_size == info_["outputs"].size())
             return 0; // all buffers have been set
         else
             return 0; // needs to be called again - FIXME: Report progress later on
     }
+
 
     void
     Component::CalculateCheckSum(long & check_sum, prime & prime_number) // Calculates a value that depends on all parameters and output sizes; used for integrity testing of kernel and module
@@ -1033,7 +1059,7 @@ INSTALL_CLASS(Module)
             session_id = sid;
             uri.erase(0, 1);
             std::string params = tail(uri, "?");
-            std::cout << params << std::endl;
+            //std::cout << params << std::endl;
             command = head(uri, "/"); 
             component_path = uri;
             parameters.parse_url(params);
@@ -1435,7 +1461,11 @@ INSTALL_CLASS(Module)
          info.merge(dictionary(classes[classname].path));  // merge with class data structure
 
         if(classes[classname].module_creator == nullptr)
-            std::cout << "Class \""<< classname << "\" has no installed code." << std::endl; // throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
+        {
+            std::cout << "Class \""<< classname << "\" has no installed code. Creating group." << std::endl; // throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
+            info["_tag"]="module";
+            BuildGroup(info, path);
+        }
         else
             components[current_component_path] = classes[classname].module_creator();
     }
@@ -1544,7 +1574,8 @@ INSTALL_CLASS(Module)
                 log.push_back(Message("Loaded "s+options_.filename));
 
                 CalculateCheckSum();
-               // ListBuffers();
+                ListBuffers();
+                ListConnections();
             }
             catch(const exception& e)
             {
