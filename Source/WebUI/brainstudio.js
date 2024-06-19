@@ -1045,7 +1045,7 @@ let controller = {
          }
 
          while(controller.commandQueue.length>0)
-            controller.get(controller.commandQueue.shift()+"/"+group_path+"?data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
+            controller.get(controller.commandQueue.shift().replace(/\$PATH\$/gi, group_path)+"&data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
         controller.queueCommand('update');
     },
 
