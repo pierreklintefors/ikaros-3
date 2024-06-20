@@ -1434,7 +1434,7 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::AddGroup(dictionary info, std::string path)    // FIXME: Move to BuildGroup and rename Build -> Add
+    void Kernel::AddGroup(dictionary info, std::string path)
     {
         current_component_info = info;
         current_component_path = path;
@@ -1488,11 +1488,27 @@ INSTALL_CLASS(Module)
     }
 
 
+
+    void Kernel::LoadExternalGroup(dictionary d)
+    {
+        std::string path = d["external"];
+        dictionary external(path);
+        external["name"] = d["name"]; // FIXME: Just in case - check for errors later
+        d.merge(external);
+        
+    }
+
+
+
     void Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
     {
         std::string name = validate_identifier(d["name"]);
         if(!path.empty())
             name = path+"."+name;
+
+        if(d.contains("external"))
+            LoadExternalGroup(d);
+
 
         AddGroup(d, name);
 

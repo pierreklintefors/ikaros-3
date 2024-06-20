@@ -410,7 +410,7 @@ public:
     void AddGroup(dictionary info, std::string path);
     void AddModule(dictionary info, std::string path);
     void AddConnection(dictionary info, std::string path); // std::string souce, std::string target, std::string delay_range, std::string alias
-    //void ParseGroupFromXML(XMLElement * xml, std::string path="");
+    void LoadExternalGroup(dictionary d);
     void BuildGroup(dictionary d, std::string path="");
 
     void AllocateInputs();
