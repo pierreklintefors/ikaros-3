@@ -31,7 +31,7 @@ const std::vector<std::string> split_string(const std::string &c, const char &d)
 std::string                     join(const std::string & separator, const std::vector<std::string> & v, bool reverse =false);    // Pyhon-like join
 
 //bool starts_with(const std::string &s, const std::string & start);
-bool ends_with(const std::string &s, const std::string &end);
+//bool ends_with(const std::string &s, const std::string &end);
 
 //std::string cut(std::string & s, const std::string & delimiter); // cut off string at delimiter and return the rest == tail?
 //std::string rcut(std::string & s, const std::string & delimiter);// search for delimeter from the end instead == rtail?
