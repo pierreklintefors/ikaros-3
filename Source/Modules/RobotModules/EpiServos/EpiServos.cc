@@ -63,9 +63,9 @@
 #define EPI_TORSO_NR_SERVOS 6
 #define EPI_NR_SERVOS 19
 
-#define TIMER_POWER_ON 2000
-#define TIMER_POWER_OFF 5000          // Timer ramping down
-#define TIMER_POWER_OFF_EXTENDED 3000 // Timer until torque enable off
+#define TIMER_POWER_ON 2           // Timer ramping up sec
+#define TIMER_POWER_OFF 5          // Timer ramping down sec
+#define TIMER_POWER_OFF_EXTENDED 3 // Timer until torque enable off sec
 
 #define HEAD_INDEX_IO 0
 #define PUPIL_INDEX_IO 4
@@ -75,12 +75,9 @@
 
 #define MAX_TEMPERATURE 65
 
-// usleep. No more timers in ikaros
-#include <unistd.h>
 // TODO:
 // Add fast sync write feature
-// #define Notify(x,y) (printf("s", y))
-// #define Notify(x,y,z) (printf("s", y))
+
 
 // #include "EpiServos.h"
 
@@ -1863,11 +1860,14 @@ class EpiServos : public Module
         Bind(presentPosition, "PRESENT_POSITION");
         Bind(presentCurrent, "PRESENT_CURRENT");
 
+        std::cout << goalPosition.size_x() << std::endl;
+        std::cout << goalPosition.size_y() << std::endl;
+        goalPosition.print();
         // Check if the input size are correct. We do not need to have an input at all!
         if (EpiTorsoMode)
         {
             if (!goalPosition.empty())
-                if (goalPositionSize < EPI_TORSO_NR_SERVOS)
+                if (goalPosition.size_x() < EPI_TORSO_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal position does not match robot type\n");
             if (!goalCurrent.empty())
                 if (goalCurrentSize < EPI_TORSO_NR_SERVOS)
@@ -1950,7 +1950,7 @@ class EpiServos : public Module
                 Notify(msg_debug, "Succeeded to open serial port!\n");
             else
             {
-                Notify(msg_fatal_error, "Failed to open serial port!\n");
+                Notify(msg_fatal_error, "\n");
                 return;
             }
             // Set port baudrate
@@ -2125,6 +2125,8 @@ class EpiServos : public Module
     void Tick()
     {
 
+        std::cout << "Tick" << std::endl;
+
         // Check limits of inputs
 
         // Temporary disable clip
@@ -2161,7 +2163,7 @@ class EpiServos : public Module
                 //     if (goalPosition)
                 //         presentPosition[i] = presentPosition[i] + 0.9 * (clip(goalPosition[i] - presentPosition[i], -maxVel, maxVel)); // adding some smoothing to prevent oscillation in simulation mode
                 for (int i = 0; i < EPI_NR_SERVOS; i++)
-                    if (goalPosition)
+                    if (!goalPosition.empty())
                         presentPosition(i) = presentPosition(i) + 0.9 * (goalPosition(i) - presentPosition(i)); // adding some smoothing to prevent oscillation in simulation mode
             }
             else
@@ -2171,7 +2173,7 @@ class EpiServos : public Module
                 //     if (goalPosition)
                 //         presentPosition[i] = presentPosition[i] + 0.9 * (clip(goalPosition[i] - presentPosition[i], -maxVel, maxVel)); // adding some smoothing to prevent oscillation in simulation mode
                 for (int i = 0; i < EPI_TORSO_NR_SERVOS; i++)
-                    if (goalPosition)
+                    if (!goalPosition.empty())
                         presentPosition(i) = presentPosition(i) + 0.9 * (goalPosition(i) - presentPosition(i)); // adding some smoothing to prevent oscillation in simulation mode
             }
             // Create fake feedback in simulation mode
@@ -2494,89 +2496,85 @@ class EpiServos : public Module
             return false;
 
         Timer t;
-        int xlTimer = 10; // Timer in ms. XL320 need this. Not sure why.
+        double xlTimer = 0.01; // Timer in sec. XL320 need this. Not sure why.
 
         // PUPIL ID 2 (Left pupil)
         // Limit position min
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 6, AngleMinLimitPupil[0], &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
 
         // Limit position max
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 8, AngleMaxLimitPupil[0], &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
 
         // Moving speed
         param_default_2Byte = 150;
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 32, param_default_2Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
 
         // P
         param_default_1Byte = 100;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 29, param_default_1Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         // I
         param_default_1Byte = 20;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 28, param_default_1Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         // D
         param_default_1Byte = 5;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 27, param_default_1Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         // PUPIL ID 3 (Right pupil)
         // Limit position in
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 6, AngleMinLimitPupil[1], &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         // Limit position max
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 8, AngleMaxLimitPupil[1], &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         // Moving speed
         param_default_2Byte = 150;
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 32, param_default_2Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
 
         // P
         param_default_1Byte = 100;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 29, param_default_1Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         // I
         param_default_1Byte = 20;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 28, param_default_1Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         // D
         param_default_1Byte = 5;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 27, param_default_1Byte, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
 
         if (EpiMode)
         {
@@ -2833,8 +2831,8 @@ class EpiServos : public Module
             if (COMM_SUCCESS != packetHandler->write2ByteTxRx(portHandler, IDMin + i, 84, 0, &dxl_error))
                 return false;
 
-        // t.Sleep(TIMER_POWER_OFF);
-        usleep(TIMER_POWER_OFF * 1000);
+        Sleep(TIMER_POWER_OFF);
+
         // Get present position
         for (int i = 0; i < nrOfServos; i++)
             if (COMM_SUCCESS != packetHandler->read4ByteTxRx(portHandler, IDMin + i, 132, &present_postition_value[i], &dxl_error))
@@ -2845,8 +2843,7 @@ class EpiServos : public Module
                 return false;
 
         // t.Restart();
-        // t.Sleep(TIMER_POWER_OFF_EXTENDED);
-        usleep(TIMER_POWER_OFF_EXTENDED * 1000);
+        Sleep(TIMER_POWER_OFF_EXTENDED);
 
         // Enable torque off
         Notify(msg_debug, "Enable torque off");
@@ -2907,50 +2904,50 @@ class EpiServos : public Module
         int dxl_comm_result = COMM_TX_FAIL; // Communication result
         uint8_t dxl_error = 0;              // Dynamixel error
         Timer t;
-        int xlTimer = 10; // Timer in ms. XL320 need this. Not sure why.
+        double xlTimer = 0.010; // Timer in sec. XL320 need this. Not sure why.
 
         // Torque off. No fancy rampiong
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 24, 0, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 24, 0, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
         // Reset min and max limit
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 6, 0, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 6, 0, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 8, 1023, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 8, 1023, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
         // Turn down torue limit
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 35, 500, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 35, 500, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
         // Torque off. No fancy rampiong
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 24, 1, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 24, 1, &dxl_error))
             return false;
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
         // Go to min pos
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 30, 0, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 30, 0, &dxl_error))
             return false;
         // Sleep for 300 ms
-        // t.Sleep(xlTimer);
-        usleep(xlTimer * 1000);
+        Sleep(xlTimer);
+
         // Read pressent position
         uint16_t present_postition_value[2] = {0, 0};
         if (COMM_SUCCESS != packetHandlerPupil->read2ByteTxRx(portHandlerPupil, 2, 37, &present_postition_value[0], &dxl_error))
@@ -2972,14 +2969,14 @@ class EpiServos : public Module
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 24, 0, &dxl_error))
             return false;
-        //t.Sleep(xlTimer);
-        usleep(xlTimer*1000);
+        Sleep(xlTimer);
+
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 35, 1023, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 35, 1023, &dxl_error))
             return false;
-        //t.Sleep(xlTimer);
-        usleep(xlTimer*1000);
+        Sleep(xlTimer);
+
 
         return true;
     }
