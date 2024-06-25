@@ -2336,19 +2336,7 @@ INSTALL_CLASS(Module)
     {
         try
         {
-            int x = 0;
-            int y = 0;
-            double value = 1;
-            std::string root = "";
-
-            if(request.parameters.contains("x"))
-                x = request.parameters["x"];
-
-            if(request.parameters.contains("y"))
-                y = request.parameters["y"];
-            
-            if(request.parameters.contains("value"))
-                value = request.parameters["value"];
+            std::string root;
          
             if(request.parameters.contains("root"))
                 root= std::string(request.parameters["root"]);
@@ -2360,19 +2348,32 @@ INSTALL_CLASS(Module)
                 return;
             }
 
-            parameter & p = parameters.at(request.component_path);  // ************FIXME: CHECK RANK
+            parameter & p = parameters.at(request.component_path);
             if(p.type == matrix_type)
             {
+                int x = 0;
+                int y = 0;
+                double value = 1;
+
+                if(request.parameters.contains("x"))
+                    x = request.parameters["x"];
+
+                if(request.parameters.contains("y"))
+                    y = request.parameters["y"];
+                
+                if(request.parameters.contains("value"))
+                    value = request.parameters["value"];
+                    
                 if(p.matrix_value->rank() == 1)
                     (*p.matrix_value)(x)= value;
                 else if(p.matrix_value->rank() == 2)
                     (*p.matrix_value)(x,y)= value;
                 else
-                    ;   // higher dimensional parameter
+                    ;   // FIXME: higher dimensional parameter
             }
             else
             {
-                p = value;
+                p = std::string(request.parameters["value"]);
             }
         }
         catch(const std::exception& e)
