@@ -90,6 +90,7 @@ function deepCopy(source) {
     return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;
 }
 
+/*
 function toURLParams(obj)
 {
     s = "";
@@ -102,6 +103,15 @@ function toURLParams(obj)
 
     return encodeURIComponent(s);
 }
+*/
+
+function toURLParams(params) {
+    return Object.keys(params).map((key) => {
+        console.log(key);
+        return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+    }).join('&');
+}
+
 
 function setType(x, t)
 {
@@ -609,7 +619,7 @@ let webui_widgets = {
 
 let controller = {
     run_mode: 'pause',
-    commandQueue: ['update'],
+    commandQueue: [['update', "",{}]],
     tick: 0,
     session_id: 0,
     client_id: Date.now(),
@@ -709,8 +719,8 @@ let controller = {
         controller.reconnect_timer = setInterval(controller.reconnect, controller.reconnect_interval);
     },
     
-    queueCommand: function (command) {
-        controller.commandQueue.push(command);
+    queueCommand: function (command, path="", dictionary={}) {
+        controller.commandQueue.push([command, path, dictionary]);
     },
 
     new: function () {
@@ -1015,14 +1025,13 @@ let controller = {
 
         let group_path ="";
         let data_string = "";
-    /*
+/*
         if(!interaction.currentView) // no view selected
         {
             controller.get("update", controller.update);
             return;
         }
 */
-
         // Request new data
         let data_set = new Set();
         
@@ -1045,8 +1054,34 @@ let controller = {
          }
 
          while(controller.commandQueue.length>0)
-            controller.get(controller.commandQueue.shift()+"/"+group_path+"?data="+encodeURIComponent(data_string), controller.update);
-            //controller.get(controller.commandQueue.shift().replace(/\$PATH\$/gi, group_path)+"&data="+encodeURIComponent(data_string), controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
+        {
+            let cmd_dict = controller.commandQueue.shift();
+            let s = cmd_dict[0]; // FIXME: check empty string
+            let path = cmd_dict[1];
+            let dict = cmd_dict[2];
+            dict.data = data_string;
+            dict.root = group_path;
+            let url_params = toURLParams(dict);
+
+            if(path.length>0 && path[0]=='.') // top path
+            {
+                s += "/" + path;
+            }
+            else
+            {
+                if(group_path != "")
+                    s += "/" + group_path;
+
+                if(path != "")
+                    s += "." + path;
+            }
+
+            if(url_params != "")
+                s += "?" + url_params;
+
+            controller.get(s, controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
+        }
+
         controller.queueCommand('update');
     },
 

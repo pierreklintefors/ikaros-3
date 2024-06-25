@@ -464,24 +464,14 @@ class WebUIWidget extends HTMLElement
         interaction.setWidgetParameter(p);
     }
 
-    // TODO: these should be changed to go through command object to allow faster update
-
     send_control_change(parameter, value=0, index_x=0, index_y=0)
     {
-        if(this.groupName)
-            controller.queueCommand("control/"+this.groupName+"."+parameter+"?x="+index_x+"&y="+index_y+"&value="+value);
-//          controller.queueCommand("control/"+this.groupName+"."+parameter+"/"+index_x+"/"+index_y+"/"+value);
-        else
-            controller.queueCommand("control/$PATH$."+parameter+"?x="+index_x+"&y="+index_y+"&value="+value);
- //           controller.queueCommand("control/"+parameter+"/"+index_x+"/"+index_y+"/"+value);       
+        controller.queueCommand("control", parameter, {"x":index_x, "y":index_y, "value":value});     
     }
 
     send_command(command, value=0, index_x=0, index_y=0)
     {
-        if(this.groupName)
-            this.get("/command/"+this.groupName+"."+command+"/"+index_x+"/"+index_y+"/"+value);
-        else
-            this.get("/command/"+command+"/"+index_x+"/"+index_y+"/"+value);
+           //  this.get("/command/"+command+"/"+index_x+"/"+index_y+"/"+value);
     }
 
     widget_loading(state)
