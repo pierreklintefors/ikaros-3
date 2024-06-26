@@ -1772,6 +1772,7 @@ class EpiServos : public Module
 
     void Init()
     {
+        
         // Robots configurations
         robot["EpiWhite"] = {.serialPortPupil = "/dev/cu.usbserial-FT66WV4A",
                              .serialPortHead = "/dev/cu.usbserial-FT6S4JL9",
@@ -1860,11 +1861,8 @@ class EpiServos : public Module
         Bind(presentPosition, "PRESENT_POSITION");
         Bind(presentCurrent, "PRESENT_CURRENT");
 
-        std::cout << "EpiServo module init:" << std::endl;
-        std::cout << goalPosition.size_x() << std::endl;
-        std::cout << goalPosition.size_y() << std::endl;
-    
-        goalPosition.print();
+        presentCurrent.print();
+     
         // Check if the input size are correct. We do not need to have an input at all!
         if (EpiTorsoMode)
         {
@@ -2126,6 +2124,7 @@ class EpiServos : public Module
 
     void Tick()
     {
+ 
 
    
 
@@ -2149,7 +2148,7 @@ class EpiServos : public Module
                     return;
                 }
 
-            reset_array(presentCurrent, presentCurrentSize); // 0 mA
+            //reset_array(presentCurrent, presentCurrentSize); // 0 mA
 
             float maxVel = 45.0 / 1000 * 10; // No timebase
 

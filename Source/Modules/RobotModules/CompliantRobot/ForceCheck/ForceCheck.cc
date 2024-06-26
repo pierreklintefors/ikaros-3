@@ -5,7 +5,7 @@ using namespace ikaros;
 
 class ForceCheck: public Module
 {
-    matrix current;
+    matrix present_current;
     matrix current_limit;
     matrix current_output;
     matrix position;// assumes degrees
@@ -19,7 +19,7 @@ class ForceCheck: public Module
     
     matrix Limiter(matrix currents, matrix limits, int increment)
     {
-        for (int i = 0; i < currents.size(); i++) {
+        for (int i = 0; i < position.size(); i++) {
             int current_value = currents[i];
             int limit_value = limits[i];   
             if ( current_value< limit_value) {
@@ -36,23 +36,23 @@ class ForceCheck: public Module
     matrix MovingCheck(matrix positions, matrix goal_positions, matrix current_limits)
     {
         for (int i = 0; i < positions.size(); i++) {
-                
             float current_position = positions[i];
             float goal = goal_positions[i];
-            float current_value = current_output[i];
+            float current_value = 0;
             float limit_value = current_limit[i];
+
             if (abs(current_position - goal) > position_margin & abs(current_value - limit_value) < current_margin)
             {
-                current_output[i] = 0; 
+                current_output[i]=0; 
             }
-                
+     
         }
         return current_output;
     }
 
     void Init()
     {
-        Bind(current, "PresentCurrent");
+        Bind(present_current, "PresentCurrent");
         Bind(current_limit, "CurrentLimit");
         Bind(current_output, "CurrentOutput");
         Bind(position, "PresentPosition");
@@ -63,8 +63,8 @@ class ForceCheck: public Module
         
 
         tickCount =0;
-        current_output.reset();
-        position.print();
+        
+      
         current_increment = 5;
         current_margin = 100;
         position_margin = 5;
@@ -73,12 +73,15 @@ class ForceCheck: public Module
 
 
     void Tick()
-    {    std::cout << "tick" << std::endl;
+    {   
         if (tickCount > 0){  
+            std::cout << "inside if" << std::endl;
             current_output = MovingCheck(position, goal_position, current_limit);
-            current_output = Limiter(current, current_limit, current_increment);
+            current_output = Limiter(present_current, current_limit, current_increment);
         }
         tickCount ++;
+       
+        
             
     }
 };
