@@ -1,0 +1,54 @@
+<group name="test" stop="-1" title="MinimalModule Example" webui_port="8000">
+   <_connection source="Torque_enable.OUTPUT" target="EpiServos.TORQUE_ENABLE"/>
+   <_connection source="Goal_current.OUTPUT" target="EpiServos.GOAL_CURRENT"/>
+   <connection source="Goal_position.OUTPUT" target="EpiServos.GOAL_POSITION"/>
+   <module _data="    180, 180, 180, 180, 180, 180, 0, 0    " class="Constant" data="    180, 180, 180, 180, 180, 180,    180, 180, 180, 180, 180, 180,    180, 180, 180, 180, 180, 180,    180" description="outputs a constant value" name="Goal_position">
+      <output description="The output" name="OUTPUT" size="data.size"/>
+      <parameter default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="    180, 180, 180, 180, 180, 180,    180, 180, 180, 180, 180, 180,    180, 180, 180, 180, 180, 180,    180"/>
+   </module>
+   <module class="Constant" data="    0 0 0 0 0 0    0 0 0 0 0 0    0 0 0 0 0 0    0" description="outputs a constant value" name="Goal_current">
+      <output description="The output" name="OUTPUT" size="data.size"/>
+      <parameter default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="    0 0 0 0 0 0    0 0 0 0 0 0    0 0 0 0 0 0    0"/>
+   </module>
+   <module class="Constant" data="    0 0 0 0 0 0    0 0 0 0 0 0    0 0 0 0 0 0    0" description="outputs a constant value" name="Torque_enable">
+      <output description="The output" name="OUTPUT" size="data.size"/>
+      <parameter default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="    0 0 0 0 0 0    0 0 0 0 0 0    0 0 0 0 0 0    0"/>
+   </module>
+   <module class="EpiServos" description="Robot servo control module" log_level="8" name="EpiServos" robot="EpiBlue" simulate="true">
+      <author>
+         <affiliation/>
+         <email/>
+         <name/>
+      </author>
+      <description type="text"/>
+      <example description="A simple example">
+         <module class="EpiServo" name="EpiServo" robot="EpiWhite" simulate="true"/>
+      </example>
+      <files>
+         <file/>
+         <file/>
+         <file/>
+      </files>
+      <input description="Goal position of the joints in degrees." name="GOAL_POSITION"/>
+      <input description="Goal current in mA. This is an optinal input and only used if the servo uses current-based position control mode" name="GOAL_CURRENT"/>
+      <input description="Enable servos. This is an optinal and not recomended input" name="TORQUE_ENABLE"/>
+      <limitations/>
+      <link class="EpiServo"/>
+      <output description="Present angle of the joints in degrees." name="PRESENT_POSITION" size="19"/>
+      <output description="Present current (if supported by the servo) in mA." name="PRESENT_CURRENT" size="19"/>
+      <parameter default="EpiWhite" descrition="Robot to connect to." name="robot" options="EpiWhite,EpiGreen,EpiBlue,EpiBlack,EpiRed" type="options" value="EpiBlue"/>
+      <parameter default="False" description="Simulation mode. No connecting is made to servos. The PRESENT POSITION output is calculated using previous position, goal position, maximum velocoty (no acceleration) and the time base of the simulation." name="simulate" type="bool" value="true"/>
+   </module>
+   <module class="Logger" description="logs start to Ikaros site" name="Logger">
+   </module>
+   <widget _index="0" _index_="0" buffer_size="200" class="plot" color="" direction="vertical" frame-style="" height="341" max="180" min="-180" select="" show_frame="false" show_title="true" source="EpiServos.PRESENT_POSITION" style="" title="Present position" width="1581" x="1100" y="40"/>
+   <widget _index="1" _index_="2" buffer_size="200" class="plot" color="" direction="vertical" frame-style="" height="341" max="2000" min="-2000" select="" show_frame="false" show_title="true" source="EpiServos.PRESENT_CURRENT" style="" title="Present current" width="1581" x="1100" y="380"/>
+   <widget _index="2" _index_="4" buffer_size="200" class="plot" color="" direction="vertical" frame-style="" height="341" max="180" min="-180" select="" show_frame="false" show_title="true" source="EpiServos.PRESENT_POSITION" style="" title="Present position" width="1581" x="1100" y="40"/>
+   <widget _index="3" _index_="6" class="slider-horizontal" count="19" frame-style="" height="111" labels="Neck tilt, Neck pan, Left eye, Right eye, Pupil left, Pupil right, Left arm 1, Left arm 2, Left arm 3, Left arm 4, Left arm 5, Left hand, Right arm 1, Right arm 2, Right arm 3, Right arm 4, Right arm 5, Right hand, Body" max="360" min="0" parameter="Goal_position.data" select="0" show_frame="false" show_title="true" show_values="true" step="2" style="" title="Goal position" width="361" x="300" y="40"/>
+   <widget _index="4" _index_="8" class="slider-horizontal" count="19" frame-style="" height="111" labels="" max="360" min="0" parameter="Goal_current.data" select="0" show_frame="false" show_title="true" show_values="true" step="0.01" style="" title="Goal current" width="241" x="680" y="40"/>
+   <widget _index="5" _index_="10" class="slider-horizontal" count="19" frame-style="" height="111" labels="" max="1" min="0" parameter="Torque_enable.data" select="0" show_frame="false" show_title="true" show_values="true" step="1" style="" title="Torque enable" width="121" x="940" y="40"/>
+   <widget _index="6" _index_="12" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="81" label_x="Neck tilt, Neck pan, Left eye, Right eye, Pupil left, Pupil right, Left arm 1, Left arm 2, Left arm 3, Left arm 4, Left arm 5, Left hand, Right arm 1, Right arm 2, Right arm 3, Right arm 4, Right arm 5, Right hand, Body" label_y="" scrollable="false" show_frame="false" show_title="true" source="EpiServos.PRESENT_POSITION" style="" title="Present position" width="1601" x="1080" y="1000"/>
+   <widget _index="7" _index_="14" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="81" label_x="Neck tilt, Neck pan, Left eye, Right eye, Pupil left, Pupil right, Left arm 1, Left arm 2, Left arm 3, Left arm 4, Left arm 5, Left hand, Right arm 1, Right arm 2, Right arm 3, Right arm 4, Right arm 5, Right hand, Body" label_y="" scrollable="false" show_frame="false" show_title="true" source="Goal_position.data" style="" title="Goal Position" width="1601" x="1080" y="780"/>
+   <widget _index="8" _index_="16" _x="1080" _y="880" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="61" label_x="" label_y="" scrollable="false" show_frame="false" show_title="true" source="Goal_current.data" style="" title="Goal Current" width="1601"/>
+   <widget _index="9" _index_="18" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="61" label_x="" label_y="" scrollable="false" show_frame="false" show_title="true" source="EpiServos.PRESENT_CURRENT" style="" title="Present current" width="1601" x="1080" y="1100"/>
+</group>

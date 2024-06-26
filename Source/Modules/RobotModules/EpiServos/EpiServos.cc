@@ -1860,8 +1860,10 @@ class EpiServos : public Module
         Bind(presentPosition, "PRESENT_POSITION");
         Bind(presentCurrent, "PRESENT_CURRENT");
 
+        std::cout << "EpiServo module init:" << std::endl;
         std::cout << goalPosition.size_x() << std::endl;
         std::cout << goalPosition.size_y() << std::endl;
+    
         goalPosition.print();
         // Check if the input size are correct. We do not need to have an input at all!
         if (EpiTorsoMode)
@@ -2125,7 +2127,7 @@ class EpiServos : public Module
     void Tick()
     {
 
-        std::cout << "Tick" << std::endl;
+   
 
         // Check limits of inputs
 

@@ -59,8 +59,8 @@
 	<input name="TORQUE_ENABLE" description="Enable servos. This is an optinal and not recomended input" />
 
 
-	<output name="PRESENT_POSITION" description="Present angle of the joints in degrees." size="19" />
-	<output name="PRESENT_CURRENT" description="Present current (if supported by the servo) in mA." size="19" />
+	<output name="PRESENT_POSITION" description="Present angle of the joints in degrees." size_x="19" />
+	<output name="PRESENT_CURRENT" description="Present current (if supported by the servo) in mA." size_x="19" />
 	<!-- maybe add power output -->
 
 	<link class="EpiServo" />
