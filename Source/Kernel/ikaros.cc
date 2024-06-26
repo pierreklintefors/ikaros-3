@@ -2095,10 +2095,11 @@ INSTALL_CLASS(Module)
         DoSendDataStatus();
 
         socket->Send("\t\"data\":\n\t{\n");
-    
-        //std::string root = tail(args, "data=");
 
         std::string data = request.parameters["data"];  // FIXME: Check that it exists ******** or return ""
+        std::string root;
+            if(request.parameters.contains("root"))
+                root = std::string(request.parameters["root"]);
 
         std::string sep = "";
         bool sent = false;
@@ -2107,7 +2108,7 @@ INSTALL_CLASS(Module)
         {
             std::string source = head(data, ",");
             std::string format = rtail(source, ":");
-            std::string source_with_root = request.component_path +"."+source;
+            std::string source_with_root = root +"."+source; // request.component_path
 
             if(buffers.count(source_with_root))
             {
@@ -2335,18 +2336,10 @@ INSTALL_CLASS(Module)
     {
         try
         {
-            int x = 0;
-            int y = 0;
-            double value = 1;
-
-            if(request.parameters.contains("x"))
-                x = request.parameters["x"];
-
-            if(request.parameters.contains("y"))
-                x = request.parameters["y"];
-            
-            if(request.parameters.contains("value"))
-                value = request.parameters["value"];
+            std::string root;
+         
+            if(request.parameters.contains("root"))
+                root= std::string(request.parameters["root"]);
 
             if(!parameters.count(request.component_path))
             {
@@ -2358,11 +2351,29 @@ INSTALL_CLASS(Module)
             parameter & p = parameters.at(request.component_path);
             if(p.type == matrix_type)
             {
-                (*p.matrix_value)(x,y)= value;
+                int x = 0;
+                int y = 0;
+                double value = 1;
+
+                if(request.parameters.contains("x"))
+                    x = request.parameters["x"];
+
+                if(request.parameters.contains("y"))
+                    y = request.parameters["y"];
+                
+                if(request.parameters.contains("value"))
+                    value = request.parameters["value"];
+                    
+                if(p.matrix_value->rank() == 1)
+                    (*p.matrix_value)(x)= value;
+                else if(p.matrix_value->rank() == 2)
+                    (*p.matrix_value)(x,y)= value;
+                else
+                    ;   // FIXME: higher dimensional parameter
             }
             else
             {
-                p = value;
+                p = std::string(request.parameters["value"]);
             }
         }
         catch(const std::exception& e)
