@@ -74,8 +74,7 @@ class ForceCheck: public Module
 
     void Tick()
     {   
-        if (tickCount > 0){  
-            std::cout << "inside if" << std::endl;
+        if (position.connected() & present_current.connected()){ 
             current_output = MovingCheck(position, goal_position, current_limit);
             current_output = Limiter(present_current, current_limit, current_increment);
         }

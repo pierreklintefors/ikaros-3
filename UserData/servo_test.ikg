@@ -1,12 +1,12 @@
 <group name="ServoCurrentLimiter" start="true" stop="-1" webui_port="8000">
+   <_connection delay_range="1" source="Torque.OUTPUT" source_range="" target="Servos.TORQUE_ENABLE" target_range=""/>
    <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="Servos.GOAL_POSITION" target_range=""/>
-   <connection delay_range="1" source="Torque.OUTPUT" source_range="" target="Servos.TORQUE_ENABLE" target_range=""/>
    <connection delay_range="1" source="Servos.PRESENT_POSITION" source_range="" target="ForceCheck.PresentPosition" target_range=""/>
    <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="ForceCheck.GoalPosition" target_range=""/>
    <connection delay_range="1" source="Servos.PRESENT_CURRENT" source_range="" target="ForceCheck.PresentCurrent" target_range=""/>
    <connection delay_range="1" source="Limit.OUTPUT" source_range="" target="ForceCheck.CurrentLimit" target_range=""/>
    <connection delay_range="1" source="ForceCheck.CurrentOutput" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
-   <module _x="504" _y="120" class="EpiServos" description="Robot servo control module" name="Servos" robot="EpiBlack" simulate="false">
+   <module _x="408" _y="96" class="EpiServos" description="Robot servo control module" name="Servos" robot="EpiBlack" simulate="true">
       <author>
          <affiliation/>
          <email/>
@@ -14,7 +14,7 @@
       </author>
       <description type="text"/>
       <example description="A simple example">
-         <module class="EpiServo" name="EpiServo" robot="EpiWhite" simulate="true"/>
+         <module class="EpiServo" name="EpiServo" robot="EpiBlack" simulate="true"/>
       </example>
       <files>
          <file/>
@@ -29,25 +29,25 @@
       <output description="Present angle of the joints in degrees." name="PRESENT_POSITION" size="19"/>
       <output description="Present current (if supported by the servo) in mA." name="PRESENT_CURRENT" size="19"/>
       <parameter control="textedit" default="EpiWhite" descrition="Robot to connect to." name="robot" options="EpiWhite,EpiGreen,EpiBlue,EpiBlack,EpiRed" type="options" value="EpiBlack"/>
-      <parameter control="textedit" default="False" description="Simulation mode. No connecting is made to servos. The PRESENT POSITION output is calculated using previous position, goal position, maximum velocoty (no acceleration) and the time base of the simulation." name="simulate" type="bool" value="True"/>
+      <parameter control="textedit" default="False" description="Simulation mode. No connecting is made to servos. The PRESENT POSITION output is calculated using previous position, goal position, maximum velocoty (no acceleration) and the time base of the simulation." name="simulate" type="bool" value="true"/>
    </module>
-   <module _x="216" _y="144" class="Constant" data="10,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalPosition">
+   <module _x="216" _y="144" class="Constant" data="180,180,180,180,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalPosition">
       <output description="The output" name="OUTPUT" size="data.size"/>
-      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="10,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
+      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="180,180,180,180,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
-   <module _x="672" _y="288" class="Constant" data="25,200,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="Limit">
+   <module _x="576" _y="312" class="Constant" data="25,80,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="Limit">
       <output description="The output" name="OUTPUT" size="data.size"/>
-      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="25,200,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
+      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="25,80,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
    <module _x="120" _y="360" class="Constant" data="150,25,15,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalCurrent">
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="150,25,15,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
-   <module _x="144" _y="216" class="Constant" data="1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="Torque">
+   <module _x="144" _y="216" class="Constant" data="0" description="outputs a constant value" name="Torque">
       <output description="The output" name="OUTPUT" size="data.size"/>
-      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
+      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="0"/>
    </module>
-   <module _x="816" _y="96" class="ForceCheck" description="Checking the used current and increase it step by step to reach the target. Reduce the current with too much restance is met" name="ForceCheck">
+   <module _x="672" _y="96" class="ForceCheck" description="Checking the used current and increase it step by step to reach the target. Reduce the current with too much restance is met" name="ForceCheck">
       <files>
          <file/>
          <file/>
@@ -59,8 +59,9 @@
       <output description="Goal current in mA to be sent to the servos (only in current-based (position) control mode)" name="CurrentOutput" size="19"/>
    </module>
    <widget _index_="0" _x="120" _y="480" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="73" label_x="" label_y="" name="Widget_7" scrollable="false" show_frame="false" show_title="true" source="Servos.PRESENT_POSITION" style="" title="Position" width="1201"/>
-   <widget _index_="2" _x="1080" _y="72" class="slider-horizontal" colorize="true" count="6" frame-style="" height="289" labels="tilt, pan, leftEye, rightEye, leftPupil, rightPupil" max="100" min="0" name="Widget_8" parameter="GoalPosition.data" select="0" show_frame="false" show_title="true" show_values="false" source="GoalPosition.data" step="1" style="" title="GoalPosition" width="241"/>
-   <widget _index_="4" _x="120" _y="648" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_14" scrollable="false" show_frame="false" show_title="true" source="ForceCheck.CurrentOutput" style="" title="CurrentOutput" width="1201"/>
+   <widget _index_="2" _x="840" _y="96" class="slider-horizontal" colorize="true" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan, LeftEye, RightEye, LeftPupil, RightPupil" max="360" min="0" name="Widget_8" parameter="GoalPosition.data" select="0" show_frame="false" show_title="true" show_values="false" source="GoalPosition.data" step="1" style="" title="GoalPosition" width="289"/>
+   <widget _index_="4" _x="120" _y="648" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_14" scrollable="false" show_frame="false" show_title="true" source="Servos.GOAL_CURRENT" style="" title="CurrentOutput" width="1201"/>
    <widget _index_="6" _x="120" _y="600" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_18" scrollable="false" show_frame="false" show_title="true" source="Servos.PRESENT_CURRENT" style="" title="PresentCurrent" width="1201"/>
    <widget _index_="8" _x="120" _y="528" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_19" scrollable="false" show_frame="false" show_title="true" source="Servos.GOAL_POSITION" style="" title="Goal Position" width="1201"/>
+   <widget _index_="10" _x="1128" _y="96" class="slider-horizontal" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan, LeftEye, RightEye, LeftPupil, RightPupil" max="180" min="0" name="Widget_20" parameter="Limit.data" select="0" show_frame="false" show_title="true" show_values="false" step="1" style="" title="CurrentLimit" width="337"/>
 </group>
