@@ -56,7 +56,7 @@
 
 	<input name="GOAL_POSITION" description="Goal position of the joints in degrees." />
 	<input name="GOAL_CURRENT" description="Goal current in mA. This is an optinal input and only used if the servo uses current-based position control mode" />
-	<input name="TORQUE_ENABLE" description="Enable servos. This is an optinal and not recomended input" />
+	
 
 
 	<output name="PRESENT_POSITION" description="Present angle of the joints in degrees." size="19" />

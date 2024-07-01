@@ -36,7 +36,7 @@
 #define IND_ADDR_PRESENT_POSITION 578
 #define ADDR_PRESENT_POSITION 132
 #define IND_ADDR_PRESENT_CURRENT 586
-#define ADDR_PRESENT_CURRENT 128
+#define ADDR_PRESENT_CURRENT 126
 #define IND_ADDR_PRESENT_TEMPERATURE 590
 #define ADDR_PRESENT_TEMPERATURE 146
 
@@ -109,16 +109,13 @@ class EpiServos : public Module
     // Ikaros IO
     matrix goalPosition;
     matrix goalCurrent;
-    matrix torqueEnable;
+    bool torqueEnable = true;
 
-    int goalPositionSize;
-    int goalCurrentSize;
-    int torqueEnableSize;
+  
 
     matrix presentPosition;
-    int presentPositionSize;
     matrix presentCurrent;
-    int presentCurrentSize;
+   
 
     bool EpiTorsoMode = false;
     bool EpiMode = false;
@@ -174,7 +171,7 @@ class EpiServos : public Module
 
         for (int i = PUPIL_ID_MIN; i <= PUPIL_ID_MAX; i++)
         {
-            if (!torqueEnable.empty())
+            /*if (!torqueEnable.empty())
             {
                 uint8_t param_default = torqueEnable[index];
                 if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, i, 24, param_default, &dxl_error))
@@ -183,29 +180,20 @@ class EpiServos : public Module
                     portHandlerPupil->clearPort();
                     return false;
                 }
-            }
+                */
+            
             if (!goalPosition.empty())
             {
                 uint16_t param_default = goalPosition[index]; // Not using degrees.
-                // Goal postiion feature/bug. If torque enable = 0 and goal position is sent. Torque enable will be 1.
-                if (!torqueEnable)
+                // Goal postiion feature/bug. If torque enable = 0 and goal position is sent. Torque enable will be 1.                
+                if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, i, 30, param_default, &dxl_error))
                 {
-                    if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, i, 30, param_default, &dxl_error))
-                    {
-                        // Notify(msg_warning, "[ID:%03d] write2ByteTxRx failed", i);
-                        portHandlerPupil->clearPort();
-                        return false;
-                    }
+                    // Notify(msg_warning, "[ID:%03d] write2ByteTxRx failed", i);
+                    portHandlerPupil->clearPort();
+                    return false;
                 }
-                else if ((uint8_t)torqueEnable[index] != 0)
-                {
-                    if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, i, 30, param_default, &dxl_error))
-                    {
-                        // Notify(msg_warning, "[ID:%03d] write2ByteTxRx failed", i);
-                        portHandlerPupil->clearPort();
-                        return false;
-                    }
-                }
+            
+                
             }
             else
             {
@@ -235,6 +223,7 @@ class EpiServos : public Module
         int32_t dxl_present_position = 0;
         int16_t dxl_present_current = 0;
         int8_t dxl_present_temperature = 0;
+        int32_t dxl_goal_current = 0;
 
         // Add if for syncread
         for (int i = IDMin; i <= IDMax; i++){
@@ -276,14 +265,15 @@ class EpiServos : public Module
         for (int i = IDMin; i <= IDMax; i++)
         {
             dxl_present_position = groupSyncRead->getData(i, 634, 4);    // Present postiion
-            dxl_present_current = groupSyncRead->getData(i, 638, 2);     // Present current
-            dxl_present_temperature = groupSyncRead->getData(i, 640, 1); // Present temperature
+            dxl_present_current = groupSyncRead->getData(i, 638, 1); // Present current
+            dxl_present_temperature = groupSyncRead->getData(i, 639, 1); //Present temperature
             // Fill IO
             presentPosition[index] = dxl_present_position / 4095.0 * 360.0; // degrees
-            presentCurrent[index] = dxl_present_current * 3.36;             // mA
+            presentCurrent[index] = dxl_present_current * 3.36;   // mA
+                   
             // Check temp
-            // if (dxl_present_temperature > MAX_TEMPERATURE)
-            //     Notify(msg_fatal_error, "Temperature over limit %i degrees (id %i)\n", dxl_present_temperature, i);
+            //if (dxl_present_temperature > MAX_TEMPERATURE)
+               //Notify(msg_fatal_error, "Temperature over limit %i degrees (id %i)\n" + dxl_present_temperature, i);
             index++;
         }
 
@@ -292,14 +282,12 @@ class EpiServos : public Module
         for (int i = IDMin; i <= IDMax; i++)
         {
             // We always write torque enable. If no input use torque enable = 1
-            if (torqueEnable)
-                param_sync_write[0] = (uint8_t)torqueEnable[index];
-            else
-                param_sync_write[0] = 1; // Torque on
+            param_sync_write[0] = 1; // Torque on
 
             // If no goal position input is connected send present position
-            if (goalPosition)
+            if (goalPosition.connected())
             {
+            
                 int value = goalPosition[index] / 360.0 * 4096.0;
                 param_sync_write[1] = DXL_LOBYTE(DXL_LOWORD(value));
                 param_sync_write[2] = DXL_HIBYTE(DXL_LOWORD(value));
@@ -314,9 +302,10 @@ class EpiServos : public Module
                 return false;
             }
 
-            if (goalCurrent)
+            if (goalCurrent.connected())
             {
                 // Goal current is not available on MX28 writing
+                goalCurrent[index].print();
                 int value = goalCurrent[index] / 3.36;
                 param_sync_write[5] = DXL_LOBYTE(DXL_HIWORD(value));
                 param_sync_write[6] = DXL_HIBYTE(DXL_HIWORD(value));
@@ -329,11 +318,14 @@ class EpiServos : public Module
             }
             dxl_addparam_result = groupSyncWrite->addParam(i, param_sync_write, 7);
 
+            
+
             if (dxl_addparam_result != true)
             {
                 // Notify(msg_debug, "[ID:%03d] groupSyncWrite addparam failed", i);
                 groupSyncWrite->clearParam();
                 groupSyncRead->clearParam();
+                
                 return false;
             }
 
@@ -347,9 +339,10 @@ class EpiServos : public Module
             // Notify(msg_debug, "%s\n", packetHandler->getTxRxResult(dxl_comm_result));
             groupSyncWrite->clearParam();
             groupSyncRead->clearParam();
+            std::cout << "Sync failed" << std::endl;
             return false;
         }
-
+       
         // Clear syncwrite parameter storage
         groupSyncWrite->clearParam();
         groupSyncRead->clearParam();
@@ -440,7 +433,6 @@ class EpiServos : public Module
 
         std::cout << robot[robotName].type << std::endl;
         // Ikaros input
-        Bind(torqueEnable, "TORQUE_ENABLE");
         Bind(goalPosition, "GOAL_POSITION");
         Bind(goalCurrent, "GOAL_CURRENT");
 
@@ -449,7 +441,7 @@ class EpiServos : public Module
         Bind(presentCurrent, "PRESENT_CURRENT");
 
 
-        
+       
 
         // Check if the input size are correct. We do not need to have an input at all!
         if (EpiTorsoMode)
@@ -460,21 +452,21 @@ class EpiServos : public Module
             if (!goalCurrent.empty())
                 if (goalCurrent.size() < EPI_TORSO_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal current does not match robot type\n");
-            if (!torqueEnable.empty())
+           /* if (!torqueEnable.empty())
                 if (torqueEnable.size() < EPI_TORSO_NR_SERVOS)
-                    Notify(msg_fatal_error, "Input size torque enable does not match robot type\n");
+                    Notify(msg_fatal_error, "Input size torque enable does not match robot type\n");*/
         }
         else if (EpiMode)
         {
             if (!goalPosition.empty())
-                if (goalPositionSize < EPI_NR_SERVOS)
+                if (goalPosition.size() < EPI_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal position does not match robot type\n");
             if (!goalCurrent.empty())
-                if (goalCurrentSize < EPI_NR_SERVOS)
+                if (goalCurrent.size() < EPI_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal current does not match robot type\n");
-            if (!torqueEnable.empty())
-                if (torqueEnableSize < EPI_NR_SERVOS)
-                    Notify(msg_fatal_error, "Input size torque enable does not match robot type\n");
+            /*if (!torqueEnable.empty())
+                if (torqueEnable.size() < EPI_NR_SERVOS)
+                    Notify(msg_fatal_error, "Input size torque enable does not match robot type\n");*/
         }
 
         // Ikaros parameter simulate
@@ -719,12 +711,12 @@ class EpiServos : public Module
         // Check limits of inputs
 
         // Temporary disable clip
-        // goalPosition[PUPIL_INDEX_IO] = clip(goalPosition[PUPIL_INDEX_IO], 5, 16);
+        //goalPosition[PUPIL_INDEX_IO] = clip(goalPosition[PUPIL_INDEX_IO], 5, 16);
         // goalPosition[PUPIL_INDEX_IO + 1] = clip(goalPosition[PUPIL_INDEX_IO + 1], 5, 16);
 
         // Special case. As pupil does not have any feedback we just return goal position
-        // presentPosition[PUPIL_INDEX_IO]    =     goalPosition[PUPIL_INDEX_IO];
-        // presentPosition[PUPIL_INDEX_IO+1]  =     goalPosition[PUPIL_INDEX_IO+1];
+        presentPosition[PUPIL_INDEX_IO]    =     goalPosition[PUPIL_INDEX_IO];
+        presentPosition[PUPIL_INDEX_IO+1]  =     goalPosition[PUPIL_INDEX_IO+1];
 
         if (simulate)
         {
@@ -780,22 +772,18 @@ class EpiServos : public Module
             return;
         }
 
-        // Set defualt output
-        set_array(presentPosition, 180, presentPositionSize);
+        
+    
 
         // Special case for pupil uses mm instead of degrees
         goalPosition[PUPIL_INDEX_IO] = PupilMMToDynamixel(goalPosition[PUPIL_INDEX_IO], AngleMinLimitPupil[0], AngleMaxLimitPupil[0]);
         goalPosition[PUPIL_INDEX_IO + 1] = PupilMMToDynamixel(goalPosition[PUPIL_INDEX_IO + 1], AngleMinLimitPupil[1], AngleMaxLimitPupil[1]);
-
         auto headThread = std::async(std::launch::async, &EpiServos::Communication, this, HEAD_ID_MIN, HEAD_ID_MAX, HEAD_INDEX_IO, std::ref(portHandlerHead), std::ref(packetHandlerHead), std::ref(groupSyncReadHead), std::ref(groupSyncWriteHead));
         auto pupilThread = std::async(std::launch::async, &EpiServos::CommunicationPupil, this); // Special!
-        auto leftArmThread = std::async(std::launch::async, &EpiServos::Communication, this, ARM_ID_MIN, ARM_ID_MAX, LEFT_ARM_INDEX_IO, std::ref(portHandlerLeftArm), std::ref(packetHandlerLeftArm), std::ref(groupSyncReadLeftArm), std::ref(groupSyncWriteLeftArm));
-        auto rightArmThread = std::async(std::launch::async, &EpiServos::Communication, this, ARM_ID_MIN, ARM_ID_MAX, RIGHT_ARM_INDEX_IO, std::ref(portHandlerRightArm), std::ref(packetHandlerRightArm), std::ref(groupSyncReadRightArm), std::ref(groupSyncWriteRightArm));
-        auto bodyThread = std::async(std::launch::async, &EpiServos::Communication, this, BODY_ID_MIN, BODY_ID_MIN, BODY_INDEX_IO, std::ref(portHandlerBody), std::ref(packetHandlerBody), std::ref(groupSyncReadBody), std::ref(groupSyncWriteBody));
-
+    
         if (!headThread.get())
         {
-            Notify(msg_warning, "Can not communicate with head");
+            Notify(msg_warning,"Can not communicate with head");
             portHandlerHead->clearPort();
         }
         if (!pupilThread.get())
@@ -803,20 +791,27 @@ class EpiServos : public Module
             Notify(msg_warning, "Can not communicate with pupil");
             portHandlerPupil->clearPort();
         }
-        if (!leftArmThread.get())
+        if(EpiMode)
         {
-            Notify(msg_warning, "Can not communicate with left arm");
-            portHandlerLeftArm->clearPort();
-        }
-        if (!rightArmThread.get())
-        {
-            Notify(msg_warning, "Can not communicate with right arm");
-            portHandlerRightArm->clearPort();
-        }
-        if (!bodyThread.get())
-        {
-            Notify(msg_warning, "Can not communicate with body");
-            portHandlerBody->clearPort();
+            auto leftArmThread = std::async(std::launch::async, &EpiServos::Communication, this, ARM_ID_MIN, ARM_ID_MAX, LEFT_ARM_INDEX_IO, std::ref(portHandlerLeftArm), std::ref(packetHandlerLeftArm), std::ref(groupSyncReadLeftArm), std::ref(groupSyncWriteLeftArm));
+            auto rightArmThread = std::async(std::launch::async, &EpiServos::Communication, this, ARM_ID_MIN, ARM_ID_MAX, RIGHT_ARM_INDEX_IO, std::ref(portHandlerRightArm), std::ref(packetHandlerRightArm), std::ref(groupSyncReadRightArm), std::ref(groupSyncWriteRightArm));
+            auto bodyThread = std::async(std::launch::async, &EpiServos::Communication, this, BODY_ID_MIN, BODY_ID_MIN, BODY_INDEX_IO, std::ref(portHandlerBody), std::ref(packetHandlerBody), std::ref(groupSyncReadBody), std::ref(groupSyncWriteBody));
+        
+            if (!leftArmThread.get())
+            {
+                Notify(msg_warning, "Can not communicate with left arm");
+                portHandlerLeftArm->clearPort();
+            }
+            if (!rightArmThread.get())
+            {
+                Notify(msg_warning, "Can not communicate with right arm");
+                portHandlerRightArm->clearPort();
+            }
+            if (!bodyThread.get())
+            {
+                Notify(msg_warning, "Can not communicate with body");
+                portHandlerBody->clearPort();
+            }
         }
     }
 
@@ -1009,7 +1004,7 @@ class EpiServos : public Module
         }
 
         // P
-        param_default_2Byte = 400;
+        param_default_2Byte = 100;
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_P, param_default_2Byte, &dxl_error)){
                 std::cout << "P (PID) not set for head servo ID: " << i <<std::endl;
@@ -1051,7 +1046,7 @@ class EpiServos : public Module
         }
 
         // D
-        param_default_2Byte = 0;
+        param_default_2Byte = 450;
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_D, param_default_2Byte, &dxl_error)){
                 std::cout << "D (PID) not set for head servo ID: " << i << std::endl;
@@ -1074,13 +1069,13 @@ class EpiServos : public Module
         // Specific setting for each servos
         // HEAD ID 2
         // Limit position max
-        param_default_4Byte = 2900;
+        param_default_4Byte = 2700;
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 2, 48, param_default_4Byte, &dxl_error)){
             std::cout << "Max limit not set for head servo ID: 2 " << std::endl;
             return false;
             }
         // Limit position min
-        param_default_4Byte = 1000;
+        param_default_4Byte = 1300;
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 2, 52, param_default_4Byte, &dxl_error)){
             std::cout << "Min limit not set for head servo ID: 2 " << std::endl;
             return false;
@@ -1088,11 +1083,11 @@ class EpiServos : public Module
 
         // HEAD ID 3
         // Limit position max
-        param_default_4Byte = 2400;
+        param_default_4Byte = 2500;
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 3, 48, param_default_4Byte, &dxl_error))
             return false;
         // Limit position min
-        param_default_4Byte = 1100;
+        param_default_4Byte = 1750;
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 3, 52, param_default_4Byte, &dxl_error))
             return false;
 
@@ -1102,18 +1097,18 @@ class EpiServos : public Module
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 4, 48, param_default_4Byte, &dxl_error))
             return false;
         // Limit position min
-        param_default_4Byte = 1800;
+        param_default_4Byte = 1830;
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 4, 52, param_default_4Byte, &dxl_error))
             return false;
 
         // HEAD ID 5 (Left eye)
         // Limit position max
-        param_default_4Byte = 2400;
+        param_default_4Byte = 2200;
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 5, 48, param_default_4Byte, &dxl_error))
             return false;
 
         // Limit position min
-        param_default_4Byte = 1700;
+        param_default_4Byte = 1780;
         if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 5, 52, param_default_4Byte, &dxl_error))
             return false;
 

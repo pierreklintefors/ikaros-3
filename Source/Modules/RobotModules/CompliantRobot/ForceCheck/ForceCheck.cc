@@ -16,11 +16,12 @@ class ForceCheck: public Module
     int current_value;
     int position_margin;
     int current_margin;
+
     
     matrix Limiter(matrix currents, matrix limits, int increment)
     {
         for (int i = 0; i < position.size(); i++) {
-            int current_value = currents[i];
+            int current_value = currents[i] + 0.1;
             int limit_value = limits[i];   
             if ( current_value< limit_value) {
                 current_output[i] = std::min(current_value + increment, limit_value); // Cap at limit_value              
@@ -38,7 +39,7 @@ class ForceCheck: public Module
         for (int i = 0; i < positions.size(); i++) {
             float current_position = positions[i];
             float goal = goal_positions[i];
-            float current_value = 0;
+            float current_value = current_output[i];
             float limit_value = current_limit[i];
 
             if (abs(current_position - goal) > position_margin & abs(current_value - limit_value) < current_margin)
@@ -66,8 +67,10 @@ class ForceCheck: public Module
         
       
         current_increment = 5;
+    
         current_margin = 100;
         position_margin = 5;
+
 
     }
 
