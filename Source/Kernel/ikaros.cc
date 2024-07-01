@@ -85,7 +85,6 @@ namespace ikaros
             case matrix_type: matrix_value = std::make_shared<matrix>(); break;
             case rate_type: double_value = std::make_shared<double>(0); break;
             case options_type: double_value = std::make_shared<double>(0); break;
-            //options = split(info_["options"],","); // FIXME: put in dict later, but consider potential XML saving problems; or split every time it is needed
             
             default: break;
         } 
@@ -187,6 +186,8 @@ namespace ikaros
 
     parameter::operator double()
     {
+        if(type==rate_type)
+            return *double_value * kernel().tick_duration;
         if(double_value) 
             return *double_value;
         else if(bool_value) 

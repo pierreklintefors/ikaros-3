@@ -89,6 +89,10 @@ class KernelTestModule: public Module
 
 
         g.print("g");
+        double gg = g;
+        std::cout << "g scaled: " << gg << std::endl; 
+
+
         data.print("data");
         mdata.print("mdata");
         x.print("x");
