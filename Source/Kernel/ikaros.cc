@@ -92,7 +92,7 @@ namespace ikaros
     }
 
     void 
-    parameter::operator=(parameter & p) // this shares data with p
+    parameter::operator=(parameter & p) // this shares data with p 
     {
         info_ = p.info_;
         type = p.type;
@@ -130,8 +130,16 @@ namespace ikaros
     std::string 
     parameter::operator=(std::string v)
     {
-        if(type==options_type) // FIXME: DO STUFF
-            ;
+        if(type==options_type)
+        {
+            auto options = split(info_["options"],",");
+            auto it = std::find(options.begin(), options.end(), v);
+            if (it != options.end())
+                *double_value = std::distance(options.begin(), it);
+            else
+                ; // FIXME: throw invalid options value – or ignore like now
+        }
+            
         else if(double_value) 
             *double_value = stod(v);
         else if(bool_value) 
@@ -163,7 +171,15 @@ namespace ikaros
             case rate_type: if(double_value) return std::to_string(*double_value);
             case string_type: if(string_value) return *string_value;
             case matrix_type: return matrix_value->json();
-            case options_type: return "**OPTIONS**";
+            case options_type:
+            {
+                int index = int(*double_value);
+                auto options = split(info_["options"],","); // FIXME: Check trim in split
+                if(index < 0 || index>= options.size())
+                    return std::to_string(index)+" (OUT-OF-RANGE)";
+                else
+                    return options[index];
+            } 
             default:  throw exception("Type conversion error for parameter.");
         }
     }
@@ -249,9 +265,10 @@ namespace ikaros
     std::string 
     parameter::json()
     {
-        switch(type)
+        switch(type)     // FIXME: remove if statements and use exception handling
         {
-            case double_type:    if(double_value)   return "[["+std::to_string(*double_value)+"]]";   // FIXME: remove if statements and use exception handling
+            case options_type:    if(double_value)   return "[["+std::to_string(int(*double_value))+"]]"; // FIXME: int or string???
+            case double_type:    if(double_value)   return "[["+std::to_string(*double_value)+"]]";
             case bool_type: if(bool_value)          return (*bool_value? "[[true]]" : "[[false]]");
             case rate_type:     if(double_value)    return "[["+std::to_string(*double_value)+"]]";
             case string_type:   if(string_value)    return "\""+*string_value+"\"";
@@ -265,8 +282,8 @@ namespace ikaros
     {
         switch(p.type)
         {
-            case options_type:  os << "OPTIONS"; break; // FIXME: *********** OPTIONS
-            case double_type:    if(p.double_value) os <<  *p.double_value; break;
+            case options_type:  os << std::string(p); break; 
+            case double_type:    if(p.double_value) os <<  *p.double_value; break; // FIXME: Is string conversion sufficient?
             case bool_type:     if(p.double_value) os <<  (*p.double_value == 0 ? "false" : "true"); break;
             case rate_type:    if(p.double_value) os <<  *p.double_value; break; 
             case string_type:   if(p.string_value) os <<  *p.string_value; break;

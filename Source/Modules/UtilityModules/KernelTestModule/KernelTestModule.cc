@@ -80,7 +80,14 @@ class KernelTestModule: public Module
         c.print("c");
         d.print("d");
         e.print("e");
+
         f.print("f");
+        std::cout << "f: " << f << std::endl;
+        std::cout << "f: " << f.json() << std::endl;
+        f= 17;
+        std::cout << "f: " << f << std::endl;   
+
+
         g.print("g");
         data.print("data");
         mdata.print("mdata");
