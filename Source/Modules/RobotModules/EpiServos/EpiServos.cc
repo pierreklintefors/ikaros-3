@@ -2126,8 +2126,6 @@ class EpiServos : public Module
     void Tick()
     {
 
-        std::cout << "Tick" << std::endl;
-
         // Check limits of inputs
 
         // Temporary disable clip
