@@ -1587,7 +1587,7 @@ INSTALL_CLASS(Module)
                 info_ = d;
                 session_id = new_session_id(); 
                 SetUp();
-                log.push_back(Message("Loaded "s+options_.filename));
+                Notify(msg_print, u8"Loaded "s+options_.filename);
 
                 CalculateCheckSum();
                 ListBuffers();
@@ -1598,7 +1598,7 @@ INSTALL_CLASS(Module)
                 //log.push_back(Message("E", e.what()));
                 // log.push_back(Message("E", "Load file failed for "s+options_.filename));
                 //Notify(msg_fatal_error, e.what());
-                Notify(msg_fatal_error, "Load file failed for "s+options_.filename);
+                Notify(msg_fatal_error, u8"Load file failed for "s+options_.filename);
                 CalculateCheckSum();
                 New();
             }
