@@ -1537,11 +1537,11 @@ INSTALL_CLASS(Module)
             }
             catch(const fatal_error& e)
             {
-                log.push_back(Message("F", "Fatal error. Init failed for \""+c.second->path_+"\": "+std::string(e.what()))); // FIXME: set end of execution
+                throw fatal_error(u8"Fatal error. Init failed for \""+c.second->path_+"\": "+std::string(e.what()));
             }
             catch(const std::exception& e)
             {
-                log.push_back(Message("F", "Init failed for "+c.second->path_+": "+std::string(e.what())));
+                throw fatal_error(u8"Init failed for "+c.second->path_+": "+std::string(e.what()));
             }
     }
 
@@ -1787,12 +1787,20 @@ INSTALL_CLASS(Module)
                     {
                         actual_tick_duration = intra_tick_timer.GetTime();
                         intra_tick_timer.Restart();
-                        Tick();
+                        try
+                        {
+                            Tick();
+                        }
+                        catch(std::exception & e)
+                        {
+                            //std::cout << e.what() << std::endl;
+                            Notify(msg_fatal_error, (e.what()));
+                            return;
+                        }
                         tick_time_usage = intra_tick_timer.GetTime();
                         idle_time = tick_duration - tick_time_usage;
                     }                    
                 }
-
 
                 Sleep(0.1);
             }
