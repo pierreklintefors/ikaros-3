@@ -78,7 +78,6 @@
 // TODO:
 // Add fast sync write feature
 
-
 // #include "EpiServos.h"
 
 // #include <stdio.h>
@@ -1589,7 +1588,7 @@ class EpiServos : public Module
 
         for (int i = PUPIL_ID_MIN; i <= PUPIL_ID_MAX; i++)
         {
-            if (torqueEnable)
+            if (!torqueEnable.empty())
             {
                 uint8_t param_default = torqueEnable[index];
                 if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, i, 24, param_default, &dxl_error))
@@ -1599,26 +1598,29 @@ class EpiServos : public Module
                     return false;
                 }
             }
-            if (goalPosition)
+            if (!goalPosition.empty())
             {
                 uint16_t param_default = goalPosition[index]; // Not using degrees.
-                // Goal postiion feature/bug. If torque enable = 0 and goal position is sent. Torque enable will be 1.
-                if (!torqueEnable)
+                if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, i, 30, param_default, &dxl_error))
                 {
-                    if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, i, 30, param_default, &dxl_error))
-                    {
-                        // Notify(msg_warning, "[ID:%03d] write2ByteTxRx failed", i);
-                        portHandlerPupil->clearPort();
-                        return false;
-                    }
+                    // Notify(msg_warning, "[ID:%03d] write2ByteTxRx failed", i);
+                    portHandlerPupil->clearPort();
+                    return false;
                 }
-                else if ((uint8_t)torqueEnable[index] != 0)
+
+                // Goal postiion feature/bug. If torque enable = 0 and goal position is sent. Torque enable will be 1.
+                // Check bug/feature
+                if (!torqueEnable.empty())
                 {
-                    if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, i, 30, param_default, &dxl_error))
+                    if ((uint8_t)torqueEnable[index] != 0)
                     {
-                        // Notify(msg_warning, "[ID:%03d] write2ByteTxRx failed", i);
-                        portHandlerPupil->clearPort();
-                        return false;
+                        uint8_t param_default = torqueEnable[index];
+                        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, i, 24, param_default, &dxl_error))
+                        {
+                            // Notify(msg_warning, "[ID:%03d] write1ByteTxRx failed", i);
+                            portHandlerPupil->clearPort();
+                            return false;
+                        }
                     }
                 }
             }
@@ -1650,7 +1652,6 @@ class EpiServos : public Module
         int32_t dxl_present_position = 0;
         int16_t dxl_present_current = 0;
         int8_t dxl_present_temperature = 0;
-
         // Add if for syncread
         for (int i = IDMin; i <= IDMax; i++)
             if (!groupSyncRead->addParam(i))
@@ -1706,13 +1707,13 @@ class EpiServos : public Module
         for (int i = IDMin; i <= IDMax; i++)
         {
             // We always write torque enable. If no input use torque enable = 1
-            if (torqueEnable)
+            if (!torqueEnable.empty())
                 param_sync_write[0] = (uint8_t)torqueEnable[index];
             else
                 param_sync_write[0] = 1; // Torque on
 
             // If no goal position input is connected send present position
-            if (goalPosition)
+            if (!goalPosition.empty())
             {
                 int value = goalPosition[index] / 360.0 * 4096.0;
                 param_sync_write[1] = DXL_LOBYTE(DXL_LOWORD(value));
@@ -1728,18 +1729,18 @@ class EpiServos : public Module
                 return false;
             }
 
-            if (goalCurrent)
+            if (!goalCurrent.empty())
             {
                 // Goal current is not available on MX28 writing
                 int value = goalCurrent[index] / 3.36;
-                param_sync_write[5] = DXL_LOBYTE(DXL_HIWORD(value));
-                param_sync_write[6] = DXL_HIBYTE(DXL_HIWORD(value));
+                param_sync_write[5] = DXL_LOBYTE(DXL_LOWORD(value));
+                param_sync_write[6] = DXL_HIBYTE(DXL_LOWORD(value));
             }
             else
             {
                 int value = 2047.0 / 3.36;
-                param_sync_write[5] = DXL_LOBYTE(DXL_HIWORD(value));
-                param_sync_write[6] = DXL_HIBYTE(DXL_HIWORD(value));
+                param_sync_write[5] = DXL_LOBYTE(DXL_LOWORD(value));
+                param_sync_write[6] = DXL_HIBYTE(DXL_LOWORD(value));
             }
             dxl_addparam_result = groupSyncWrite->addParam(i, param_sync_write, 7);
 
@@ -1870,22 +1871,22 @@ class EpiServos : public Module
                 if (goalPosition.size_x() < EPI_TORSO_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal position does not match robot type\n");
             if (!goalCurrent.empty())
-                if (goalCurrentSize < EPI_TORSO_NR_SERVOS)
+                if (goalCurrent.size_x() < EPI_TORSO_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal current does not match robot type\n");
             if (!torqueEnable.empty())
-                if (torqueEnableSize < EPI_TORSO_NR_SERVOS)
+                if (torqueEnable.size_x() < EPI_TORSO_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size torque enable does not match robot type\n");
         }
         else if (EpiMode)
         {
             if (!goalPosition.empty())
-                if (goalPositionSize < EPI_NR_SERVOS)
+                if (goalPosition.size_x() < EPI_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal position does not match robot type\n");
             if (!goalCurrent.empty())
-                if (goalCurrentSize < EPI_NR_SERVOS)
+                if (goalCurrent.size_x() < EPI_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size goal current does not match robot type\n");
             if (!torqueEnable.empty())
-                if (torqueEnableSize < EPI_NR_SERVOS)
+                if (torqueEnable.size_x() < EPI_NR_SERVOS)
                     Notify(msg_fatal_error, "Input size torque enable does not match robot type\n");
         }
 
@@ -2124,8 +2125,6 @@ class EpiServos : public Module
 
     void Tick()
     {
-
-        std::cout << "Tick" << std::endl;
 
         // Check limits of inputs
 
@@ -2521,13 +2520,11 @@ class EpiServos : public Module
             return false;
         Sleep(xlTimer);
 
-
         // I
         param_default_1Byte = 20;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 28, param_default_1Byte, &dxl_error))
             return false;
         Sleep(xlTimer);
-
 
         // D
         param_default_1Byte = 5;
@@ -2535,19 +2532,16 @@ class EpiServos : public Module
             return false;
         Sleep(xlTimer);
 
-
         // PUPIL ID 3 (Right pupil)
         // Limit position in
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 6, AngleMinLimitPupil[1], &dxl_error))
             return false;
         Sleep(xlTimer);
 
-
         // Limit position max
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 8, AngleMaxLimitPupil[1], &dxl_error))
             return false;
         Sleep(xlTimer);
-
 
         // Moving speed
         param_default_2Byte = 150;
@@ -2561,20 +2555,17 @@ class EpiServos : public Module
             return false;
         Sleep(xlTimer);
 
-
         // I
         param_default_1Byte = 20;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 28, param_default_1Byte, &dxl_error))
             return false;
         Sleep(xlTimer);
 
-
         // D
         param_default_1Byte = 5;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 27, param_default_1Byte, &dxl_error))
             return false;
         Sleep(xlTimer);
-
 
         if (EpiMode)
         {
@@ -2711,7 +2702,7 @@ class EpiServos : public Module
         if (portHandler == NULL) // If no port handler return true. Only return false if communication went wrong.
             return true;
 
-        Notify(msg_debug, "Power on servos");
+        //Notify(msg_debug, "Power on servos");
 
         Timer t;
         const int nrOfServos = IDMax - IDMin + 1;
@@ -2735,6 +2726,8 @@ class EpiServos : public Module
                 return false;
         while (t.GetTime() < TIMER_POWER_ON)
         {
+            //Notify(msg_debug, "Power on servos (Ramping)");
+            //std::cout << t.GetTime() << std::endl;
             // Get present position
             for (int i = 0; i < nrOfServos; i++)
                 if (COMM_SUCCESS != packetHandler->read4ByteTxRx(portHandler, IDMin + i, 132, &present_postition_value[i], &dxl_error))
@@ -2961,8 +2954,8 @@ class EpiServos : public Module
         AngleMaxLimitPupil[0] = AngleMinLimitPupil[0] + 280;
         AngleMaxLimitPupil[1] = AngleMinLimitPupil[1] + 280;
 
-       // Not implemented.
-       //Notify(msg_debug, "Position limits pupil servos (auto calibrate): min %i %i max %i %i \n", AngleMinLimitPupil[0], AngleMinLimitPupil[1], AngleMaxLimitPupil[0], AngleMaxLimitPupil[1]);
+        // Not implemented.
+        // Notify(msg_debug, "Position limits pupil servos (auto calibrate): min %i %i max %i %i \n", AngleMinLimitPupil[0], AngleMinLimitPupil[1], AngleMaxLimitPupil[0], AngleMaxLimitPupil[1]);
 
         // Torque off. No fancy rampiong
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 24, 0, &dxl_error))
@@ -2976,7 +2969,6 @@ class EpiServos : public Module
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 35, 1023, &dxl_error))
             return false;
         Sleep(xlTimer);
-
 
         return true;
     }

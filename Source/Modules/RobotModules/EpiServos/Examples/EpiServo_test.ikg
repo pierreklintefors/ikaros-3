@@ -3,58 +3,59 @@
 		<module
 			class = "Constant"
 			name = "Goal_position"
-			data = "
+			_data = "
 			180, 180, 180, 180, 180, 180,
 			180, 180, 180, 180, 180, 180,
 			180, 180, 180, 180, 180, 180,
 			180"
-			_data = "
-			180, 180, 180, 180, 180, 180, 0, 0
+			data = "
+			180, 180, 180, 180, 0, 0
 			"
 		/>
 		<module
 			class = "Constant"
 			name = "Goal_current"
-			data = "
+			_data = "
 			0 0 0 0 0 0
 			0 0 0 0 0 0
 			0 0 0 0 0 0
 			0"
+			data = "
+			0, 0, 0, 0, 0, 0
+			"
 		/>
 
 		<module
 			class = "Constant"
 			name = "Torque_enable"
-			data = "
+			_data = "
 			0 0 0 0 0 0
 			0 0 0 0 0 0
 			0 0 0 0 0 0
 			0"
+			data = "
+			1, 1, 1, 1, 1, 1
+			"
 		/>
 
 		<module
 			class = "EpiServos"
 			name = "EpiServos"
 			log_level = "8"
-			robot = "EpiBlue"
-			simulate = "true"
+			robot = "EpiWhite"
+			simulate = "false"
 		/>
 
         <_connection  source = "Torque_enable.OUTPUT"  target = "EpiServos.TORQUE_ENABLE" />
         <connection  source = "Goal_position.OUTPUT"  target = "EpiServos.GOAL_POSITION" />
-        <_connection  source = "Goal_current.OUTPUT"  target = "EpiServos.GOAL_CURRENT" />
+        <connection  source = "Goal_current.OUTPUT"  target = "EpiServos.GOAL_CURRENT" />
 
-		<!-- View not working as expexted -->
-		<widget _index="0" class="plot" buffer_size="200" color="" direction="vertical" frame-style="" height="341" max="180" min="-180" select="" show_frame="false" show_title="true" source="EpiServos.PRESENT_POSITION" style="" title="Present position" width="1581" x="1100" y="40"/>
-		<widget _index="1" class="plot" buffer_size="200" color="" direction="vertical" frame-style="" height="341" max="2000" min="-2000" select="" show_frame="false" show_title="true" source="EpiServos.PRESENT_CURRENT" style="" title="Present current" width="1581" x="1100" y="380"/>
-		<widget _index="2" class="plot" buffer_size="200" color="" direction="vertical" frame-style="" height="341" max="180" min="-180" select="" show_frame="false" show_title="true" source="EpiServos.PRESENT_POSITION" style="" title="Present position" width="1581" x="1100" y="40"/>
-		<widget _index="3" class="slider-horizontal" count="19" frame-style="" height="1161" labels="Neck tilt, Neck pan, Left eye, Right eye, Pupil left, Pupil right, Left arm 1, Left arm 2, Left arm 3, Left arm 4, Left arm 5, Left hand, Right arm 1, Right arm 2, Right arm 3, Right arm 4, Right arm 5, Right hand, Body" max="360" min="0" parameter="Goal_position.data" select="0" show_frame="false" show_title="true" show_values="true" step="2" style="" title="Goal position" width="361" x="300" y="40"/>
-		<widget _index="4" class="slider-horizontal" count="19" frame-style="" height="1161" labels="" max="360" min="0" parameter="Goal_current.data" select="0" show_frame="false" show_title="true" show_values="true" step="0.01" style="" title="Goal current" width="241" x="680" y="40"/>
-		<widget _index="5" class="slider-horizontal" count="19" frame-style="" height="1161" labels="" max="1" min="0" parameter="Torque_enable.data" select="0" show_frame="false" show_title="true" show_values="true" step="1" style="" title="Torque enable" width="121" x="940" y="40"/>
-		<widget _index="6" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="81" label_x="Neck tilt, Neck pan, Left eye, Right eye, Pupil left, Pupil right, Left arm 1, Left arm 2, Left arm 3, Left arm 4, Left arm 5, Left hand, Right arm 1, Right arm 2, Right arm 3, Right arm 4, Right arm 5, Right hand, Body" label_y="" scrollable="false" show_frame="false" show_title="true" source="EpiServos.PRESENT_POSITION" style="" title="Present position" width="1601" x="1080" y="1000"/>
-		<widget _index="7" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="81" label_x="Neck tilt, Neck pan, Left eye, Right eye, Pupil left, Pupil right, Left arm 1, Left arm 2, Left arm 3, Left arm 4, Left arm 5, Left hand, Right arm 1, Right arm 2, Right arm 3, Right arm 4, Right arm 5, Right hand, Body" label_y="" scrollable="false" show_frame="false" show_title="true" source="Goal_position.data" style="" title="Goal Position" width="1601" x="1080" y="780"/>
-		<widget _index="8" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="61" label_x="" label_y="" scrollable="false" show_frame="false" show_title="true" source="Goal_current.data" style="" title="Goal Current" width="1601" x="1080" y="880"/>
-		<widget _index="9" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="61" label_x="" label_y="" scrollable="false" show_frame="false" show_title="true" source="EpiServos.PRESENT_CURRENT" style="" title="Present current" width="1601" x="1080" y="1100"/>
+   <widget _index_="0" _x="120" _y="480" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="73" label_x="" label_y="" name="Widget_7" scrollable="false" show_frame="false" show_title="true" source="EpiServos.PRESENT_POSITION" style="" title="Position" width="1201"/>
+   <widget _index_="2" _x="840" _y="96" class="slider-horizontal" colorize="true" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan,  RightEye, LeftEye,  RightPupil, LeftPupil" max="360" min="0" name="Widget_8" parameter="Goal_position.data" select="0" show_frame="false" show_title="true" show_values="true" source="GoalPosition.data" step="1" style="" title="GoalPosition" width="289"/>
+   <widget _index_="4" _x="120" _y="648" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_14" scrollable="false" show_frame="false" show_title="true" source="EpiServos.GOAL_CURRENT" style="" title="Goal Current" width="1201"/>
+   <widget _index_="6" _x="120" _y="600" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_18" scrollable="false" show_frame="false" show_title="true" source="EpiServos.PRESENT_CURRENT" style="" title="PresentCurrent" width="1201"/>
+   <widget _index_="8" _x="120" _y="528" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_19" scrollable="false" show_frame="false" show_title="true" source="EpiServos.GOAL_POSITION" style="" title="Goal Position" width="1201"/>
+   <widget _index_="10" _x="1128" _y="96" class="slider-horizontal" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan, LeftEye, RightEye, LeftPupil, RightPupil" max="1000" min="0" name="Widget_20" parameter="Goal_current.data" select="0" show_frame="false" show_title="true" show_values="true" step="1" style="" title="CurrentLimit" width="337"/>
 
     <module class = "Logger" name = "Logger" />
 </group>
