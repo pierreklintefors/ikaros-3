@@ -5,6 +5,7 @@
    <connection delay_range="1" source="Servos.PRESENT_CURRENT" source_range="" target="ForceCheck.PresentCurrent" target_range=""/>
    <connection delay_range="1" source="Limit.OUTPUT" source_range="" target="ForceCheck.CurrentLimit" target_range=""/>
    <connection delay_range="1" source="GoalCurrent.OUTPUT" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
+   <connection delay_range="1" source="ForceCheck.CurrentOutput" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
    <module _x="408" _y="96" class="EpiServos" description="Robot servo control module" name="Servos" robot="EpiGray" simulate="false">
       <author>
          <affiliation/>
@@ -37,9 +38,9 @@
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="25,80,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
-   <module _x="120" _y="360" class="Constant" data="1000,500,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalCurrent">
+   <module _x="120" _y="360" class="Constant" data="900,84,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalCurrent">
       <output description="The output" name="OUTPUT" size="data.size"/>
-      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="1000,500,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
+      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="900,84,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
    <module _x="672" _y="96" class="ForceCheck" description="Checking the used current and increase it step by step to reach the target. Reduce the current with too much restance is met" name="ForceCheck">
       <files>

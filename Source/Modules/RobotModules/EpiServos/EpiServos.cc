@@ -223,25 +223,22 @@ class EpiServos : public Module
         int32_t dxl_present_position = 0;
         int16_t dxl_present_current = 0;
         int8_t dxl_present_temperature = 0;
-        int32_t dxl_goal_current = 0;
+        uint16_t dxl_goal_current = 0;
 
         // Add if for syncread
         for (int i = IDMin; i <= IDMax; i++){
             if (!groupSyncRead->addParam(i))
             {
-                // Notify(msg_debug, "[ID:%03d] groupSyncRead addparam failed", i);
                 groupSyncWrite->clearParam();
                 groupSyncRead->clearParam();
                 return false;
             }
         }
+
         // Sync read
         dxl_comm_result = groupSyncRead->txRxPacket();
-        //dxl_comm_result = groupSyncReadHead->fastSyncReadTxRxPacket(); // Servoes probably needs to be updated.
-
         if (dxl_comm_result != COMM_SUCCESS)
         {
-            // Notify(msg_debug, "%s\n", packetHandler->getTxRxResult(dxl_comm_result));
             groupSyncWrite->clearParam();
             groupSyncRead->clearParam();
             return false;
@@ -251,9 +248,8 @@ class EpiServos : public Module
         for (int i = IDMin; i <= IDMax; i++)
         {
             dxl_comm_result = groupSyncRead->isAvailable(i, 634, 4 + 2 + 1);
-            if (dxl_comm_result != true)
+            if (!dxl_comm_result)
             {
-                // Notify(msg_debug, "[ID:%03d] groupSyncRead getdata failed", i);
                 groupSyncWrite->clearParam();
                 groupSyncRead->clearParam();
                 return false;
@@ -264,16 +260,12 @@ class EpiServos : public Module
         index = IOIndex;
         for (int i = IDMin; i <= IDMax; i++)
         {
-            dxl_present_position = groupSyncRead->getData(i, 634, 4);    // Present postiion
-            dxl_present_current = groupSyncRead->getData(i, 638, 1); // Present current
-            dxl_present_temperature = groupSyncRead->getData(i, 639, 1); //Present temperature
-            // Fill IO
+            dxl_present_position = groupSyncRead->getData(i, 634, 4);    // Present position
+            dxl_present_current = groupSyncRead->getData(i, 638, 2); // Present current
+            
+
             presentPosition[index] = dxl_present_position / 4095.0 * 360.0; // degrees
             presentCurrent[index] = dxl_present_current * 3.36;   // mA
-                   
-            // Check temp
-            //if (dxl_present_temperature > MAX_TEMPERATURE)
-               //Notify(msg_fatal_error, "Temperature over limit %i degrees (id %i)\n" + dxl_present_temperature, i);
             index++;
         }
 
@@ -281,13 +273,10 @@ class EpiServos : public Module
         index = IOIndex;
         for (int i = IDMin; i <= IDMax; i++)
         {
-            // We always write torque enable. If no input use torque enable = 1
             param_sync_write[0] = 1; // Torque on
 
-            // If no goal position input is connected send present position
             if (goalPosition.connected())
-            {
-            
+            {   
                 int value = goalPosition[index] / 360.0 * 4096.0;
                 param_sync_write[1] = DXL_LOBYTE(DXL_LOWORD(value));
                 param_sync_write[2] = DXL_HIBYTE(DXL_LOWORD(value));
@@ -304,28 +293,24 @@ class EpiServos : public Module
 
             if (goalCurrent.connected())
             {
-                // Goal current is not available on MX28 writing
-                goalCurrent[index].print();
+
                 int value = goalCurrent[index] / 3.36;
-                param_sync_write[5] = DXL_LOBYTE(DXL_HIWORD(value));
-                param_sync_write[6] = DXL_HIBYTE(DXL_HIWORD(value));
+                param_sync_write[5] = DXL_LOBYTE(DXL_LOWORD(value));
+                param_sync_write[6] = DXL_HIBYTE(DXL_LOWORD(value));
             }
             else
             {
                 int value = 2047.0 / 3.36;
-                param_sync_write[5] = DXL_LOBYTE(DXL_HIWORD(value));
-                param_sync_write[6] = DXL_HIBYTE(DXL_HIWORD(value));
+                param_sync_write[5] = DXL_LOBYTE(DXL_LOWORD(value));
+                param_sync_write[6] = DXL_HIBYTE(DXL_LOWORD(value));
             }
+
+
             dxl_addparam_result = groupSyncWrite->addParam(i, param_sync_write, 7);
-
-            
-
-            if (dxl_addparam_result != true)
+            if (!dxl_addparam_result)
             {
-                // Notify(msg_debug, "[ID:%03d] groupSyncWrite addparam failed", i);
                 groupSyncWrite->clearParam();
                 groupSyncRead->clearParam();
-                
                 return false;
             }
 
@@ -336,18 +321,17 @@ class EpiServos : public Module
         dxl_comm_result = groupSyncWrite->txPacket();
         if (dxl_comm_result != COMM_SUCCESS)
         {
-            // Notify(msg_debug, "%s\n", packetHandler->getTxRxResult(dxl_comm_result));
             groupSyncWrite->clearParam();
             groupSyncRead->clearParam();
             std::cout << "Sync failed" << std::endl;
             return false;
         }
-       
-        // Clear syncwrite parameter storage
+
         groupSyncWrite->clearParam();
         groupSyncRead->clearParam();
-        return (true);
+        return true;
     }
+
 
     void Init()
     {
@@ -657,7 +641,7 @@ class EpiServos : public Module
         if (EpiTorsoMode || EpiMode)
         {
             groupSyncWriteHead = new dynamixel::GroupSyncWrite(portHandlerHead, packetHandlerHead, 224, 1 + 4 + 2); // Torque enable, goal position, goal current
-            groupSyncReadHead = new dynamixel::GroupSyncRead(portHandlerHead, packetHandlerHead, 634, 4 + 2 + 1);   // Present poistion, presernt current, temperature
+            groupSyncReadHead = new dynamixel::GroupSyncRead(portHandlerHead, packetHandlerHead, 634, 4 + 2 + 1 +2);   // Present poistion, presernt current, temperature goal current
         }
         if (EpiMode)
         {
