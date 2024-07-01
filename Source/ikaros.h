@@ -22,6 +22,7 @@ using namespace std::literals;
 #include "Kernel/options.h"
 #include "Kernel/range.h"
 #include "Kernel/expression.h"
+#include "Kernel/maths.h"
 #include "Kernel/matrix.h"
 #include "Kernel/socket.h"
 #include "Kernel/timing.h"
