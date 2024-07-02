@@ -70,6 +70,7 @@ namespace ikaros
         operator std::string () const;
         
         int get_int(std::string s);
+        bool is_set(std::string s);    // Returns true if set and true, and false if not set or not set to true, bool or string
 
         std::string json() const;
         std::string xml(std::string name, int depth=0, std::string exclude = "");
@@ -141,6 +142,7 @@ namespace ikaros
         bool is_dictionary()    { return std::holds_alternative<dictionary>(value_); }
         bool is_list()          { return std::holds_alternative<list>(value_); }
         bool is_null()          { return std::holds_alternative<null>(value_); }
+        bool is_true();
 
         int as_int()            { return double(*this); };  // FIXME: CHECK THIS ONE
 
