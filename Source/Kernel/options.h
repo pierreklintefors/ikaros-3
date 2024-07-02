@@ -45,7 +45,7 @@ namespace ikaros {
             for(auto & s: args)
             {
                 int pos = s.find('=');
-                if(pos != std::string::npos)
+                if(pos != std::string::npos && s.front() !='-')
                 {
                     if(pos < 1)
                         throw std::runtime_error("Assignment without variable");
