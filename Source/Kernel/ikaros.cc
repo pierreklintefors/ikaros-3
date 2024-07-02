@@ -1580,10 +1580,10 @@ INSTALL_CLASS(Module)
 
 //                if(run_mode >= run_mode_stop) // only look at below command line arguments started from command line
 //                    {
-
+/*
         if(d.contains("start"))
             start = is_true(d["start"]);
-/*
+
                     if(d.contains("real_time"))
                         if(is_true(d["real_time"]))
                         {
@@ -1768,6 +1768,17 @@ INSTALL_CLASS(Module)
                 New();
             else
                 LoadFile();
+
+            // Check start-up arguments
+
+            if(info_.is_set("start"))
+            {
+                if(info_.is_set("realtime"))
+                    run_mode = run_mode_restart_realtime;
+                else
+                    run_mode = run_mode_restart_play;
+            }
+            
             timer.Restart();
             tick = -1; // To make first tick 0 after increment
 
