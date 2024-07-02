@@ -710,10 +710,8 @@ class EpiServos : public Module
     {
 
         // Check limits of inputs
-
-        // Temporary disable clip
-        // goalPosition[PUPIL_INDEX_IO] = clip(goalPosition[PUPIL_INDEX_IO], 5, 16);
-        // goalPosition[PUPIL_INDEX_IO + 1] = clip(goalPosition[PUPIL_INDEX_IO + 1], 5, 16);
+        goalPosition[PUPIL_INDEX_IO] = clip(goalPosition[PUPIL_INDEX_IO], 5, 16); // Pupil size must be between 5 mm to 16 mm.
+        goalPosition[PUPIL_INDEX_IO + 1] = clip(goalPosition[PUPIL_INDEX_IO + 1], 5, 16); // Pupil size must be between 5 mm to 16 mm.
 
         // Special case. As pupil does not have any feedback we just return goal position
         // presentPosition[PUPIL_INDEX_IO]    =     goalPosition[PUPIL_INDEX_IO];
@@ -736,27 +734,19 @@ class EpiServos : public Module
             // Comment out GetTickLength() Adding constant.
             // if (GetTickLength() != 0)
             //    maxVel = 45.0 / 1000 * GetTickLength(); // Maximum change in one second in degrees / timebase
-            maxVel = 0.01;
+            maxVel = 0.01; // This should be a ratio parameter
 
             if (EpiMode)
             {
-                // Temporary disable clip
-                // for (int i = 0; i < EPI_NR_SERVOS; i++)
-                //     if (goalPosition)
-                //         presentPosition[i] = presentPosition[i] + 0.9 * (clip(goalPosition[i] - presentPosition[i], -maxVel, maxVel)); // adding some smoothing to prevent oscillation in simulation mode
                 for (int i = 0; i < EPI_NR_SERVOS; i++)
                     if (!goalPosition.empty())
-                        presentPosition(i) = presentPosition(i) + 0.9 * (goalPosition(i) - presentPosition(i)); // adding some smoothing to prevent oscillation in simulation mode
+                        presentPosition[i] = presentPosition[i] + 0.9 * (clip(goalPosition(i) - presentPosition(i), -maxVel, maxVel)); // adding some smoothing to prevent oscillation in simulation mode
             }
             else
             {
-                // Temporary disable clip
-                // for (int i = 0; i < EPI_TORSO_NR_SERVOS; i++)
-                //     if (goalPosition)
-                //         presentPosition[i] = presentPosition[i] + 0.9 * (clip(goalPosition[i] - presentPosition[i], -maxVel, maxVel)); // adding some smoothing to prevent oscillation in simulation mode
                 for (int i = 0; i < EPI_TORSO_NR_SERVOS; i++)
                     if (!goalPosition.empty())
-                        presentPosition(i) = presentPosition(i) + 0.9 * (goalPosition(i) - presentPosition(i)); // adding some smoothing to prevent oscillation in simulation mode
+                        presentPosition[i] = presentPosition[i] + 0.9 * (clip(goalPosition(i) - presentPosition(i), -maxVel, maxVel)); // adding some smoothing to prevent oscillation in simulation mode
             }
             // Create fake feedback in simulation mode
             // Temporary disable GetTick()
