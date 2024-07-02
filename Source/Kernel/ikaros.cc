@@ -85,14 +85,13 @@ namespace ikaros
             case matrix_type: matrix_value = std::make_shared<matrix>(); break;
             case rate_type: double_value = std::make_shared<double>(0); break;
             case options_type: double_value = std::make_shared<double>(0); break;
-            //options = split(info_["options"],","); // FIXME: put in dict later, but consider potential XML saving problems; or split every time it is needed
             
             default: break;
         } 
     }
 
     void 
-    parameter::operator=(parameter & p) // this shares data with p
+    parameter::operator=(parameter & p) // this shares data with p 
     {
         info_ = p.info_;
         type = p.type;
@@ -130,8 +129,16 @@ namespace ikaros
     std::string 
     parameter::operator=(std::string v)
     {
-        if(type==options_type) // FIXME: DO STUFF
-            ;
+        if(type==options_type)
+        {
+            auto options = split(info_["options"],",");
+            auto it = std::find(options.begin(), options.end(), v);
+            if (it != options.end())
+                *double_value = std::distance(options.begin(), it);
+            else
+                ; // FIXME: throw invalid options value – or ignore like now
+        }
+            
         else if(double_value) 
             *double_value = stod(v);
         else if(bool_value) 
@@ -163,7 +170,15 @@ namespace ikaros
             case rate_type: if(double_value) return std::to_string(*double_value);
             case string_type: if(string_value) return *string_value;
             case matrix_type: return matrix_value->json();
-            case options_type: return "**OPTIONS**";
+            case options_type:
+            {
+                int index = int(*double_value);
+                auto options = split(info_["options"],","); // FIXME: Check trim in split
+                if(index < 0 || index>= options.size())
+                    return std::to_string(index)+" (OUT-OF-RANGE)";
+                else
+                    return options[index];
+            } 
             default:  throw exception("Type conversion error for parameter.");
         }
     }
@@ -171,6 +186,8 @@ namespace ikaros
 
     parameter::operator double()
     {
+        if(type==rate_type)
+            return *double_value * kernel().tick_duration;
         if(double_value) 
             return *double_value;
         else if(bool_value) 
@@ -249,9 +266,10 @@ namespace ikaros
     std::string 
     parameter::json()
     {
-        switch(type)
+        switch(type)     // FIXME: remove if statements and use exception handling
         {
-            case double_type:    if(double_value)   return "[["+std::to_string(*double_value)+"]]";   // FIXME: remove if statements and use exception handling
+            case options_type:    if(double_value)   return "[["+std::to_string(int(*double_value))+"]]"; // FIXME: int or string???
+            case double_type:    if(double_value)   return "[["+std::to_string(*double_value)+"]]";
             case bool_type: if(bool_value)          return (*bool_value? "[[true]]" : "[[false]]");
             case rate_type:     if(double_value)    return "[["+std::to_string(*double_value)+"]]";
             case string_type:   if(string_value)    return "\""+*string_value+"\"";
@@ -265,8 +283,8 @@ namespace ikaros
     {
         switch(p.type)
         {
-            case options_type:  os << "OPTIONS"; break; // FIXME: *********** OPTIONS
-            case double_type:    if(p.double_value) os <<  *p.double_value; break;
+            case options_type:  os << std::string(p); break; 
+            case double_type:    if(p.double_value) os <<  *p.double_value; break; // FIXME: Is string conversion sufficient?
             case bool_type:     if(p.double_value) os <<  (*p.double_value == 0 ? "false" : "true"); break;
             case rate_type:    if(p.double_value) os <<  *p.double_value; break; 
             case string_type:   if(p.string_value) os <<  *p.string_value; break;
@@ -1537,11 +1555,11 @@ INSTALL_CLASS(Module)
             }
             catch(const fatal_error& e)
             {
-                log.push_back(Message("F", "Fatal error. Init failed for \""+c.second->path_+"\": "+std::string(e.what()))); // FIXME: set end of execution
+                throw fatal_error(u8"Fatal error. Init failed for \""+c.second->path_+"\": "+std::string(e.what()));
             }
             catch(const std::exception& e)
             {
-                log.push_back(Message("F", "Init failed for "+c.second->path_+": "+std::string(e.what())));
+                throw fatal_error(u8"Init failed for "+c.second->path_+": "+std::string(e.what()));
             }
     }
 
@@ -1587,7 +1605,7 @@ INSTALL_CLASS(Module)
                 info_ = d;
                 session_id = new_session_id(); 
                 SetUp();
-                log.push_back(Message("Loaded "s+options_.filename));
+                Notify(msg_print, u8"Loaded "s+options_.filename);
 
                 CalculateCheckSum();
                 ListBuffers();
@@ -1598,7 +1616,7 @@ INSTALL_CLASS(Module)
                 //log.push_back(Message("E", e.what()));
                 // log.push_back(Message("E", "Load file failed for "s+options_.filename));
                 //Notify(msg_fatal_error, e.what());
-                Notify(msg_fatal_error, "Load file failed for "s+options_.filename);
+                Notify(msg_fatal_error, u8"Load file failed for "s+options_.filename);
                 CalculateCheckSum();
                 New();
             }
@@ -1787,12 +1805,20 @@ INSTALL_CLASS(Module)
                     {
                         actual_tick_duration = intra_tick_timer.GetTime();
                         intra_tick_timer.Restart();
-                        Tick();
+                        try
+                        {
+                            Tick();
+                        }
+                        catch(std::exception & e)
+                        {
+                            //std::cout << e.what() << std::endl;
+                            Notify(msg_fatal_error, (e.what()));
+                            return;
+                        }
                         tick_time_usage = intra_tick_timer.GetTime();
                         idle_time = tick_duration - tick_time_usage;
                     }                    
                 }
-
 
                 Sleep(0.1);
             }
