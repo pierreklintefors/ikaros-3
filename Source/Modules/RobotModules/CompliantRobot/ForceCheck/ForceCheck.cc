@@ -8,7 +8,7 @@ class ForceCheck: public Module
     matrix present_current;
     matrix current_limit;
     matrix current_output;
-    matrix position;// assumes degrees
+    matrix present_position;// assumes degrees
     matrix goal_position_in;
     matrix goal_position_out;
 
@@ -22,7 +22,7 @@ class ForceCheck: public Module
     
     matrix Limiter(matrix currents, matrix limits, int increment)
     {
-        for (int i = 0; i < position.size(); i++) {
+        for (int i = 0; i < present_position.size(); i++) {
             int current_value = abs(currents[i]);
             int limit_value = limits[i];   
             if ( current_value< limit_value) {
@@ -43,6 +43,7 @@ class ForceCheck: public Module
     {
         for (int i = 0; i < positions.size(); i++) {
             float current_position = positions[i];
+            std::cout << "present pos for servo" << i+2 << " is " << current_position << std::endl;
             float goal = goal_position_in[i];
             float current_value = current_output[i];
             float limit_value = current_limit[i];
@@ -51,11 +52,14 @@ class ForceCheck: public Module
             {   
                 std::cout << "Obsticale detected, lowering current" << std::endl;
                 current_output[i]=0; 
+                std::cout << "Obstacle detected, lowering current for servo " << i+1 << " to " << current_output(i) << std::endl;
                 goal_position_out[i] = current_position;
+                std::cout << "Goal position changed to " << current_position << std::endl;
             }
             else 
             {  
                 current_output[i] = current_value;
+                goal_position_out.copy(goal_position_in);
      
             }
         }
@@ -67,13 +71,13 @@ class ForceCheck: public Module
         Bind(present_current, "PresentCurrent");
         Bind(current_limit, "CurrentLimit");
         Bind(current_output, "CurrentOutput");
-        Bind(position, "PresentPosition");
+        Bind(present_position, "PresentPosition");
         Bind(goal_position_in, "GoalPositionIn");
-        Bind(goal_position_in, "GoalPositionOut");
+        Bind(goal_position_out, "GoalPositionOut");
 
 
         
-        goal_position_out.set(0);
+        
         
 
         
@@ -91,11 +95,12 @@ class ForceCheck: public Module
     {   
         
 
-        if (position.connected() & present_current.connected()){ 
-            goal_position_out = goal_position_in;
-            current_output = MovingCheck(position, current_limit, goal_position_in, goal_position_out);
+        if (present_position.connected() & present_current.connected()){ 
+            present_position.print();
+            current_output = MovingCheck(present_position, current_limit, goal_position_in, goal_position_out);
             current_output = Limiter(present_current, current_limit, current_increment);
         }
+        
         
        
         

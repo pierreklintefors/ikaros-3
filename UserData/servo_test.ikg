@@ -1,11 +1,11 @@
-<group name="ServoCurrentLimiter" start="true" stop="-1" webui_port="8000">
+<group filename="servo_test.ikg" name="ServoCurrentLimiter" start="true" stop="-1" webui_port="8000">
    <connection delay_range="1" source="Servos.PRESENT_POSITION" source_range="" target="ForceCheck.PresentPosition" target_range=""/>
    <connection delay_range="1" source="Servos.PRESENT_CURRENT" source_range="" target="ForceCheck.PresentCurrent" target_range=""/>
    <connection delay_range="1" source="Limit.OUTPUT" source_range="" target="ForceCheck.CurrentLimit" target_range=""/>
    <connection delay_range="1" source="ForceCheck.CurrentOutput" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
    <connection delay_range="1" source="Servos.GOAL_POSITION" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
-   <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="Servos.GOAL_POSITION" target_range=""/>
    <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
+   <connection delay_range="1" source="ForceCheck.GoalPositionOut" source_range="" target="Servos.GOAL_POSITION" target_range=""/>
    <module _x="288" _y="288" class="EpiServos" description="Robot servo control module" name="Servos" robot="EpiGray" simulate="false">
       <author>
          <affiliation/>
@@ -30,15 +30,15 @@
       <parameter control="textedit" default="EpiWhite" descrition="Robot to connect to." name="robot" options="EpiWhite,EpiGreen,EpiBlue,EpiBlack,EpiRed" type="options" value="EpiGray"/>
       <parameter control="textedit" default="False" description="Simulation mode. No connecting is made to servos. The PRESENT POSITION output is calculated using previous position, goal position, maximum velocoty (no acceleration) and the time base of the simulation." name="simulate" type="bool" value="false"/>
    </module>
-   <module _x="120" _y="120" class="Constant" data="180,180,180,180,30,30,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalPosition">
+   <module _x="120" _y="120" class="Constant" data="185,180,180,180,30,30,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalPosition">
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="180,180,180,180,30,30,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
-   <module _x="96" _y="192" class="Constant" data="500,100,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="Limit">
+   <module _x="96" _y="192" class="Constant" data="500,100,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="Limit">
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="500,100,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
-   <module _x="120" _y="360" class="Constant" data="900,84,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalCurrent">
+   <module _x="120" _y="360" class="Constant" data="900,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalCurrent">
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="900,84,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
