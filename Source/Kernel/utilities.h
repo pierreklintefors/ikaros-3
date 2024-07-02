@@ -69,7 +69,6 @@ namespace ikaros
     };
 
     long character_sum(std::string s); // sums the character codes interpreded as numbers
-
 };  
 
 #endif
