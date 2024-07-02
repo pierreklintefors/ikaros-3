@@ -1,12 +1,12 @@
 <group name="ServoCurrentLimiter" start="true" stop="-1" webui_port="8000">
-   <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="Servos.GOAL_POSITION" target_range=""/>
    <connection delay_range="1" source="Servos.PRESENT_POSITION" source_range="" target="ForceCheck.PresentPosition" target_range=""/>
-   <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="ForceCheck.GoalPosition" target_range=""/>
    <connection delay_range="1" source="Servos.PRESENT_CURRENT" source_range="" target="ForceCheck.PresentCurrent" target_range=""/>
    <connection delay_range="1" source="Limit.OUTPUT" source_range="" target="ForceCheck.CurrentLimit" target_range=""/>
-   <connection delay_range="1" source="GoalCurrent.OUTPUT" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
    <connection delay_range="1" source="ForceCheck.CurrentOutput" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
-   <module _x="408" _y="96" class="EpiServos" description="Robot servo control module" name="Servos" robot="EpiGray" simulate="false">
+   <connection delay_range="1" source="Servos.GOAL_POSITION" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
+   <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="Servos.GOAL_POSITION" target_range=""/>
+   <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
+   <module _x="288" _y="288" class="EpiServos" description="Robot servo control module" name="Servos" robot="EpiGray" simulate="false">
       <author>
          <affiliation/>
          <email/>
@@ -30,33 +30,34 @@
       <parameter control="textedit" default="EpiWhite" descrition="Robot to connect to." name="robot" options="EpiWhite,EpiGreen,EpiBlue,EpiBlack,EpiRed" type="options" value="EpiGray"/>
       <parameter control="textedit" default="False" description="Simulation mode. No connecting is made to servos. The PRESENT POSITION output is calculated using previous position, goal position, maximum velocoty (no acceleration) and the time base of the simulation." name="simulate" type="bool" value="false"/>
    </module>
-   <module _x="216" _y="144" class="Constant" data="180,180,180,180,30,30,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalPosition">
+   <module _x="120" _y="120" class="Constant" data="180,180,180,180,30,30,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalPosition">
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="180,180,180,180,30,30,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
-   <module _x="576" _y="312" class="Constant" data="25,80,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="Limit">
+   <module _x="96" _y="192" class="Constant" data="500,100,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="Limit">
       <output description="The output" name="OUTPUT" size="data.size"/>
-      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="25,80,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
+      <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="500,100,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
    <module _x="120" _y="360" class="Constant" data="900,84,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" description="outputs a constant value" name="GoalCurrent">
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="900,84,500,500,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"/>
    </module>
-   <module _x="672" _y="96" class="ForceCheck" description="Checking the used current and increase it step by step to reach the target. Reduce the current with too much restance is met" name="ForceCheck">
+   <module _x="312" _y="96" class="ForceCheck" description="Checking the used current and increase it step by step to reach the target. Reduce the current with too much restance is met" name="ForceCheck">
       <files>
          <file/>
          <file/>
       </files>
-      <input description="The goal position of the servomotors in degrees" name="GoalPosition" size="19"/>
+      <input description="The goal position of the servomotors in degrees" name="GoalPositionIn" size="19"/>
       <input description="The present position of the servomotors in degrees" name="PresentPosition" size="19"/>
       <input description="The present current from the servomotors in mA" flatten="yes" name="PresentCurrent"/>
       <input default="100" description="The present current from the servomotors in mA" flatten="yes" name="CurrentLimit"/>
       <output description="Goal current in mA to be sent to the servos (only in current-based (position) control mode)" name="CurrentOutput" size="19"/>
+      <output description="The goal position of the servomotors in degrees" name="GoalPositionOut" size="19"/>
    </module>
    <widget _index_="0" _x="120" _y="480" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="73" label_x="" label_y="" name="Widget_7" scrollable="false" show_frame="false" show_title="true" source="Servos.PRESENT_POSITION" style="" title="Position" width="1201"/>
-   <widget _index_="2" _x="840" _y="96" class="slider-horizontal" colorize="true" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan,  RightEye, LeftEye,  RightPupil, LeftPupil" max="360" min="0" name="Widget_8" parameter="GoalPosition.data" select="0" show_frame="false" show_title="true" show_values="true" source="GoalPosition.data" step="1" style="" title="GoalPosition" width="289"/>
+   <widget _index_="2" _x="552" _y="96" class="slider-horizontal" colorize="true" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan,  RightEye, LeftEye,  RightPupil, LeftPupil" max="360" min="0" name="Widget_8" parameter="GoalPosition.data" select="0" show_frame="false" show_title="true" show_values="true" source="GoalPosition.data" step="1" style="" title="GoalPosition" width="289"/>
    <widget _index_="4" _x="120" _y="648" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_14" scrollable="false" show_frame="false" show_title="true" source="Servos.GOAL_CURRENT" style="" title="Goal Current" width="1201"/>
    <widget _index_="6" _x="120" _y="600" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_18" scrollable="false" show_frame="false" show_title="true" source="Servos.PRESENT_CURRENT" style="" title="PresentCurrent" width="1201"/>
    <widget _index_="8" _x="120" _y="528" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_19" scrollable="false" show_frame="false" show_title="true" source="Servos.GOAL_POSITION" style="" title="Goal Position" width="1201"/>
-   <widget _index_="10" _x="1128" _y="96" class="slider-horizontal" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan, LeftEye, RightEye, LeftPupil, RightPupil" max="1000" min="0" name="Widget_20" parameter="Limit.data" select="0" show_frame="false" show_title="true" show_values="true" step="1" style="" title="CurrentLimit" width="337"/>
+   <widget _index_="10" _x="840" _y="96" class="slider-horizontal" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan, LeftEye, RightEye, LeftPupil, RightPupil" max="2000" min="0" name="Widget_20" parameter="Limit.data" select="0" show_frame="false" show_title="true" show_values="true" step="1" style="" title="Goal Current" width="337"/>
 </group>
