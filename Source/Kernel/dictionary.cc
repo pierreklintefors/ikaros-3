@@ -2,9 +2,7 @@
 // dictionary.h  (c) Christian Balkenius 2023-2024
 
 #include "dictionary.h"
-
-
-// #include "json.cc"  // TEMPORARY EXTERNAL JSON FUNCTIONS
+#include "utilities.h"
 
 #include <cctype>
 #include <stdexcept>
@@ -137,6 +135,15 @@ namespace ikaros
     dictionary::get_int(std::string s)
     {
         return (*dict_)[s].as_int();
+    }
+
+    bool
+    dictionary::is_set(std::string s)
+    {
+        if(!contains(s))
+            return false;
+
+        return (*dict_)[s].is_true();
     }
 
     bool 
@@ -492,6 +499,22 @@ namespace ikaros
             else
                 return "*"; // FIXME: Throw exception
         }
+
+        bool 
+        value::is_true()
+        {
+            if(std::holds_alternative<bool>(value_))
+                return std::get<bool>(value_);
+            else if(std::holds_alternative<null>(value_))
+                return false;
+            else if(std::holds_alternative<double>(value_))
+                return std::get<double>(value_) != 0;
+            else if(std::holds_alternative<std::string>(value_))
+                return ::ikaros::is_true(std::get<std::string>(value_));
+            else
+                return false;
+        }
+
 
         std::string  
         value::json() const

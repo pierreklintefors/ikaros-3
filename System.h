@@ -3,6 +3,8 @@
 //
 //    Copyright (C) 2001-2019  Christian Balkenius
 //
+//  PLACEHOLDER FILE - NOT UPDATED FOR IKAROS-3
+//
 //    This program is free software; you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
 //    the Free Software Foundation; either version 2 of the License, or
@@ -25,7 +27,6 @@
 
 
 //
-//	Target system can be set using a compiler flag, e.g., -DMAC_OS_X
 //	Alternatively, the appropriate #define below can be uncommented
 //
 
