@@ -767,6 +767,7 @@ namespace ikaros
     bool
     Component::Notify(int msg, std::string message)
     {
+        std::cout << "ikaros: " << message << std::endl;
         return kernel().Notify(msg, message);
     }
 

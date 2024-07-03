@@ -1,4 +1,4 @@
-<group name="test" stop="-1" title="MinimalModule Example" webui_port="8000">
+<group filename="EpiServo_test.ikg" name="test" start="true" stop="-1" title="MinimalModule Example" webui_port="8000">
    <_connection source="Torque_enable.OUTPUT" target="EpiServos.TORQUE_ENABLE"/>
    <connection source="Goal_position.OUTPUT" target="EpiServos.GOAL_POSITION"/>
    <connection source="Goal_current.OUTPUT" target="EpiServos.GOAL_CURRENT"/>
@@ -46,5 +46,5 @@
    <widget _index_="4" _x="120" _y="648" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_14" scrollable="false" show_frame="false" show_title="true" source="EpiServos.GOAL_CURRENT" style="" title="Goal Current" width="1201"/>
    <widget _index_="6" _x="120" _y="600" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_18" scrollable="false" show_frame="false" show_title="true" source="EpiServos.PRESENT_CURRENT" style="" title="PresentCurrent" width="1201"/>
    <widget _index_="8" _x="120" _y="528" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="49" label_x="" label_y="" name="Widget_19" scrollable="false" show_frame="false" show_title="true" source="EpiServos.GOAL_POSITION" style="" title="Goal Position" width="1201"/>
-   <widget _index_="10" _x="672" _y="120" class="slider-horizontal" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan, LeftEye, RightEye, LeftPupil, RightPupil" max="2000" min="0" name="Widget_20" parameter="Goal_current.data" select="0" show_frame="false" show_title="true" show_values="true" step="1" style="" title="CurrentLimit" width="337"/>
+   <widget _index_="10" _x="672" _y="120" class="slider-horizontal" count="6" frame-style="" height="313" labels="NeckTilt, NeckPan, RightEye, LeftEye, RightPupil, LeftPupil" max="2000" min="0" name="Widget_20" parameter="Goal_current.data" select="0" show_frame="false" show_title="true" show_values="true" step="1" style="" title="CurrentLimit" width="337"/>
 </group>

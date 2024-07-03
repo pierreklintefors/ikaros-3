@@ -20,7 +20,7 @@ class PositionSelection: public Module
         Bind(position_input2, "PositionInput2");
         Bind(position_output, "PositionOutput");
 
-
+        
         
 
 
@@ -29,10 +29,10 @@ class PositionSelection: public Module
 
     void Tick()
     {   
+        Notify(msg_debug, "Entering Tick of PositionSelection");
         
-
-        if (position_input1.connected() &&position_input2.connected()) {
-            
+        if (position_input1.connected() &position_input2.connected()) {
+            Notify(msg_debug, "Input connected in PositionSelection");
             if (position_input2.sum() > 0)
             {
                 position_output.copy(position_input2);
@@ -43,13 +43,10 @@ class PositionSelection: public Module
             }
             
         }
+        
+        position_output = {180,180,0,0,12,12,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        position_output.print();
 
-
-        
-        
-        
-       
-        
             
     }
 };

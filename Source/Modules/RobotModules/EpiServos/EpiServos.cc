@@ -688,17 +688,16 @@ class EpiServos : public Module
     void Tick()
     {
  
-
+        Notify(msg_debug, "Entering Tick of EpiServos");
    
-
-        // Check limits of inputs
+        
         goalPosition[PUPIL_INDEX_IO] = clip(goalPosition[PUPIL_INDEX_IO], 5, 16); // Pupil size must be between 5 mm to 16 mm.
         goalPosition[PUPIL_INDEX_IO + 1] = clip(goalPosition[PUPIL_INDEX_IO + 1], 5, 16); // Pupil size must be between 5 mm to 16 mm.
 
         // Special case. As pupil does not have any feedback we just return goal position
         presentPosition[PUPIL_INDEX_IO]    =     goalPosition[PUPIL_INDEX_IO];
         presentPosition[PUPIL_INDEX_IO+1]  =     goalPosition[PUPIL_INDEX_IO+1];
-
+        
         if (simulate)
         {
             // Check if input is nan.
