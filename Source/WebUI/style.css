@@ -853,7 +853,7 @@ div.module {
     /* z-index: 200; */
     overflow: hidden;
     background-color: #383838;
-    border:2px solid #00000000;
+    /* border:2px solid #00000000; */
     color: yellow;
     /*font-size: 12px;
     cursor: move;*/
@@ -1022,56 +1022,18 @@ svg *{
 }
 
 
-
-.gi:hover {
-    border: 3px solid rgb(180, 117, 0);
-}
-
-.gi.selected {
-    border: 3px solid orange;
-    box-shadow: 5px 5px 5px grey;
-}
-
-.gi {
-    /*
-    background-color: #383838;
-    */
-    border: 3px solid #00000000;
-}
-
-/************* RED OVERRIDE **************/
 /*
-
-plain
-light
-dark
-
-RED
-
-#ff4d4d
-ffcccc
-#990000
-
-
-
-
-.gi {
-    background-color: #990000;
+#main.edit_mode .gi:hover {
+    border: 1px solid rgb(180, 117, 0);
 }
-
-div.module dt {
-
-    border-top: 1px solid #ffcccc;
-    border-bottom: 1px solid 990000;
-
-    background-color: #ff4d4d;
-
-}
-
-div.module td.title
-{
-    background-color: #990000;
-}
-
 */
 
+.gi.selected {
+    border: 1px solid orange;
+    box-shadow: 5px 5px 5px rgb(197, 197, 197);
+}
+
+.gi {
+
+    border: 1px solid #00000000;
+}
