@@ -390,6 +390,12 @@ main[data-mode="edit"] {
     height: 100%;
     display:none;
 }
+
+#main.edit_mode #main_grid
+{
+    display:block;
+}
+
 #main_grid_canvas
 {
     position:absolute;
@@ -397,7 +403,7 @@ main[data-mode="edit"] {
     left:0px;
     width: 3000;
     height: 3000;
-    display:none;
+    display:block;
 }
 
 /* grid commands */
