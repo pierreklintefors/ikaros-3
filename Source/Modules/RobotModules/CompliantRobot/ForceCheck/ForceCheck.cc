@@ -40,13 +40,14 @@ class ForceCheck: public Module
 
     //Could also be done by using dynamixel_sdk
     matrix MovingCheck(matrix positions,  matrix current_limits, matrix goal_position_in, matrix goal_position_out )
-    {
+    {   
+        Notify(msg_debug, "Entering MovingCheck");
         for (int i = 0; i < positions.size(); i++) {
             float current_position = positions[i];
-            std::cout << "present pos for servo" << i+2 << " is " << current_position << std::endl;
             float goal = goal_position_in[i];
             float current_value = current_output[i];
             float limit_value = current_limit[i];
+            std::cout << "initiated variables" << std::endl;
 
             if (abs(current_position - goal) > position_margin & abs(limit_value -current_value) < current_margin)
             {   
@@ -93,7 +94,7 @@ class ForceCheck: public Module
 
     void Tick()
     {   
-        
+        goal_position_out.set(0);
 
         if (present_position.connected() & present_current.connected()){ 
             present_position.print();

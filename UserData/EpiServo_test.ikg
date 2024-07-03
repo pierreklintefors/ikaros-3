@@ -1,4 +1,4 @@
-<group filename="EpiServo_test.ikg" name="test" stop="-1" title="MinimalModule Example" webui_port="8000">
+<group name="test" stop="-1" title="MinimalModule Example" webui_port="8000">
    <_connection source="Torque_enable.OUTPUT" target="EpiServos.TORQUE_ENABLE"/>
    <connection source="Goal_position.OUTPUT" target="EpiServos.GOAL_POSITION"/>
    <connection source="Goal_current.OUTPUT" target="EpiServos.GOAL_CURRENT"/>

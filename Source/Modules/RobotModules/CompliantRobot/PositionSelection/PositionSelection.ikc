@@ -1,0 +1,10 @@
+<class name="PositionSelection" description="Selecting an array of values to be sent to the servomotors from multiple stacked incoming position arrays">
+	<input name="PositionInput" description="Position array"/>
+	<input name="PositionInput2" description="Position array"/>
+	<output name="PositionOutput" description="The position array that will be sent to the motors as goal position"/>
+	<files>
+   		<file>PositionSelection.cc</file>
+   		<file>PositionSelection.ikc</file>
+   </files>
+</class>
+
