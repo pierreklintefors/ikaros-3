@@ -1635,9 +1635,8 @@ let inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
 
-        let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
         inspector.addHeader("Group");
-        if(edit_mode)
+        if(main.edit_mode)
         {
             inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], inspector);
         }
@@ -1659,7 +1658,7 @@ let inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
 
-        let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
+        //let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
         if(item == undefined)
         {
             inspector.addHeader("Internal Error");
@@ -1673,7 +1672,7 @@ let inspector = {
         else if(item._tag=="module")
         {
             inspector.addHeader("MODULE");
-            if(edit_mode)
+            if(main.edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]); // , this
                 inspector.addMenu("class", item.class, network.classes).addEventListener('change', function ()  
@@ -1698,7 +1697,7 @@ let inspector = {
         else if(item._tag=="group")
         {
             inspector.addHeader("GROUP");
-            if(edit_mode)
+            if(main.edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
             }
@@ -1711,7 +1710,7 @@ let inspector = {
         else if(item._tag=="input")
         {
             inspector.addHeader("INPUT");
-            if(edit_mode)
+            if(main.edit_mode)
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
             else
                 inspector.addAttributeValue("name", item.name); 
@@ -1721,7 +1720,7 @@ let inspector = {
         {
             inspector.addHeader("OUTPUT");
 
-            if(edit_mode)
+            if(main.edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}, {'name':'size', 'control':'textedit', 'type':'source'}], this);
             }
@@ -1736,7 +1735,7 @@ let inspector = {
             let widget_container = document.getElementById(selector.selected_background+'.'+item.name);
 
             inspector.addHeader("WIDGET");
-            if(edit_mode)
+            if(main.edit_mode)
                 {
                 inspector.addMenu("class", item.class, widget_classes).addEventListener('change', function ()  
                 { 
@@ -1771,7 +1770,7 @@ let inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
 
-        let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
+        //let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
 
         inspector.addHeader("Connection");
         inspector.addAttributeValue("source", item.source);
