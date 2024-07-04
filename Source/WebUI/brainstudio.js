@@ -2414,6 +2414,8 @@ let main =
 
     startTrackConnection(evt)
     {
+        if(!main.edit_mode)
+            return;
         this.style.backgroundColor="orange";
         evt.stopPropagation();
         let id = this.id;
