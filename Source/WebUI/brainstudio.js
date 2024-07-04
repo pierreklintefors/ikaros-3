@@ -2432,7 +2432,6 @@ let main =
     {
         if(!main.tracked_connection)
             return;
-        //evt.stopPropagation();
 
         let ox = main.view.getBoundingClientRect().left;
         let oy = main.view.getBoundingClientRect().top;
@@ -2452,13 +2451,20 @@ let main =
         {
             main.tracked_connection = null;
         }
-        else
+        else  if(network.dict[main.tracked_connection.target]._tag='widget') // set source of widget
+        {
+            network.dict[main.tracked_connection.target].source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".");
+            let target = main.tracked_connection.target;
+            main.tracked_connection = null;
+            selector.selectItems([target], null);
+
+        }
+        else // make new connection
         {
             let source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".")
             let target = removeStringFromStart(main.tracked_connection.target.split(':')[0], selector.selected_background+".")
             network.newConnection(selector.selected_background, source, target);
             main.tracked_connection = null;
-            //main.addConnections();
             selector.selectConnection(selector.selected_background+"."+source+"*"+selector.selected_background+"."+target);
         }
     },
@@ -2468,7 +2474,8 @@ let main =
         if(!main.tracked_connection)
             return;
         this.style.backgroundColor="orange";
-        main.tracked_connection.target = this.id;
+        if(this.id != "")   // FIXME: Not sure why this is needed
+            main.tracked_connection.target = this.id;
     },
 
     resetConnectectionTarget(evt)
@@ -2476,7 +2483,11 @@ let main =
         if(!main.tracked_connection)
             return;
             main.tracked_connection.target = null;
-        this.style.backgroundColor="gray";
+
+        if(this.classList.contains('widget'))
+            this.style.backgroundColor="rgb(0,0,0,0)";
+        else
+            this.style.backgroundColor="gray";
     },
 
     addGroup(g,path)
@@ -2721,6 +2732,12 @@ let main =
             o.addEventListener('mousedown', main.startTrackConnection, false);
 
             for(let i of main.view.querySelectorAll(".i_spot"))
+            {
+                i.addEventListener('mouseover', main.setConnectectionTarget, true);
+                i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
+            }
+
+            for(let i of main.view.querySelectorAll(".widget"))
             {
                 i.addEventListener('mouseover', main.setConnectectionTarget, true);
                 i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
