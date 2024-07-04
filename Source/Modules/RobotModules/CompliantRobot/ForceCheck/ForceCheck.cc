@@ -40,28 +40,28 @@ class ForceCheck: public Module
     //Could also be done by using dynamixel_sdk
     matrix MovingCheck(matrix positions,  matrix current_limits, matrix goal_position_in, matrix goal_position_out )
     {   
-        Notify(msg_debug, "Entering MovingCheck");
+       
    ;
         for (int i = 0; i < positions.size(); i++) {
-            float current_position = positions[i];
+            float current_position = positions(i);
             float goal = goal_position_in[i];
             float current_value = current_output[i];
             float limit_value = current_limit[i];
-            
+            if (current_position >0){
 
-            if (abs(current_position - goal) > position_margin & abs(limit_value -current_value) < current_margin)
-            {   
-                std::cout << "Obsticale detected, lowering current" << std::endl;
-                current_output[i]=0; 
-                std::cout << "Obstacle detected, lowering current for servo " << i+1 << " to " << current_output(i) << std::endl;
-                goal_position_out[i] = current_position;
-                std::cout << "Goal position changed to " << current_position << std::endl;
-            }
-            else 
-            {  
-                current_output[i] = current_value;
-                goal_position_out.copy(goal_position_in);
-     
+                if (abs(goal - current_position) > position_margin & abs(limit_value -current_value) < current_margin)
+                {   
+                    current_output[i]=0; 
+                    std::cout << "Obstacle detected, lowering current for servo " << i+1 << " to " << current_output(i) << std::endl;
+                    goal_position_out[i] = current_position;
+                    std::cout << "Goal position changed to " << current_position << std::endl;
+                }
+                else 
+                {  
+                    current_output[i] = current_value;
+                    
+                }
+
             }
         }
         return current_output;
@@ -80,7 +80,7 @@ class ForceCheck: public Module
         current_increment = 10;
     
         current_margin = 10;
-        position_margin = 5;
+        position_margin = 10;
         tickCount = 0;
         minimum_current = 5;
 
@@ -89,17 +89,15 @@ class ForceCheck: public Module
 
     void Tick()
     {   
-        Notify(msg_debug, "Entering Tick of ForceCheck");
+       
 
-        if (present_position.connected() & present_current.connected() & goal_position_in.connected()) {
-            Notify(msg_debug, "Input connected in ForecCheck");
+        if (!present_position.empty() & !present_current.empty() & !goal_position_in.empty()) {
             current_output = MovingCheck(present_position, current_limit, goal_position_in, goal_position_out);
             current_output = Limiter(present_current, current_limit, current_increment);
         }
         
         
        
-        tickCount ++;
       
             
     }

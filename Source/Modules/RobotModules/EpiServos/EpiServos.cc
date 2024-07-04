@@ -182,7 +182,7 @@ class EpiServos : public Module
                 }
                 */
             
-            if (goalPosition.connected())
+            if (!goalPosition.empty())
             {
                 uint16_t param_default = goalPosition[index]; // Not using degrees.
                 // Goal postiion feature/bug. If torque enable = 0 and goal position is sent. Torque enable will be 1.                
@@ -275,7 +275,7 @@ class EpiServos : public Module
         {
             param_sync_write[0] = 1; // Torque on
 
-            if (goalPosition.connected())
+            if (!goalPosition.empty())
             {   
                 int value = goalPosition[index] / 360.0 * 4096.0;
                 param_sync_write[1] = DXL_LOBYTE(DXL_LOWORD(value));
@@ -687,16 +687,15 @@ class EpiServos : public Module
 
     void Tick()
     {
- 
-        Notify(msg_debug, "Entering Tick of EpiServos");
-   
-        
+       
         goalPosition[PUPIL_INDEX_IO] = clip(goalPosition[PUPIL_INDEX_IO], 5, 16); // Pupil size must be between 5 mm to 16 mm.
         goalPosition[PUPIL_INDEX_IO + 1] = clip(goalPosition[PUPIL_INDEX_IO + 1], 5, 16); // Pupil size must be between 5 mm to 16 mm.
 
         // Special case. As pupil does not have any feedback we just return goal position
         presentPosition[PUPIL_INDEX_IO]    =     goalPosition[PUPIL_INDEX_IO];
         presentPosition[PUPIL_INDEX_IO+1]  =     goalPosition[PUPIL_INDEX_IO+1];
+    
+        
         
         if (simulate)
         {
@@ -725,10 +724,16 @@ class EpiServos : public Module
             }
             else
             {
+                Notify(msg_debug, "Simulating EpiTorso");
                 for (int i = 0; i < EPI_TORSO_NR_SERVOS; i++)
-                    if (!goalPosition.empty()){
-                        presentPosition(i) = presentPosition(i) + 0.02 * (goalPosition(i) - presentPosition(i)); // adding some smoothing to prevent oscillation in simulation mode
+                    if (!goalPosition.empty() && !goalCurrent.empty()){
                         presentCurrent(i) = presentCurrent(i) + 0.06 * (goalCurrent(i) - presentCurrent(i));
+                        if (i == 0 && presentPosition(i) > 200 && presentCurrent(i) < 700){
+                            presentPosition(i) = presentPosition(i);
+                        }
+                        else
+                            presentPosition(i) = presentPosition(i) + 0.02 * (goalPosition(i) - presentPosition(i)); // adding some smoothing to prevent oscillation in simulation mode
+                        
                     }
             }
             // Create fake feedback in simulation mode
@@ -745,7 +750,6 @@ class EpiServos : public Module
         }
 
         
-    
 
         // Special case for pupil uses mm instead of degrees
         goalPosition[PUPIL_INDEX_IO] = PupilMMToDynamixel(goalPosition[PUPIL_INDEX_IO], AngleMinLimitPupil[0], AngleMaxLimitPupil[0]);

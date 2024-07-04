@@ -4,7 +4,7 @@
    <connection delay_range="1" source="Constant1.OUTPUT" source_range="" target="Add.INPUT1" target_range=""/>
    <connection delay_range="1" source="Add.OUTPUT" source_range="" target="ForceCheck.PresentCurrent" target_range=""/>
    <connection delay_range="1" source="Position.OUTPUT" source_range="" target="ForceCheck.PresentPosition" target_range=""/>
-   <connection delay_range="1" source="GoalPos.OUTPUT" source_range="" target="ForceCheck.GoalPosition" target_range=""/>
+   <connection delay_range="1" source="GoalPos.OUTPUT" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
    <module _x="72.000000" _y="240.000000" class="Constant" data="1,1" description="outputs a constant value" name="Constant1">
       <output description="The output" name="OUTPUT" size="data.size"/>
       <parameter control="textedit" default="1, 2, 3, 4, 5, 6" description="output from module" name="data" type="matrix" value="1,1"/>
@@ -33,8 +33,9 @@
       <input description="The first input" name="PresentCurrent"/>
       <input description="The second input" name="CurrentLimit"/>
       <input description="The second input" name="PresentPosition"/>
-      <input description="The second input" name="GoalPosition"/>
+      <input description="Goal position" name="GoalPositionIn"/>
       <output description="The output" name="CurrentOutput" size="PresentCurrent.size"/>
+      <output description="Goal position output" name="GoalPositionOut"/>
    </module>
    <module _x="0.000000" _y="288.000000" class="Logger" description="logs start to Ikaros site" name="Logger">
    </module>
