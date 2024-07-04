@@ -107,7 +107,7 @@ function toURLParams(obj)
 
 function toURLParams(params) {
     return Object.keys(params).map((key) => {
-        console.log(key);
+        //console.log(key);
         return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
     }).join('&');
 }
@@ -432,6 +432,7 @@ let network = {
     classes: null,
     classinfo: {},
     dict: {},
+    tainted: false,
 
     init(n)
     {
@@ -655,7 +656,7 @@ let controller = {
         // AUTOMATIC RECONNECT TEMPORARILY TURNED OFF - should only happen in run mode **********
     },
 
-        saveNetwork() // FIXME: Change to allow saving of fragments
+        saveNetwork()
         {
             const jsonString = JSON.stringify(network.network,null,2);
     
@@ -675,6 +676,9 @@ let controller = {
             return response.json(); // Assuming the server responds with JSON
         })
         .then(data => {
+            // SUCCESS
+            main.setViewMode(); // Pressing edit mode again will taint the network
+            network.tainted = false;    // Only place to prevent saving again
             //alert(data);
             //console.log('Success:', data);
             // Now request network!
@@ -751,7 +755,7 @@ let controller = {
         if (filename !== null)
         {
             //console.log("User input:", userInput);
-            // FIXME: check name validity
+            // FIXME: check name validity *************** blanks and .ikg **********
             network.network.filename = filename;
             controller.save();
         } 
@@ -763,58 +767,77 @@ let controller = {
 
     quit: function () {
         controller.run_mode = 'quit';
-        controller.get("quit", controller.update); // do not request data -  stop immediately
+        controller.get("quit", controller.update);
      },
 
     stop: function () {
         controller.run_mode = 'stop';
-        controller.get("stop", controller.update); // do not request data -  stop immediately
+        controller.get("stop", controller.update);
      },
     
-    pause: function () {
-        main.cancelEditMode();
+    pause: function () // Save and at set at step 0 if not running
+    {
+        if(network.tainted)
+            {
+                if(network.network.filename=="")
+                    controller.saveas();
+                else
+                    controller.save();  // FIXME: Save should call saveas instead ********
+                return;
+            }
+
+        main.setViewMode(); // FIXME: Probably not necessary
         controller.queueCommand('pause');
     },
     
     step: function ()
     {
-        if(network.network.filename=="")
-            controller.saveas();
-        else
-            controller.save();
-
+        if(network.tainted)
+        {
+            if(network.network.filename=="")
+                controller.saveas();
+            else
+                controller.save();  // FIXME: Save should call saveas instead ********
+            return;
+        }
+        
         document.querySelector("#state").innerText = "step";
-        main.cancelEditMode();
+        main.setViewMode(); // FIXME: Probably not necessary
         controller.queueCommand('step');
     },
     
-    play: function () {
-        if(network.network.filename=="")
+    play: function ()
+    {
+        if(network.tainted)
         {
-            controller.saveas();
+            if(network.network.filename=="")
+                controller.saveas();
+            else
+                controller.save();  // FIXME: Save should call saveas instead ********
             return;
         }
-        else
-            controller.save();
     
-            main.cancelEditMode()
+        main.setViewMode() // FIXME: Probably not necessary
         controller.queueCommand('play');
     },
     
-    realtime: function () {
-        if(network.network.filename=="")
-        {
-            controller.saveas();
-            return;
-        }
-        else
-            controller.save();
+    realtime: function ()// ********************* HERE
+    {
+        if(network.tainted)
+            {
+                if(network.network.filename=="")
+                    controller.saveas();
+                else
+                    controller.save();  // FIXME: Save should call saveas instead ********
+                return;
+            }
+            
 
-            main.cancelEditMode();
+            main.setViewMode(); // FIXME: Probably not necessary
         controller.queueCommand('realtime');
     },
-
-    start: function () {
+/*
+    start: function () {// ********************* HERE - WHAT IS THIS
         if(network.network.filename=="")
         {
             controller.saveas();
@@ -826,7 +849,7 @@ let controller = {
 
         controller.play();  // FIXME: possibly start selected mode play/fast-forward/realtime
     },
-
+*/
     clear_wait()
     {
         controller.load_count = 0;
@@ -1612,9 +1635,8 @@ let inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
 
-        let edit_mode = main.grid.style.display == 'block';
         inspector.addHeader("Group");
-        if(edit_mode)
+        if(main.edit_mode)
         {
             inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], inspector);
         }
@@ -1636,7 +1658,7 @@ let inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
 
-        let edit_mode = main.grid.style.display == 'block';
+        //let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
         if(item == undefined)
         {
             inspector.addHeader("Internal Error");
@@ -1650,7 +1672,7 @@ let inspector = {
         else if(item._tag=="module")
         {
             inspector.addHeader("MODULE");
-            if(edit_mode)
+            if(main.edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]); // , this
                 inspector.addMenu("class", item.class, network.classes).addEventListener('change', function ()  
@@ -1675,7 +1697,7 @@ let inspector = {
         else if(item._tag=="group")
         {
             inspector.addHeader("GROUP");
-            if(edit_mode)
+            if(main.edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
             }
@@ -1688,7 +1710,7 @@ let inspector = {
         else if(item._tag=="input")
         {
             inspector.addHeader("INPUT");
-            if(edit_mode)
+            if(main.edit_mode)
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
             else
                 inspector.addAttributeValue("name", item.name); 
@@ -1698,7 +1720,7 @@ let inspector = {
         {
             inspector.addHeader("OUTPUT");
 
-            if(edit_mode)
+            if(main.edit_mode)
             {
                 inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}, {'name':'size', 'control':'textedit', 'type':'source'}], this);
             }
@@ -1713,7 +1735,7 @@ let inspector = {
             let widget_container = document.getElementById(selector.selected_background+'.'+item.name);
 
             inspector.addHeader("WIDGET");
-            if(edit_mode)
+            if(main.edit_mode)
                 {
                 inspector.addMenu("class", item.class, widget_classes).addEventListener('change', function ()  
                 { 
@@ -1748,7 +1770,7 @@ let inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
 
-        let edit_mode = main.grid.style.display == 'block';
+        //let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
 
         inspector.addHeader("Connection");
         inspector.addAttributeValue("source", item.source);
@@ -1877,7 +1899,7 @@ let main =
     connections: "",
     grid_spacing: 24,
     grid_active: false,
-    edit_mode: false,
+    edit_mode: false,       // FIXME: onlye use this variable for edit mode everywhere ***********
     map: {},
 
     module_counter: 1,
@@ -2210,7 +2232,7 @@ let main =
             if(new_y < 0)
                 new_y = 0;
 
-        if(main.grid_active) // snap
+        if(main.edit_mode)
         {
             let g = main.grid_spacing;
             new_x = g*Math.round(new_x/g);
@@ -2655,37 +2677,73 @@ let main =
             }
     },
 
+    // FIXME USE SINGLE FUNCTION TO SET MODE setMode(edit/view)
+    // Use functions to get mode editMode(), viewMode()
+
     cancelEditMode()
     {
-        main.grid.style.display = 'none';
+        this.setViewMode();
+    },
+
+    setEditMode()
+    {
+        network.tainted = true;
+        main.main.classList.add("edit_mode");
+        main.main.classList.remove("view_mode");
+        main.edit_mode = true;
+        controller.run_mode = 'stop';
+        controller.get("stop", controller.update);
+        inspector.showInspectorForSelection();
+    },
+
+    setViewMode()
+    {
+        main.main.classList.add("view_mode");
+        main.main.classList.remove("edit_mode");
         main.edit_mode = false;
+        inspector.showInspectorForSelection();
     },
 
     toggleEditMode()
     {
+        if(main.main.classList.contains("edit_mode"))
+            this.setViewMode();
+        else
+            this.setEditMode();
+/*
         let s = window.getComputedStyle(main.grid, null);
         if (s.display === 'none')
         {
-            main.grid.style.display = 'block';
+            main.main.classList.add("edit_mode");
+            main.main.classList.remove("view_mode");
+
+            //main.grid.style.display = 'block';
             main.edit_mode = true;
-            main.grid_canvas.style.display = 'block';
-            main.grid_active = true;
+            //main.grid_canvas.style.display = 'block';
+            //main.grid_active = true;
 
             controller.run_mode = 'stop';
             controller.get("stop", controller.update)
         }
         else
         {
-            main.grid.style.display = 'none';
+            main.main.classList.add("view_mode");
+            main.main.classList.remove("edit_mode");
+
+            //main.grid.style.display = 'none';
             main.edit_mode = false;
-            main.grid_canvas.style.display = 'none';
-            main.grid_active = false;
+            //main.grid_canvas.style.display = 'none';
+            //main.grid_active = false;
         }
+
         inspector.showInspectorForSelection();
+                */
     },
 
-    toggleGrid()
+    /*
+    toggleGrid() // FIXME: handle in CSS instead
     {
+        return;
         let s = window.getComputedStyle(main.grid_canvas, null);
         if (s.display === 'none')
         {
@@ -2698,6 +2756,7 @@ let main =
             main.grid_active = false;
         }
     },
+*/
 
     selectItem(foreground, background)
     {

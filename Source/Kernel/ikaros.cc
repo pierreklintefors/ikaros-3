@@ -67,9 +67,6 @@ namespace ikaros
         if(type_string=="int")
             type_string = "double";
 
-        //default_value = std::string(info_["default"]);   // FIXME: use value in dictionary directly later
-        //std::string options = info_["options"];
-
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
         if(type_index == parameter_strings.end())
             throw exception("Unkown parameter type: "+type_string+".");

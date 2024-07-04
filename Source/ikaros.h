@@ -87,9 +87,9 @@ public:
 //
 
 enum parameter_type { no_type=0, double_type, bool_type, string_type, matrix_type, options_type, rate_type };
-static std::vector<std::string> parameter_strings = {"none", "double", "bool", "string", "matrix", "options", "rate"}; // TODO: Add list of strings?
+static std::vector<std::string> parameter_strings = {"none", "double", "bool", "string", "matrix", "options", "rate"}; 
 
-class parameter // FIXME: check all types everywhere; send base rate to WebUI not current value
+class parameter
 {
 private:
 public:
@@ -97,7 +97,6 @@ public:
     parameter_type                  type;
     std::shared_ptr<double>         double_value;
     std::shared_ptr<bool>           bool_value;
-
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
 
@@ -112,7 +111,6 @@ public:
     operator matrix & ();
     operator std::string();
     operator double();
-
 
     void print(std::string name="")
     {
