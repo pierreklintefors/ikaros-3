@@ -1504,6 +1504,8 @@ let inspector = {
                                 evt.preventDefault();
                             else if(p.type == 'float' && "-0123456789.".indexOf(evt.key) == -1)
                                 evt.preventDefault();
+                            else if(p.type == 'delay' && "0123456789:".indexOf(evt.key) == -1)
+                                evt.preventDefault();
                             else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
                                 evt.preventDefault();
                         });
@@ -1787,25 +1789,20 @@ let inspector = {
         inspector.addHeader("CONNECTION");
         inspector.addAttributeValue("source", item.source);
         inspector.addAttributeValue("target", item.target);
-        inspector.addAttributeValue("delay", item.delay);
-/*
+
             if(main.edit_mode)
             {
                 inspector.addDataRows(item, [
-                    {'name':'source_range', 'control':'textedit', 'type':'source'},
-                    {'name':'target_range', 'control':'textedit', 'type':'source'},
-                    {'name':'delay_range', 'control':'textedit', 'type':'source'},
-                    {'name':'alias', 'control':'textedit', 'type':'source'}     
-                ], this);
+
+                {'name':'delay', 'control':'textedit', 'type':'delay'},    // FIXME: Type delay range numbers + at most one ':'
+                {'name':'alias', 'control':'textedit', 'type':'source'}     
+            ], this);
             }
             else
             {
-                inspector.addAttributeValue("source_range", item.source_range);
-                inspector.addAttributeValue("target_range", item.target_range);
                 inspector.addAttributeValue("delay_range", item.delay_range);
                 inspector.addAttributeValue("alias", item.alias);
             }
-*/
     },
 
     showMultipleSelection(n)
