@@ -2379,11 +2379,13 @@ let main =
 
     startDragComponents(evt)
     {
-        if(evt.detail == 2) // ignore double clicks
+        if(evt.detail == 2) // handle double clicks elsewhere
         {
+                evt.stopPropagation();
+                return;
            // Open sinpector before selecting
            //if (window.getComputedStyle(inspector.component, null).display === 'none') 
-                inspector.toggleComponent();
+            //inspector.toggleComponent();
         }
 
         main.initialMouseX = evt.clientX;
@@ -2715,13 +2717,15 @@ let main =
 
         // Add object handlers
 
-        for(let e of main.view.querySelectorAll(".group"))
-            e.ondblclick = function(evt) { selector.selectItems([], this.dataset.name); 
-            }; // Jump into group
-
-        for(let e of main.view.querySelectorAll(".gi"))
+         for(let e of main.view.querySelectorAll(".gi"))
         {
             e.addEventListener('mousedown', main.startDragComponents, false);
+
+            if(e.classList.contains("group"))
+                e.ondblclick = function(evt) {  selector.selectItems([], this.dataset.name); } // Jump into group
+            else
+                e.ondblclick = function(evt) {  inspector.toggleComponent(); } //toggle inspector
+
             if(selectionList.includes(e.dataset.name))
                 e.classList.add("selected")
             else
