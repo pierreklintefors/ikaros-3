@@ -2241,6 +2241,16 @@ let main =
         alert("DELETE MODULE: "+m);
     },
 
+    deleteInput(i)
+    {
+        alert("DELETE INPUT: "+i);
+    },
+
+    deleteOutput(o)
+    {
+        alert("DELETE OUTPUT: "+o);
+    },
+
     deleteWidget(w)
     {
         alert("DELETE WIDGET: "+w);
@@ -2248,20 +2258,51 @@ let main =
 
     deleteConnection(c)
     {
-        alert("DELETE CONNECTION:"+c);
+        return; // Temporary ***********
+
+        let connection = network.dict[c];
+        let s_t = c.split('*');
+        let source = getStringUpToBracket(s_t[0]);
+        let target = getStringUpToBracket(s_t[1]);
+        let group = network.dict[selector.selected_background];
+        group.connections = group.connections.filter(con => con.source==source && con.target==target);
     },
 
     deleteComponent()
     {
         if(selector.selected_connection !=undefined)
+        {
             this.deleteConnection(selector.selected_connection);
             selector.selectItems([], null);
-        {
-
             return;
         }
 
-        alert("No, still not possible...");
+        for(let c of selector.selected_foreground)
+        {
+            switch(network.dict[c]._tag)
+            {
+                case 'module':
+                    this.deleteModule(c);
+                    break;
+                case 'group':
+                    this.deleteGroup(c);
+                    break;
+                case 'input':
+                    this.deleteInput(c);
+                    break; 
+                case 'output':
+                    this.deleteOutput(c);
+                    break; 
+                case 'widget':
+                    this.deleteWidget(c);
+                    break; 
+            }
+        }
+
+        /******************* REDRAW *******************/
+
+        network.rebuildDict();
+
     },
 
     changeComponentPosition(c, dx,dy)
@@ -2453,7 +2494,7 @@ let main =
         {
             main.tracked_connection = null;
         }
-        else  if(network.dict[main.tracked_connection.target]._tag='widget') // set source of widget
+        else  if(main.tracked_connection.target in network.dict && network.dict[main.tracked_connection.target]._tag=='widget') // set source of widget
         {
             network.dict[main.tracked_connection.target].source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".");
             let target = main.tracked_connection.target;
@@ -2791,7 +2832,6 @@ let main =
             main.addComponents(group, foreground, background);
         }
     },
-
 
     /*
         TODO:
