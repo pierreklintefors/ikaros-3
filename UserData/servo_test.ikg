@@ -8,8 +8,7 @@
    <connection delay_range="1" source="ForceCheck.CurrentOutput" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
    <connection delay_range="1" source="Servos.GOAL_POSITION" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
    <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
-
-   <module _x="240" _y="336" class="EpiServos" description="Robot servo control module" log_level="2" name="Servos" robot="EpiBlack" simulate="false">
+   <module _x="240" _y="336" class="EpiServos" description="Robot servo control module" log_level="2" name="Servos" robot="EpiBlack" simulate="true">
       <author>
          <affiliation/>
          <email/>
