@@ -11,13 +11,11 @@ class Print: public Module
         Bind(input, "INPUT");
     }
 
-
     void Tick()
     {
         input.print();
     }
 };
-
 
 INSTALL_CLASS(Print)
 

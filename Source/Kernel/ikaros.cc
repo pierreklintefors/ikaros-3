@@ -852,13 +852,18 @@ INSTALL_CLASS(Module)
     {
             SetSourceRanges(name, ingoing_connections);
             int max_delay = 0;
+            bool first_ingoing_connection = true;
             for(auto & c : ingoing_connections) // STEP 0b: copy source_range to target_range if not set
             {
                 if(!c->delay_range_.empty() && c->delay_range_.trim().b_[0] > max_delay)
                     max_delay = c->delay_range_.trim().b_[0];
 
                 if(c->target_range.empty())
+                {
+                    if(!first_ingoing_connection)
+                        throw exception("Target ranges must be set explicitly for multiple connections to \""+name+"\".");
                     c->target_range = c->source_range;
+                }
                 else
                 {
                     int si = c->source_range.rank()-1;
@@ -875,6 +880,8 @@ INSTALL_CLASS(Module)
 
                 if(c->delay_range_.size() > 1) // Add extra dimension to input if connection is a delay range with more than one delay
                     c->target_range.push_front(0, c->delay_range_.trim().b_[0]);
+
+                first_ingoing_connection = false;
             }
 
         range r;
