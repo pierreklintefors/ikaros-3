@@ -206,6 +206,16 @@ function parentPath(path)
     
 }
 
+
+function getStringUpToBracket(str) {
+    const index = str.indexOf('[');
+    if (index === -1) {
+      return str;
+    }
+    return str.substring(0, index);
+  }
+
+
 // COOKIES FOR PERSISTENT STATE
 
 function setCookie(name,value,days=100)
@@ -462,7 +472,7 @@ let network = {
         for(let w of o.widgets || [])
             network.dict[(path+'.'+o.name).substring(1)+'.'+w.name] = w;
         for(let c of o.connections || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+c.source+'*'+(path+'.'+o.name).substring(1)+'.'+c.target] = c;
+            network.dict[(path+'.'+o.name).substring(1)+'.'+getStringUpToBracket(c.source)+'*'+(path+'.'+o.name).substring(1)+'.'+getStringUpToBracket(c.target)] = c;
     },
 
     newConnection(path, source, target)
@@ -472,9 +482,13 @@ let network = {
             "_tag": "connection",
             "source": source,
             "target": target,
+            delay: "1"
+
+            /*
             "source_range":"",
             "target_range": "",
-            delay_range: "1"
+            
+            */
         };
         let group = network.dict[path];
         if(group.connections == null) // FIXME: SHOULD NOT BE NECESSARY
@@ -1490,6 +1504,8 @@ let inspector = {
                                 evt.preventDefault();
                             else if(p.type == 'float' && "-0123456789.".indexOf(evt.key) == -1)
                                 evt.preventDefault();
+                            else if(p.type == 'delay' && "0123456789:".indexOf(evt.key) == -1)
+                                evt.preventDefault();
                             else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
                                 evt.preventDefault();
                         });
@@ -1722,12 +1738,12 @@ let inspector = {
 
             if(main.edit_mode)
             {
-                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}, {'name':'size', 'control':'textedit', 'type':'source'}], this);
+                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this); //  {'name':'size', 'control':'textedit', 'type':'source'}
             }
             else
             {
                 inspector.addAttributeValue("name", item.name);
-                inspector.addAttributeValue("size", item.size);
+                //inspector.addAttributeValue("size", item.size);
             }
         }
         else if(item._tag=="widget")
@@ -1770,18 +1786,23 @@ let inspector = {
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
 
-        //let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
-
-        inspector.addHeader("Connection");
+        inspector.addHeader("CONNECTION");
         inspector.addAttributeValue("source", item.source);
         inspector.addAttributeValue("target", item.target);
 
-        inspector.addDataRows(item, [
-            {'name':'source_range', 'control':'textedit', 'type':'source'},
-            {'name':'target_range', 'control':'textedit', 'type':'source'},
-            {'name':'delay_range', 'control':'textedit', 'type':'source'},
-            {'name':'alias', 'control':'textedit', 'type':'source'}     
-        ], this);
+            if(main.edit_mode)
+            {
+                inspector.addDataRows(item, [
+
+                {'name':'delay', 'control':'textedit', 'type':'delay'},    // FIXME: Type delay range numbers + at most one ':'
+                {'name':'alias', 'control':'textedit', 'type':'source'}     
+            ], this);
+            }
+            else
+            {
+                inspector.addAttributeValue("delay_range", item.delay_range);
+                inspector.addAttributeValue("alias", item.alias);
+            }
     },
 
     showMultipleSelection(n)
@@ -1882,7 +1903,8 @@ let selector = {
 
     selectConnection(connection)
     {
-        //alert("CONNECTION "+connection);
+
+
         selector.selected_foreground = [];
         selector.selected_connection = connection;
         main.selectItem(selector.selected_foreground, selector.selected_background);
@@ -1915,12 +1937,8 @@ let main =
         main.main = document.querySelector("#main");
         main.view = document.querySelector("#main_view");
         main.grid = document.querySelector("#main_grid");
-        //main.group_commands = document.querySelector("#group_commands");
         main.grid_canvas = document.querySelector("#main_grid_canvas");
         main.drawGrid();
-
-        // let g = network.dict["Brain.Amygdala.Central"];
-        // main.addComponents(g);
     },
 
     drawGrid()
@@ -2213,10 +2231,78 @@ let main =
         return newObject;
     },
 
+    deleteGroup(g)
+    {
+        alert("DELETE GROUP: "+g);
+    },
+
+    deleteModule(m)
+    {
+        alert("DELETE MODULE: "+m);
+    },
+
+    deleteInput(i)
+    {
+        alert("DELETE INPUT: "+i);
+    },
+
+    deleteOutput(o)
+    {
+        alert("DELETE OUTPUT: "+o);
+    },
+
+    deleteWidget(w)
+    {
+        alert("DELETE WIDGET: "+w);
+    },
+
+    deleteConnection(c)
+    {
+        return; // Temporary ***********
+
+        let connection = network.dict[c];
+        let s_t = c.split('*');
+        let source = getStringUpToBracket(s_t[0]);
+        let target = getStringUpToBracket(s_t[1]);
+        let group = network.dict[selector.selected_background];
+        group.connections = group.connections.filter(con => con.source==source && con.target==target);
+    },
 
     deleteComponent()
     {
-        alert("No, still not possible...");
+        if(selector.selected_connection !=undefined)
+        {
+            this.deleteConnection(selector.selected_connection);
+            selector.selectItems([], null);
+            return;
+        }
+
+        for(let c of selector.selected_foreground)
+        {
+            switch(network.dict[c]._tag)
+            {
+                case 'module':
+                    this.deleteModule(c);
+                    break;
+                case 'group':
+                    this.deleteGroup(c);
+                    break;
+                case 'input':
+                    this.deleteInput(c);
+                    break; 
+                case 'output':
+                    this.deleteOutput(c);
+                    break; 
+                case 'widget':
+                    this.deleteWidget(c);
+                    break; 
+            }
+        }
+
+        /******************* REDRAW *******************/
+
+        network.rebuildDict();
+
     },
 
     changeComponentPosition(c, dx,dy)
@@ -2245,7 +2331,6 @@ let main =
         network.dict[c]._x = new_x;
         network.dict[c]._y = new_y;
     },
-
 
     changeComponentSize(dX, dY)
     {
@@ -2335,13 +2420,14 @@ let main =
 
     startDragComponents(evt)
     {
-        if(!main.edit_mode)
-            return;
-
-    //    alert("startDragComponents");
-
-        if(evt.detail == 2) // ignore double clicks
-            return;
+        if(evt.detail == 2) // handle double clicks elsewhere
+        {
+                evt.stopPropagation();
+                return;
+           // Open sinpector before selecting
+           //if (window.getComputedStyle(inspector.component, null).display === 'none') 
+            //inspector.toggleComponent();
+        }
 
         main.initialMouseX = evt.clientX;
         main.initialMouseY = evt.clientY;
@@ -2350,6 +2436,9 @@ let main =
         //evt.stopPropagation();
 
         if(!selector.selected_foreground.includes(this.dataset.name))
+            return;
+
+        if(!main.edit_mode)
             return;
 
         main.map = {};
@@ -2368,6 +2457,8 @@ let main =
 
     startTrackConnection(evt)
     {
+        if(!main.edit_mode)
+            return;
         this.style.backgroundColor="orange";
         evt.stopPropagation();
         let id = this.id;
@@ -2384,7 +2475,6 @@ let main =
     {
         if(!main.tracked_connection)
             return;
-        //evt.stopPropagation();
 
         let ox = main.view.getBoundingClientRect().left;
         let oy = main.view.getBoundingClientRect().top;
@@ -2404,13 +2494,20 @@ let main =
         {
             main.tracked_connection = null;
         }
-        else
+        else  if(main.tracked_connection.target in network.dict && network.dict[main.tracked_connection.target]._tag=='widget') // set source of widget
+        {
+            network.dict[main.tracked_connection.target].source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".");
+            let target = main.tracked_connection.target;
+            main.tracked_connection = null;
+            selector.selectItems([target], null);
+
+        }
+        else // make new connection
         {
             let source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".")
             let target = removeStringFromStart(main.tracked_connection.target.split(':')[0], selector.selected_background+".")
             network.newConnection(selector.selected_background, source, target);
             main.tracked_connection = null;
-            //main.addConnections();
             selector.selectConnection(selector.selected_background+"."+source+"*"+selector.selected_background+"."+target);
         }
     },
@@ -2420,7 +2517,8 @@ let main =
         if(!main.tracked_connection)
             return;
         this.style.backgroundColor="orange";
-        main.tracked_connection.target = this.id;
+        if(this.id != "")   // FIXME: Not sure why this is needed
+            main.tracked_connection.target = this.id;
     },
 
     resetConnectectionTarget(evt)
@@ -2428,7 +2526,11 @@ let main =
         if(!main.tracked_connection)
             return;
             main.tracked_connection.target = null;
-        this.style.backgroundColor="gray";
+
+        if(this.classList.contains('widget'))
+            this.style.backgroundColor="rgb(0,0,0,0)";
+        else
+            this.style.backgroundColor="gray";
     },
 
     addGroup(g,path)
@@ -2557,8 +2659,11 @@ let main =
     
     addConnection(c,path)
     {
-        let source_point = document.getElementById(`${path}.${c.source}:out`);
-        let target_point = document.getElementById(`${path}.${c.target}:in`);
+        let source = getStringUpToBracket(c.source);
+        let target = getStringUpToBracket(c.target);       
+
+        let source_point = document.getElementById(`${path}.${source}:out`);
+        let target_point = document.getElementById(`${path}.${target}:in`);
 
         if(source_point == undefined ||target_point == undefined)
             return;
@@ -2572,7 +2677,7 @@ let main =
         let x2 = target_point.getBoundingClientRect().left-ox+4.5;
         let y2 = target_point.getBoundingClientRect().top-oy+4.5;
 
-        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line' data-source='${c.source}' id="${path}.${c.source}*${path}.${c.target}" data-target='${c.target}'onclick='selector.selectConnection("${path}.${c.source}*${path}.${c.target}")'/>`; 
+        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line' data-source='${c.source}' id="${path}.${source}*${path}.${target}" data-target='${target}'onclick='selector.selectConnection("${path}.${source}*${path}.${target}")'/>`; 
         main.connections += cc;
     },
 
@@ -2610,7 +2715,6 @@ let main =
         let c = document.getElementById(connection);
         if(c != undefined) // FIXME: Use exception above instead
             c.classList.remove("selected");
-
     },
 
     addConnections()
@@ -2654,13 +2758,15 @@ let main =
 
         // Add object handlers
 
-        for(let e of main.view.querySelectorAll(".group"))
-            e.ondblclick = function(evt) { selector.selectItems([], this.dataset.name); 
-            }; // Jump into group
-
-        for(let e of main.view.querySelectorAll(".gi"))
+         for(let e of main.view.querySelectorAll(".gi"))
         {
             e.addEventListener('mousedown', main.startDragComponents, false);
+
+            if(e.classList.contains("group"))
+                e.ondblclick = function(evt) {  selector.selectItems([], this.dataset.name); } // Jump into group
+            else
+                e.ondblclick = function(evt) {  inspector.toggleComponent(); } //toggle inspector
+
             if(selectionList.includes(e.dataset.name))
                 e.classList.add("selected")
             else
@@ -2671,6 +2777,12 @@ let main =
             o.addEventListener('mousedown', main.startTrackConnection, false);
 
             for(let i of main.view.querySelectorAll(".i_spot"))
+            {
+                i.addEventListener('mouseover', main.setConnectectionTarget, true);
+                i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
+            }
+
+            for(let i of main.view.querySelectorAll(".widget"))
             {
                 i.addEventListener('mouseover', main.setConnectectionTarget, true);
                 i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
@@ -2710,53 +2822,7 @@ let main =
             this.setViewMode();
         else
             this.setEditMode();
-/*
-        let s = window.getComputedStyle(main.grid, null);
-        if (s.display === 'none')
-        {
-            main.main.classList.add("edit_mode");
-            main.main.classList.remove("view_mode");
-
-            //main.grid.style.display = 'block';
-            main.edit_mode = true;
-            //main.grid_canvas.style.display = 'block';
-            //main.grid_active = true;
-
-            controller.run_mode = 'stop';
-            controller.get("stop", controller.update)
-        }
-        else
-        {
-            main.main.classList.add("view_mode");
-            main.main.classList.remove("edit_mode");
-
-            //main.grid.style.display = 'none';
-            main.edit_mode = false;
-            //main.grid_canvas.style.display = 'none';
-            //main.grid_active = false;
-        }
-
-        inspector.showInspectorForSelection();
-                */
     },
-
-    /*
-    toggleGrid() // FIXME: handle in CSS instead
-    {
-        return;
-        let s = window.getComputedStyle(main.grid_canvas, null);
-        if (s.display === 'none')
-        {
-         main.grid_canvas.style.display = 'block';
-         main.grid_active = true;
-        }
-        else
-        {
-            main.grid_canvas.style.display = 'none';
-            main.grid_active = false;
-        }
-    },
-*/
 
     selectItem(foreground, background)
     {
@@ -2766,7 +2832,6 @@ let main =
             main.addComponents(group, foreground, background);
         }
     },
-
 
     /*
         TODO:

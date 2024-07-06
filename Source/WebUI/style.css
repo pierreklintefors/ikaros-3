@@ -1030,10 +1030,10 @@ svg *{
 
 .gi.selected {
     border: 1px solid orange;
-    box-shadow: 5px 5px 5px rgb(197, 197, 197);
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.25);
 }
 
 .gi {
 
-    border: 1px solid #00000000;
+    border: 1px solid rgba(0, 0, 0, 0);
 }
