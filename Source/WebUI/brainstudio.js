@@ -207,13 +207,15 @@ function parentPath(path)
 }
 
 
-function getStringUpToBracket(str) {
+function getStringUpToBracket(str)
+{
     const index = str.indexOf('[');
     if (index === -1) {
       return str;
     }
     return str.substring(0, index);
   }
+
 
 
 // COOKIES FOR PERSISTENT STATE
@@ -1911,6 +1913,11 @@ let selector = {
         main.deselectConnection(selector.selected_connection);
         main.selectConnection(connection);
         inspector.showInspectorForSelection();
+    },
+
+    getLocalPath(s) // Remove outer path and range
+    {
+        return removeStringFromStart(getStringUpToBracket(s), selector.selected_background+'.');
     }
 }
 
@@ -2233,39 +2240,39 @@ let main =
 
     deleteGroup(g)
     {
-        alert("DELETE GROUP: "+g);
+        alert("CANNOT DELETE GROUP: "+g);
     },
 
     deleteModule(m)
     {
-        alert("DELETE MODULE: "+m);
+        alert("CANNOT DELETE MODULE: "+m);
     },
 
     deleteInput(i)
     {
-        alert("DELETE INPUT: "+i);
+        alert("CANNOT DELETE INPUT: "+i);
     },
 
     deleteOutput(o)
     {
-        alert("DELETE OUTPUT: "+o);
+        alert("CANNOT DELETE OUTPUT: "+o);
     },
 
     deleteWidget(w)
     {
-        alert("DELETE WIDGET: "+w);
+        alert("CANNOT DELETE WIDGET: "+w);
     },
 
     deleteConnection(c)
     {
-        return; // Temporary ***********
-
         let connection = network.dict[c];
         let s_t = c.split('*');
-        let source = getStringUpToBracket(s_t[0]);
-        let target = getStringUpToBracket(s_t[1]);
+
+        let source = selector.getLocalPath(s_t[0]);
+        let target = selector.getLocalPath(s_t[1]);
+
         let group = network.dict[selector.selected_background];
-        group.connections = group.connections.filter(con => con.source==source && con.target==target);
+        group.connections = group.connections.filter(con => !(selector.getLocalPath(con.source)==source && selector.getLocalPath(con.target)==target));
     },
 
     deleteComponent()
@@ -2274,9 +2281,9 @@ let main =
         {
             this.deleteConnection(selector.selected_connection);
             selector.selectItems([], null);
-            return;
         }
 
+        else
         for(let c of selector.selected_foreground)
         {
             switch(network.dict[c]._tag)
@@ -2299,10 +2306,7 @@ let main =
             }
         }
 
-        /******************* REDRAW *******************/
-
         network.rebuildDict();
-
     },
 
     changeComponentPosition(c, dx,dy)
@@ -2763,9 +2767,15 @@ let main =
             e.addEventListener('mousedown', main.startDragComponents, false);
 
             if(e.classList.contains("group"))
-                e.ondblclick = function(evt) {  selector.selectItems([], this.dataset.name); } // Jump into group
+                e.ondblclick = function(evt) {  
+                selector.selectItems([], this.dataset.name); // Jump into group
+            }
             else
-                e.ondblclick = function(evt) {  inspector.toggleComponent(); } //toggle inspector
+                e.ondblclick = function(evt)
+            {  
+                selector.selectItems([this.dataset.name]);
+                inspector.toggleComponent();
+            }
 
             if(selectionList.includes(e.dataset.name))
                 e.classList.add("selected")

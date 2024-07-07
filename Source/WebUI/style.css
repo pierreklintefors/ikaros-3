@@ -552,12 +552,12 @@ webui-widget-button button {
     height: 100%;
     font-size: 14px;
 }
-
+/*
 webui-widget-button button:hover
 {
-    /* cursor: pointer; */
+     cursor: pointer; 
 }
-
+*/
 /*
  *
  *  MAIN AREA
