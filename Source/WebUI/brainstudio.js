@@ -2509,7 +2509,6 @@ const main =
     },
 
 
-
     startTrackConnection(evt)
     {
         if(!main.edit_mode)
@@ -3089,6 +3088,11 @@ startTrackConnection(evt) {
             inspector.toggleComponent();
             return;
         }
+    },
+
+    showCommandInfo()
+    {
+        alert("No info yet");
     }
 }
 
