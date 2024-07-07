@@ -18,6 +18,7 @@ WebUI
 - Cmd-D: duplicate
 - Cmd-S: save
 - Cmd-O: open
+- Cmd-E: toggle edit mode
 
 ### Clicks
 
