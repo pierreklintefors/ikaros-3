@@ -699,13 +699,8 @@ class EpiServos : public Module
         
         if (simulate)
         {
-            // Check if input is nan.
-            for (int i = 0; i < EPI_NR_SERVOS; i++)
-                if (std::isnan(goalPosition[i]))
-                {
-                    Notify(msg_warning, "EpiServo module input is NAN\n");
-                    return;
-                }
+            
+           
 
             //reset_array(presentCurrent, presentCurrentSize); // 0 mA
 
@@ -718,9 +713,16 @@ class EpiServos : public Module
 
             if (EpiMode)
             {
-                for (int i = 0; i < EPI_NR_SERVOS; i++)
+                
+                for (int i = 0; i < EPI_NR_SERVOS; i++){
+                    if (std::isnan(goalPosition[i]))
+                    {
+                    Notify(msg_warning, "EpiServo module input is NAN\n");
+                    return;
+                    }
                     if (!goalPosition.empty())
                         presentPosition[i] = presentPosition[i] + 0.9 * (clip(goalPosition(i) - presentPosition(i), -maxVel, maxVel)); // adding some smoothing to prevent oscillation in simulation mode
+                }
             }
             else
             {
