@@ -730,7 +730,7 @@ class EpiServos : public Module
                 for (int i = 0; i < EPI_TORSO_NR_SERVOS; i++)
                     if (!goalPosition.empty() && !goalCurrent.empty()){
                         presentCurrent(i) = presentCurrent(i) + 0.06 * (goalCurrent(i) - presentCurrent(i));
-                        if (i == 0 && presentPosition(i) > 200 && presentCurrent(i) < 700 && goalPosition(i) <200){
+                        if (i == 0 && presentPosition(i) > 200 && presentCurrent(i) < 700){
                             presentPosition(i) = presentPosition(i);
                         }
                         else
