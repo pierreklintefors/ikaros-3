@@ -147,9 +147,9 @@ function secondsToHMS(d)
         if(isNaN(d) || d < 0)
             return "-";
 
-        var h = Math.floor(d / 3600);
-        var m = Math.floor(d % 3600 / 60);
-        var s = Math.floor(d % 3600 % 60);
+        const h = Math.floor(d / 3600);
+        const m = Math.floor(d % 3600 / 60);
+        const s = Math.floor(d % 3600 % 60);
         return h+":"+zeroPad(m)+":"+zeroPad(s);
     }
     catch(err)
@@ -200,20 +200,22 @@ function nameInPath(path)
 
 function parentPath(path)
 {
-    let p = path.split('.');
+    const p = path.split('.');
     p.pop();
     return p.join('.');
     
 }
 
 
-function getStringUpToBracket(str) {
+function getStringUpToBracket(str)
+{
     const index = str.indexOf('[');
     if (index === -1) {
       return str;
     }
     return str.substring(0, index);
   }
+
 
 
 // COOKIES FOR PERSISTENT STATE
@@ -229,9 +231,9 @@ function setCookie(name,value,days=100)
 function getCookie(name)
 {
     var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
-        var c = ca[i];
+    const ca = document.cookie.split(';');
+    for(let i=0;i < ca.length;i++) {
+        const c = ca[i];
         while (c.charAt(0)==' ') c = c.substring(1,c.length);
         if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
     }
@@ -246,8 +248,6 @@ function eraseCookie(name)
 function resetCookies()
 {
     setCookie('current_view', "");
-//    setCookie('root', ""); // or /
-//    setCookie('inspector',"closed");
 }
 
 
@@ -336,9 +336,9 @@ let dialog = {
 
     confirmOpen: function() {
         try {
-            let dialogType = this.getDialogType();
-            let sel = document.getElementById(`open_dialog_${dialogType}_items`);
-            let text = sel.options[sel.selectedIndex].text;
+            const dialogType = this.getDialogType();
+            const sel = document.getElementById(`open_dialog_${dialogType}_items`);
+            const text = sel.options[sel.selectedIndex].text;
             
             this.window.close(text);
             
@@ -354,10 +354,8 @@ let dialog = {
         this.window.close(null);
     },
 
-    showOpenDialog: function(callback, message) {
-
-
-
+    showOpenDialog: function(callback, message) 
+    {
         fetch('/files', {method: 'GET', headers: {"Session-Id": controller.session_id, "Client-Id": controller.client_id}})
         .then(response => {
             if (!response.ok) {
@@ -383,8 +381,9 @@ let dialog = {
 
     },
 
-    getDialogType: function() {
-        let sys = document.getElementById("open_dialog_system_items");
+    getDialogType: function() 
+    {
+        const sys = document.getElementById("open_dialog_system_items");
         return sys.style.display === 'block' ? 'system' : 'user';
     },
 
@@ -477,7 +476,7 @@ let network = {
 
     newConnection(path, source, target)
     {
-        let connection = 
+        const connection = 
         {
             "_tag": "connection",
             "source": source,
@@ -624,7 +623,7 @@ let network = {
     }
 }
 
-let webui_widgets = {
+const webui_widgets = {
     constructors: {},
     add: function(element_name, class_object) {
         customElements.define(element_name, class_object);
@@ -1062,17 +1061,10 @@ let controller = {
 
         let group_path ="";
         let data_string = "";
-/*
-        if(!interaction.currentView) // no view selected
-        {
-            controller.get("update", controller.update);
-            return;
-        }
-*/
+
         // Request new data
         let data_set = new Set();
-        
-        let w = document.getElementsByClassName('widget'); // FiXME: only in view later
+        const w = document.getElementsByClassName('widget');
         for(let i=0; i<w.length; i++)
             try
             {
@@ -1092,13 +1084,13 @@ let controller = {
 
          while(controller.commandQueue.length>0)
         {
-            let cmd_dict = controller.commandQueue.shift();
+            const cmd_dict = controller.commandQueue.shift();
             let s = cmd_dict[0]; // FIXME: check empty string
-            let path = cmd_dict[1];
-            let dict = cmd_dict[2];
+            const path = cmd_dict[1];
+            const dict = cmd_dict[2];
             dict.data = data_string;
             dict.root = group_path;
-            let url_params = toURLParams(dict);
+            const url_params = toURLParams(dict);
 
             if(path.length>0 && path[0]=='.') // top path
             {
@@ -1197,8 +1189,8 @@ let controller = {
  *
  */
 
-let breadcrumbs = {
-
+const breadcrumbs = 
+{
     init()
     {
         breadcrumbs.breadcrumbs = document.querySelector("#breadcrumbs");
@@ -1208,8 +1200,8 @@ let breadcrumbs = {
     {
         const crum = breadcrumbs.breadcrumbs.querySelectorAll('.dynamic');
         crum.forEach(crum => { crum.remove(); });
-        let sep = "";
         let path = "";
+        let sep = "";
         let h = "";
         for(g of item.split('.'))
         {
@@ -1227,14 +1219,7 @@ let breadcrumbs = {
             }
         }
         h += "</div>";
-
-        // IF GROUP BACKGROUND IS VISIBLE
-/*
-        h+= "<div class='add_button dynamic' style=''>Add&nbsp;Group</div>";
-        h+= "<div class='add_button dynamic' style=''>Add&nbsp;Module</div>";
-        h+= "<div class='add_button dynamic' style=''>Add&nbsp;Widget</div>";
-*/
-            document.querySelector("#nav").insertAdjacentHTML('afterend', h);
+        document.querySelector("#nav").insertAdjacentHTML('afterend', h);
     }
 }
 
@@ -1244,7 +1229,7 @@ let breadcrumbs = {
  *
  */
 
-let nav = {
+const nav = {
 
     init() 
     {
@@ -1253,7 +1238,7 @@ let nav = {
     },
     toggle()
     {
-        let s = window.getComputedStyle(nav.navigator , null);
+        const s = window.getComputedStyle(nav.navigator , null);
         if (s.display === 'none')
             nav.navigator.style.display = 'block';
         else 
@@ -1270,7 +1255,7 @@ let nav = {
     },
     openGroup(item)
     {
-        let g = nav.navigator.querySelector("[data-name='"+item+"']");
+        const g = nav.navigator.querySelector("[data-name='"+item+"']");
         g = g.parentElement;
         while(g)
         {
@@ -1291,7 +1276,7 @@ let nav = {
     },
     navClick(e)
     {
-        let fg = bg = e.target.parentElement.dataset.name;
+        const bg = e.target.parentElement.dataset.name;
         selector.selectItems([], bg);
         e.stopPropagation();
     },
@@ -1316,17 +1301,14 @@ let nav = {
 
       traverseAndSelect(element, data_name)
       {
-        if (!element) return;
-    
+        if (!element) 
+            return;
         if(element.dataset.name == data_name)
             element.classList.add("selected");
         else
             element.classList.remove("selected");
-
         if (element.children)
-        {
             Array.from(element.children).forEach((child) => { nav.traverseAndSelect(child, data_name); });
-        }
     },
 
     traverseAndOpen(element, data_name)
@@ -1340,7 +1322,7 @@ let nav = {
     }
 }
 
-let inspector = {
+const inspector = {
     subview: {},
     current_t_body: null,
     component: null,
@@ -1403,9 +1385,9 @@ let inspector = {
 
     addTableRow(label, content="")
     {
-        let row = current_t_body.insertRow(-1);
-        let cell1 = row.insertCell(0);
-        let cell2 = row.insertCell(1);
+        const row = current_t_body.insertRow(-1);
+        const cell1 = row.insertCell(0);
+        const cell2 = row.insertCell(1);
         cell1.innerText = label;
         cell2.innerHTML = content;
         return cell2.firstElementChild;
@@ -1424,9 +1406,9 @@ let inspector = {
     addMenu(name, value, opts, attribute) // SET ALSO VARIABLE AND LINK GROUP for EDITABLE
     {
         var s = '<select name="'+name+'" oninput="this">';
-        for(var j in opts)
+        for(let j in opts)
         {
-            let val= opts[j];
+            const val= opts[j];
             if(opts[j] == value)
                 s += '<option value="'+val+'" selected >'+opts[j]+'</option>';
             else
@@ -1443,7 +1425,7 @@ let inspector = {
         for(let [a,v] of Object.entries(component))
         {
             if(!["name","class"].includes(a) && a[0]!='_')
-             t.push({'name':a,'control':'textedit', 'type':'source'});
+                t.push({'name':a,'control':'textedit', 'type':'source'});
         }
         return t;
     },
@@ -1468,15 +1450,15 @@ let inspector = {
                     {
                         console.log("HELP!!!");
                     }
-                let value = item[p.name];
-                let cell1 = row.insertCell(0);
-                let cell2 = row.insertCell(1);
+                const value = item[p.name];
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
                 cell1.innerText = p.name;
                 cell2.innerHTML = value != undefined ? value : "";
                 cell2.setAttribute('class', p.type);
                 cell2.addEventListener("paste", function(e) {
                     e.preventDefault();
-                    var text = e.clipboardData.getData("text/plain");
+                    const text = e.clipboardData.getData("text/plain");
                     document.execCommand("insertHTML", false, text); // FIXME: uses deprecated functions
                 });
 
@@ -1517,10 +1499,8 @@ let inspector = {
                             else
                             {
                                 item[p.name] = evt.target.innerText.replace(String.fromCharCode(10), "").replace(String.fromCharCode(13), "");
-                            // if(p.name == "style")
-                                //    widget.updateStyle(widget, evt.target.innerText);     // FIXME ***********
-                                //if(p.name == "frame-style")
-                                //    widget.updateStyle(component, evt.target.innerText);   // FIXME ***********
+                            // if(p.name == "style") widget.updateStyle(widget, evt.target.innerText);     // FIXME ***********
+                                //if(p.name == "frame-style") widget.updateStyle(component, evt.target.innerText);   // FIXME ***********
                             }
                             if(inspector.notify)
                             inspector.notify.parameterChangeNotification(p);
@@ -1639,7 +1619,7 @@ let inspector = {
                 selector.selectItems([new_name], null);
             }
         }
-        network.rebuildDict(); // FIXME: Remove later when done in network functions // ***** + breadcrumbs *************
+        network.rebuildDict();
         nav.populate();
     },
 
@@ -1667,6 +1647,100 @@ let inspector = {
         inspector.addAttributeValue("widgets", (item.widgets || []).length);
     },
 
+
+    showSingleSelection(c) 
+    {
+        const item = network.dict[c];
+        inspector.hideSubviews();
+        inspector.setTable(inspector.subview.table);
+        inspector.subview.table.style.display = 'block';
+    
+        if (!item) {
+            inspector.addHeader("Internal Error");
+            return;
+        }
+    
+        if (!item._tag) {
+            inspector.addHeader("Unknown Component");
+            inspector.addAttributeValue("name", item.name);
+            inspector.addDataRows(item, inspector.createTemplate(item));
+            return;
+        }
+    
+        const editMode = main.edit_mode;
+        const commonDataRow = [{'name': 'name', 'control': 'textedit', 'type': 'source'}];
+    
+        switch (item._tag) {
+            case "module":
+                inspector.addHeader("MODULE");
+                if (editMode) {
+                    inspector.addDataRows(item, commonDataRow);
+                    inspector.addMenu("class", item.class, network.classes).addEventListener('change', function () {
+                        network.changeModuleClass(selector.selected_foreground[0], this.value);
+                        selector.selectItems(selector.selected_foreground);
+                    });
+                    const template = item.parameters || [];
+                    for (let key in template) {
+                        template[key].control = "textedit";
+                    }
+                    inspector.addDataRows(item, template);
+                } else {
+                    inspector.addAttributeValue("name", item.name);
+                    inspector.addAttributeValue("class", item.class);
+                }
+                break;
+            
+            case "group":
+                inspector.addHeader("GROUP");
+                if (editMode) {
+                    inspector.addDataRows(item, commonDataRow);
+                } else {
+                    inspector.addAttributeValue("name", item.name);
+                }
+                break;
+            
+            case "input":
+                inspector.addHeader("INPUT");
+                if (editMode) {
+                    inspector.addDataRows(item, commonDataRow);
+                } else {
+                    inspector.addAttributeValue("name", item.name);
+                }
+                break;
+            
+            case "output":
+                inspector.addHeader("OUTPUT");
+                if (editMode) {
+                    inspector.addDataRows(item, commonDataRow);
+                } else {
+                    inspector.addAttributeValue("name", item.name);
+                }
+                break;
+            
+            case "widget":
+                const widgetContainer = document.getElementById(`${selector.selected_background}.${item.name}`);
+                inspector.addHeader("WIDGET");
+                if (editMode) {
+                    inspector.addMenu("class", item.class, widget_classes).addEventListener('change', function () {
+                        network.changeWidgetClass(selector.selected_foreground[0], this.value);
+                        selector.selectItems(selector.selected_foreground);
+                    });
+                    const template = widgetContainer.widget.parameter_template;
+                    inspector.addDataRows(item, template, widgetContainer.widget);
+                } else {
+                    inspector.addAttributeValue("name", item.name);
+                }
+                break;
+    
+            default:
+                inspector.addHeader("Unknown Tag");
+                inspector.addAttributeValue("name", item.name);
+                break;
+        }
+    },
+
+    
+    /*
     showSingleSelection(c)
     {
         let item = network.dict[c];
@@ -1766,21 +1840,13 @@ let inspector = {
                     inspector.addAttributeValue("name", item.name);
                 }
         }
-
-
-        //inspector.addMenu("color","black",['black','red','green','blue','yellow'],"_color", c);
-        /*
-        inspector.addDataRows({"a":5, "b":42}, 
-            [{'name':'a','control':'textedit', 'type':'int'}, 
-             {'name':'b','control':'slider', 'type':'int'}]);
-
-             inspector.addDataRows(item, inspector.createTemplate(component));
-                */
     },
+*/
+
 
     showConnection(connection)
     {
-        let item = network.dict[connection];
+        const item = network.dict[connection];
 
         inspector.hideSubviews();
         inspector.setTable(inspector.subview.table);
@@ -1792,11 +1858,11 @@ let inspector = {
 
             if(main.edit_mode)
             {
-                inspector.addDataRows(item, [
-
-                {'name':'delay', 'control':'textedit', 'type':'delay'},    // FIXME: Type delay range numbers + at most one ':'
-                {'name':'alias', 'control':'textedit', 'type':'source'}     
-            ], this);
+                inspector.addDataRows(item, 
+                [
+                    {'name':'delay', 'control':'textedit', 'type':'delay'},
+                    {'name':'alias', 'control':'textedit', 'type':'source'}     
+                ], this);
             }
             else
             {
@@ -1828,8 +1894,8 @@ let inspector = {
 }
 
 
-let log = {
-
+const log = 
+{
     init()
     {
 
@@ -1838,7 +1904,7 @@ let log = {
 
     toggleLog()
     {
-        let s = window.getComputedStyle(log.view, null);
+        const s = window.getComputedStyle(log.view, null);
         if (s.display === 'none')
             log.view.style.display = 'block';
         else 
@@ -1848,11 +1914,8 @@ let log = {
     showView()
     {
         log.view.style.display = 'block';
-
     }
 }
-
-let selector = {
 
 /*
  *
@@ -1860,6 +1923,9 @@ let selector = {
  * 
  */
 
+
+const selector =
+{
     selected_foreground: [],
     selected_connection: null,
     selected_background: null,
@@ -1911,17 +1977,22 @@ let selector = {
         main.deselectConnection(selector.selected_connection);
         main.selectConnection(connection);
         inspector.showInspectorForSelection();
+    },
+
+    getLocalPath(s) // Remove outer path and range
+    {
+        return removeStringFromStart(getStringUpToBracket(s), selector.selected_background+'.');
     }
 }
 
-let main = 
+const main = 
 {
     view: null,
     grid: null,
     connections: "",
     grid_spacing: 24,
     grid_active: false,
-    edit_mode: false,       // FIXME: onlye use this variable for edit mode everywhere ***********
+    edit_mode: false,
     map: {},
 
     module_counter: 1,
@@ -1977,13 +2048,12 @@ let main =
 
     centerComponents()
     {
-        let g = network.dict[selector.selected_background];
-
-        let sum_x = 0;
-        let sum_y = 0;
-        let n = 0;
-        let comps = [...g.groups||[], ...g.modules||[], ...g.inputs||[], ...g.outputs||[], ...g.widgets||[]];
-        for(let c of comps)    // ******* widgets??? ******* USE MIN/MAX instead?
+        const g = network.dict[selector.selected_background];
+        const sum_x = 0;
+        const sum_y = 0;
+        const n = 0;
+        const comps = [...g.groups||[], ...g.modules||[], ...g.inputs||[], ...g.outputs||[], ...g.widgets||[]];
+        for(let c of comps)
         {
             sum_x += parseInt(c._x);
             sum_y += parseInt(c._y);
@@ -1993,28 +2063,25 @@ let main =
         if(n==0)
             return;
 
-        let old_center_x = sum_x/n;
-        let old_center_y = sum_y/n;    
-        
-        let new_center_x = main.main.offsetWidth/2;
-        let new_center_y = main.main.offsetHeight/2;
-
-        let dx = new_center_x-old_center_x;
-        let dy = new_center_y-old_center_y;
+        const old_center_x = sum_x/n;
+        const old_center_y = sum_y/n;    
+        const new_center_x = main.main.offsetWidth/2;
+        const new_center_y = main.main.offsetHeight/2;
+        const dx = new_center_x-old_center_x;
+        const dy = new_center_y-old_center_y;
 
         for(let c of comps)
         {
             c._x = `${parseInt(c._x) + dx}`;
             c._y = `${parseInt(c._y) + dy}`;
         }
-
-            selector.selectItems([], null);
+        selector.selectItems([], null);
     },
     
     newModule()
     {
-        let name = "Untitled_"+(Object.keys(network.dict).length+1);
-        let m =
+        const name = "Untitled_"+(Object.keys(network.dict).length+1);
+        const m =
         {
             'name':name,
             'class':"Module",
@@ -2025,10 +2092,9 @@ let main =
             'outputs': [],
             'parameters':[]
         };
-        let full_name = selector.selected_background+'.'+name;
+        const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].modules.push(m);
         network.dict[full_name]=m;
-        // TODO: SEND TO KERNEL **********************************************
         main.new_position_x += 30;
         main.new_position_y += 30;
 
@@ -2043,8 +2109,8 @@ let main =
 
     newGroup() // FIXME: Move to network
     {
-        let name = "Group_"+(Object.keys(network.dict).length+1);
-        let m =
+        const name = "Group_"+(Object.keys(network.dict).length+1);
+        const m =
         {
             'name':name,
             '_tag':"group",
@@ -2057,13 +2123,12 @@ let main =
             'groups':[],
             'widgets':[]
         };
-        let full_name = selector.selected_background+'.'+name;
+        const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].groups.push(m);
         network.dict[full_name]=m;
-        // TODO: SEND TO KERNEL **********************************************
         main.new_position_x += 30;
         main.new_position_y += 30;
-
+    
         if(main.new_position_y >600)
         {
             main.new_position_x -= 350;
@@ -2076,8 +2141,8 @@ let main =
 
     newInput() // FIXME: Move to network
     {
-        let name = "Input_"+(Object.keys(network.dict).length+1);
-        let m =
+        const name = "Input_"+(Object.keys(network.dict).length+1);
+        const m =
         {
             'name':name,
             '_tag':"input",
@@ -2087,7 +2152,6 @@ let main =
         let full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].inputs.push(m);
         network.dict[full_name]=m;
-        // TODO: SEND TO KERNEL **********************************************
         main.new_position_x += 30;
         main.new_position_y += 30;
 
@@ -2101,8 +2165,8 @@ let main =
 
     newOutput() // FIXME: Move to network
     {
-        let name = "Output_"+(Object.keys(network.dict).length+1);
-        let m =
+        const name = "Output_"+(Object.keys(network.dict).length+1);
+        const m =
         {
             'name':name,
             //'size':"1",
@@ -2110,7 +2174,7 @@ let main =
             '_x':main.new_position_x,
             '_y':main.new_position_y
         };
-        let full_name = selector.selected_background+'.'+name;
+        const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].outputs.push(m);
         network.dict[full_name]=m;
         main.new_position_x += 30;
@@ -2124,10 +2188,10 @@ let main =
         selector.selectItems([full_name]);
     },
 
-    newWidget() // (w) FIXME: Move (data structure only) to network
+    newWidget()
     {
-        let name = "Widget_"+(Object.keys(network.dict).length+1);
-        let w = {
+        const name = "Widget_"+(Object.keys(network.dict).length+1);
+        const w = {
             "_tag": "widget",
             "name": name,
             "title": name,
@@ -2138,11 +2202,11 @@ let main =
             'height': 200
         };
 
-        let full_name = selector.selected_background+'.'+name;
+        const full_name = selector.selected_background+'.'+name;
+
         network.dict[selector.selected_background].widgets.push(w);
         network.dict[full_name]=w;
         selector.selectItems([full_name]);
-
         main.new_position_x += 30;
         main.new_position_y += 30;
 
@@ -2233,39 +2297,38 @@ let main =
 
     deleteGroup(g)
     {
-        alert("DELETE GROUP: "+g);
+        alert("CANNOT DELETE GROUP: "+g);
     },
 
     deleteModule(m)
     {
-        alert("DELETE MODULE: "+m);
+        alert("CANNOT DELETE MODULE: "+m);
     },
 
     deleteInput(i)
     {
-        alert("DELETE INPUT: "+i);
+        alert("CANNOT DELETE INPUT: "+i);
     },
 
     deleteOutput(o)
     {
-        alert("DELETE OUTPUT: "+o);
+        alert("CANNOT DELETE OUTPUT: "+o);
     },
 
     deleteWidget(w)
     {
-        alert("DELETE WIDGET: "+w);
+        alert("CANNOT DELETE WIDGET: "+w);
     },
 
     deleteConnection(c)
     {
-        return; // Temporary ***********
+        const connection = network.dict[c];
+        const s_t = c.split('*');
+        const source = selector.getLocalPath(s_t[0]);
+        const target = selector.getLocalPath(s_t[1]);
+        const group = network.dict[selector.selected_background];
 
-        let connection = network.dict[c];
-        let s_t = c.split('*');
-        let source = getStringUpToBracket(s_t[0]);
-        let target = getStringUpToBracket(s_t[1]);
-        let group = network.dict[selector.selected_background];
-        group.connections = group.connections.filter(con => con.source==source && con.target==target);
+        group.connections = group.connections.filter(con => !(selector.getLocalPath(con.source)==source && selector.getLocalPath(con.target)==target));
     },
 
     deleteComponent()
@@ -2274,9 +2337,9 @@ let main =
         {
             this.deleteConnection(selector.selected_connection);
             selector.selectItems([], null);
-            return;
         }
 
+        else
         for(let c of selector.selected_foreground)
         {
             switch(network.dict[c]._tag)
@@ -2299,16 +2362,12 @@ let main =
             }
         }
 
-        /******************* REDRAW *******************/
-
         network.rebuildDict();
-
     },
 
     changeComponentPosition(c, dx,dy)
     {
-        let e = document.getElementById(c);
-
+        const e = document.getElementById(c);
         let new_x = main.map[c][0] + dx;
         let new_y = main.map[c][1] + dy;
 
@@ -2320,7 +2379,7 @@ let main =
 
         if(main.edit_mode)
         {
-            let g = main.grid_spacing;
+            const g = main.grid_spacing;
             new_x = g*Math.round(new_x/g);
             new_y = g*Math.round(new_y/g);
         }
@@ -2334,14 +2393,13 @@ let main =
 
     changeComponentSize(dX, dY)
     {
-        let w_id = selector.selected_foreground[0];
-        let w = document.getElementById(w_id);
+        const w_id = selector.selected_foreground[0];
+        const w = document.getElementById(w_id);
+        const newWidth = main.grid_spacing*Math.round((main.startX + dX)/main.grid_spacing)+1;
+        const newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
 
-        let newWidth = main.grid_spacing*Math.round((main.startX + dX)/main.grid_spacing)+1;
-        let newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
         w.style.width = newWidth + 'px';
         w.style.height = newHeight + 'px';
-
         network.dict[w_id].width = newWidth;
         network.dict[w_id].height = newHeight;
 
@@ -2354,8 +2412,8 @@ let main =
             return;
 
         evt.stopPropagation()
-        let dx = evt.clientX - main.initialMouseX;
-        let dy = evt.clientY - main.initialMouseY;
+        const dx = evt.clientX - main.initialMouseX;
+        const dy = evt.clientY - main.initialMouseY;
 
         for(let c of selector.selected_foreground)
             main.changeComponentPosition(c, dx,dy);
@@ -2365,33 +2423,33 @@ let main =
 
     releaseComponents(evt)
     {
-        main.view.removeEventListener('mousemove',main.moveComponents, true);
-        main.view.removeEventListener('mouseup',main.releaseComponents, true);
-        main.view.removeEventListener('mousemove',main.moveComponents, false);
-        main.view.removeEventListener('mouseup',main.releaseComponents, false);
+        const main_view = main.view;
+        main_view.removeEventListener('mousemove',main.moveComponents, true);
+        main_view.removeEventListener('mouseup',main.releaseComponents, true);
+        main_view.removeEventListener('mousemove',main.moveComponents, false);
+        main_view.removeEventListener('mouseup',main.releaseComponents, false);
         main.map = {};
     },
 
     releaseResizeComponent(evt)
     {
-        main.view.removeEventListener('mousemove',main.resizeComponent, true);
-        main.view.removeEventListener('mouseup',main.releaseResizeComponent, true);
-        main.view.removeEventListener('mousemove',main.resizeComponent, false);
+        main_view.removeEventListener('mousemove',main.resizeComponent, true);
+        main_view.removeEventListener('mouseup',main.releaseResizeComponent, true);
+        main_view.removeEventListener('mousemove',main.resizeComponent, false);
         main.view.removeEventListener('mouseup',main.releaseResizeComponent, false);
         main.map = {}; // just in case
 
-        let dX = evt.clientX - main.initialMouseX;
-        let dY = evt.clientY - main.initialMouseY;
+        const dX = evt.clientX - main.initialMouseX;
+        const dY = evt.clientY - main.initialMouseY;
         main.changeComponentSize(dX,dY);
 
-        let w_id = selector.selected_foreground[0];
-        let w = document.getElementById(w_id);
+        const w_id = selector.selected_foreground[0];
+        const w = document.getElementById(w_id);
+        const newWidth = main.grid_spacing*Math.round((main.startX + dX)/main.grid_spacing)+1;
+        const newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
 
-        let newWidth = main.grid_spacing*Math.round((main.startX + dX)/main.grid_spacing)+1;
-        let newHeight = main.grid_spacing*Math.round((main.startY + dY)/main.grid_spacing)+1;
         w.style.width = newWidth + 'px';
         w.style.height = newHeight + 'px';
-
         network.dict[w_id].width = newWidth;
         network.dict[w_id].height = newHeight;
     },
@@ -2412,8 +2470,8 @@ let main =
     },
 
     resizeComponent: function (evt) {
-        let dX = evt.clientX - main.initialMouseX;
-        let dY = evt.clientY - main.initialMouseY;
+        const dX = evt.clientX - main.initialMouseX;
+        const dY = evt.clientY - main.initialMouseY;
         main.changeComponentSize(dX,dY);
         return false;
     },
@@ -2424,16 +2482,12 @@ let main =
         {
                 evt.stopPropagation();
                 return;
-           // Open sinpector before selecting
-           //if (window.getComputedStyle(inspector.component, null).display === 'none') 
-            //inspector.toggleComponent();
         }
 
         main.initialMouseX = evt.clientX;
         main.initialMouseY = evt.clientY;
 
         selector.selectItems([this.dataset.name], null, evt.shiftKey);
-        //evt.stopPropagation();
 
         if(!selector.selected_foreground.includes(this.dataset.name))
             return;
@@ -2444,16 +2498,16 @@ let main =
         main.map = {};
         for(let c of selector.selected_foreground)
         {
-            let e = document.getElementById(c);
+            const e = document.getElementById(c);
             main.map[c] = [e.offsetLeft, e.offsetTop];
-        };
+        }
 
         main.view.addEventListener('mousemove',main.moveComponents, true);
         main.view.addEventListener('mouseup',main.releaseComponents,true);
-        //main.view.style.cursor = "e-resize";
-        //main.view.cursor = "e-resize";
+
         return false;
     },
+
 
     startTrackConnection(evt)
     {
@@ -2461,12 +2515,24 @@ let main =
             return;
         this.style.backgroundColor="orange";
         evt.stopPropagation();
-        let id = this.id;
-        let e = document.getElementById(id);
-        let x = e.getBoundingClientRect().left-main.view.getBoundingClientRect().left+4.5;
-        let y = e.getBoundingClientRect().top-main.view.getBoundingClientRect().top+4.5;
 
-        main.tracked_connection =  { "x1": x, "y1": y, "x2": x, "y2": y, "source": id.split(':')[0], "target": null, "source_element": e };
+        const id = this.id;
+        const e = document.getElementById(id);
+        const viewRect = main.view.getBoundingClientRect();
+        const elementRect = e.getBoundingClientRect();
+        const x = elementRect.left-viewRect.left+4.5;
+        const y = elementRect.top-viewRect.top+4.5;
+
+        main.tracked_connection =  
+        { 
+            x1: x, 
+            y1: y, 
+            x2: x, 
+            y2: y, 
+            source: id.split(':')[0], 
+            target: null, 
+            source_element: e 
+        };
         main.view.addEventListener('mousemove',main.moveTrackedConnection, true);
         main.view.addEventListener('mouseup',main.releaseTrackedConnection,true);
     },
@@ -2476,14 +2542,46 @@ let main =
         if(!main.tracked_connection)
             return;
 
-        let ox = main.view.getBoundingClientRect().left;
-        let oy = main.view.getBoundingClientRect().top;
-
+        const viewRect = main.view.getBoundingClientRect();
+        const ox = viewRect.left;
+        const oy = viewRect.top;
         main.tracked_connection.x2 = evt.clientX - ox;
         main.tracked_connection.y2 = evt.clientY - oy;
         main.addConnections();
     },
 
+
+/*
+startTrackConnection(evt) {
+    if (!main.edit_mode) {
+        return;
+    }
+
+    this.style.backgroundColor = "orange";
+    evt.stopPropagation();
+    
+    const id = this.id;
+    const e = document.getElementById(id);
+    const viewRect = main.view.getBoundingClientRect();
+    const elementRect = e.getBoundingClientRect();
+    const x = elementRect.left - viewRect.left + 4.5;
+    const y = elementRect.top - viewRect.top + 4.5;
+
+    main.tracked_connection = {
+        x1: x,
+        y1: y,
+        x2: x,
+        y2: y,
+        source: id.split(':')[0],
+        target: null,
+        source_element: e
+    };
+
+    main.view.addEventListener('mousemove', main.moveTrackedConnection, true);
+    main.view.addEventListener('mouseup', main.releaseTrackedConnection, true);
+},
+*/
+    /*
     releaseTrackedConnection(evt)
     {
         evt.stopPropagation();
@@ -2511,7 +2609,41 @@ let main =
             selector.selectConnection(selector.selected_background+"."+source+"*"+selector.selected_background+"."+target);
         }
     },
+    */
 
+    releaseTrackedConnection(evt) {
+        evt.stopPropagation();
+    
+        if (!main.tracked_connection)
+            return;
+    
+        const { target, source } = main.tracked_connection;
+    
+        if (!target) 
+        {
+            main.tracked_connection = null;
+            return;
+        }
+    
+        const isTargetWidget = target in network.dict && network.dict[target]._tag === 'widget';
+    
+        if (isTargetWidget) 
+        {
+            network.dict[target].source = removeStringFromStart(source.split(':')[0], selector.selected_background + ".");
+            main.tracked_connection = null;
+            selector.selectItems([target], null);
+        } 
+        else 
+        {
+            const cleanSource = removeStringFromStart(source.split(':')[0], selector.selected_background + ".");
+            const cleanTarget = removeStringFromStart(target.split(':')[0], selector.selected_background + ".");
+            network.newConnection(selector.selected_background, cleanSource, cleanTarget);
+            main.tracked_connection = null;
+            selector.selectConnection(`${selector.selected_background}.${cleanSource}*${selector.selected_background}.${cleanTarget}`);
+        }
+    },
+
+    
     setConnectectionTarget(evt)
     {
         if(!main.tracked_connection)
@@ -2526,7 +2658,6 @@ let main =
         if(!main.tracked_connection)
             return;
             main.tracked_connection.target = null;
-
         if(this.classList.contains('widget'))
             this.style.backgroundColor="rgb(0,0,0,0)";
         else
@@ -2535,7 +2666,7 @@ let main =
 
     addGroup(g,path)
     {
-        let fullName = `${path}.${g.name}`;
+        const fullName = `${path}.${g.name}`;
         let s = "";
         s += `<div class='gi module group' style='top:${g._y}px;left:${g._x}px;'  id='${fullName}' data-name='${fullName}'>`;
         s += `<table>`;
@@ -2583,10 +2714,12 @@ let main =
         main.view.innerHTML += s;
     },
 
+
+
+
+/*
     addWidget(w,path)
     {
-        // main.view.innerHTML += `<div class='gi widget' style='height:40px; width:160px;background-color:#dd0;border:1px solid #666;position:absolute;top:${w._y}px;left:${w._x}px;'>${w.name}</div>`;
-
         let newObject = document.createElement("div");
         newObject.setAttribute("class", "frame visible gi widget");
 
@@ -2604,8 +2737,7 @@ let main =
         {
             console.log("Internal Error: No constructor found for "+"webui-widget-"+w['class']);
             newObject.widget = new webui_widgets.constructors['webui-widget-text'];
-            newObject.widget.element = newObject; // FIXME: why not also below??
-            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
+            newObject.widget.element = newObject;
             newObject.widget.parameters['text'] = "\""+"webui-widget-"+w['class']+"\" not found. Is it included in index.html?";
             newObject.widget.parameters['_index_'] = index;
         }
@@ -2653,31 +2785,92 @@ let main =
         catch(err)
         {
             console.log(err);
-        }
-        
+        } 
     },
+    */
+
+
+    addWidget(w, path) {
+        const newObject = document.createElement("div");
+        newObject.setAttribute("class", "frame visible gi widget");
     
+        const newTitle = document.createElement("div");
+        newTitle.setAttribute("class", "title");
+        newTitle.innerHTML = w.name;
+        newObject.appendChild(newTitle);
+    
+        const index = main.view.querySelectorAll(".widget").length;
+        main.view.appendChild(newObject);
+        newObject.addEventListener('mousedown', main.startDragComponents, false);
+    
+        const widgetClass = `webui-widget-${w.class}`;
+        let constr = webui_widgets.constructors[widgetClass];
+    
+        if (!constr) {
+            console.log(`Internal Error: No constructor found for ${widgetClass}`);
+            newObject.widget = new webui_widgets.constructors['webui-widget-text'];
+            newObject.widget.element = newObject;
+            newObject.widget.parameters['text'] = `"${widgetClass}" not found. Is it included in index.html?`;
+            newObject.widget.parameters['_index_'] = index;
+        } else {
+            newObject.widget = new webui_widgets.constructors[widgetClass];
+            for (let k in newObject.widget.parameters) {
+                if (w[k] === undefined) {
+                    w[k] = newObject.widget.parameters[k];
+                } else {
+                    let tp = newObject.widget.param_types[k];
+                    w[k] = setType(w[k], tp);
+                }
+            }
+            newObject.widget.parameters = w;
+            newObject.widget.parameters['_index_'] = index;
+        }
+    
+        newObject.widget.setAttribute('class', 'widget');
+        newObject.appendChild(newObject.widget); 
+    
+        // Set style and position
+        newObject.style.top = `${w._y}px`;
+        newObject.style.left = `${w._x}px`;
+        newObject.style.width = `${w.width || 200}px`;
+        newObject.style.height = `${w.height || 200}px`;
+    
+        // Add handle for resizing
+        const handle = document.createElement("div");
+        handle.setAttribute("class", "handle");
+        handle.onmousedown = main.startResize;
+        newObject.appendChild(handle);
+    
+        // Set attributes for the new object
+        const fullName = `${path}.${w.name}`;
+        newObject.setAttribute("id", fullName);
+        newObject.setAttribute("data-name", fullName);
+    
+        try {
+            newObject.widget.updateAll();
+        } catch (err) {
+            console.log(err);
+        }
+    },
+
+
     addConnection(c,path)
     {
-        let source = getStringUpToBracket(c.source);
-        let target = getStringUpToBracket(c.target);       
-
-        let source_point = document.getElementById(`${path}.${source}:out`);
-        let target_point = document.getElementById(`${path}.${target}:in`);
+        const source = getStringUpToBracket(c.source);
+        const target = getStringUpToBracket(c.target);       
+        const source_point = document.getElementById(`${path}.${source}:out`);
+        const target_point = document.getElementById(`${path}.${target}:in`);
 
         if(source_point == undefined ||target_point == undefined)
             return;
         
-        let ox = main.view.getBoundingClientRect().left;
-        let oy = main.view.getBoundingClientRect().top;
-
-        let x1 = source_point.getBoundingClientRect().left-ox+4.5;
-        let y1 = source_point.getBoundingClientRect().top-oy+4.5;
-
-        let x2 = target_point.getBoundingClientRect().left-ox+4.5;
-        let y2 = target_point.getBoundingClientRect().top-oy+4.5;
-
-        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line' data-source='${c.source}' id="${path}.${source}*${path}.${target}" data-target='${target}'onclick='selector.selectConnection("${path}.${source}*${path}.${target}")'/>`; 
+        const ox = main.view.getBoundingClientRect().left;
+        const oy = main.view.getBoundingClientRect().top;
+        const x1 = source_point.getBoundingClientRect().left-ox+4.5;
+        const y1 = source_point.getBoundingClientRect().top-oy+4.5;
+        const x2 = target_point.getBoundingClientRect().left-ox+4.5;
+        const y2 = target_point.getBoundingClientRect().top-oy+4.5;
+        const cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line' data-source='${c.source}' id="${path}.${source}*${path}.${target}" data-target='${target}'onclick='selector.selectConnection("${path}.${source}*${path}.${target}")'/>`; 
         main.connections += cc;
     },
 
@@ -2685,43 +2878,41 @@ let main =
     {
         if(!main.tracked_connection)
             return;
-        let x1 = main.tracked_connection.x1;
-        let y1 = main.tracked_connection.y1;
-        let x2 = main.tracked_connection.x2;
-        let y2 = main.tracked_connection.y2;
-        let cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line tracked'/>`; 
+        const con = main.tracked_connection;
+        const x1 = con.x1;
+        const y1 = con.y1;
+        const x2 = con.x2;
+        const y2 = con.y2;
+        const cc = `<line x1='${x1}' y1='${y1}' x2='${x2}' y2='${y2}' class='connection_line tracked'/>`; 
         main.connections += cc;
     },
 
     selectConnection(connection)
     {
-        let c = document.getElementById(connection);
+        const c = document.getElementById(connection);
         if(c != undefined) // FIXME: Use exception above instead
         {
             c.classList.add("selected");
-
-            let st = connection.split('*');
-
-            let s = document.getElementById(st[0]+":out");
+            const st = connection.split('*');
+            const s = document.getElementById(st[0]+":out");
+            const t = document.getElementById(st[1]+":in");
             s.style.backgroundColor = "orange";
-
-            let t = document.getElementById(st[1]+":in");
             t.style.backgroundColor = "orange";
         }
     },
 
     deselectConnection(connection)
     {
-        let c = document.getElementById(connection);
+        const c = document.getElementById(connection);
         if(c != undefined) // FIXME: Use exception above instead
             c.classList.remove("selected");
     },
 
     addConnections()
     {
-        let path = selector.selected_background;
-        let group = network.dict[path];
-        let s = document.getElementById("connections");
+        const path = selector.selected_background;
+        const group = network.dict[path];
+        const s = document.getElementById("connections");
         if(s)
             s.innerHTML = "";
         main.connections = "<svg xmlns='http://www.w3.org/2000/svg' id='connections'>";
@@ -2743,10 +2934,10 @@ let main =
             main.addInput(i,path);
 
         for(let o of group.outputs || [])
-                main.addOutput(o,path);
+            main.addOutput(o,path);
 
-            for(let g of group.groups || [])
-                main.addGroup(g,path);
+        for(let g of group.groups || [])
+            main.addGroup(g,path);
 
         for(let m of group.modules || [])
             main.addModule(m,path);
@@ -2763,9 +2954,15 @@ let main =
             e.addEventListener('mousedown', main.startDragComponents, false);
 
             if(e.classList.contains("group"))
-                e.ondblclick = function(evt) {  selector.selectItems([], this.dataset.name); } // Jump into group
+                e.ondblclick = function(evt) {  
+                selector.selectItems([], this.dataset.name); // Jump into group
+            }
             else
-                e.ondblclick = function(evt) {  inspector.toggleComponent(); } //toggle inspector
+                e.ondblclick = function(evt)
+            {  
+                selector.selectItems([this.dataset.name]);
+                inspector.toggleComponent();
+            }
 
             if(selectionList.includes(e.dataset.name))
                 e.classList.add("selected")
@@ -2776,21 +2973,19 @@ let main =
         for(let o of main.view.querySelectorAll(".o_spot"))
             o.addEventListener('mousedown', main.startTrackConnection, false);
 
-            for(let i of main.view.querySelectorAll(".i_spot"))
-            {
-                i.addEventListener('mouseover', main.setConnectectionTarget, true);
-                i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
-            }
+        for(let i of main.view.querySelectorAll(".i_spot"))
+        {
+            i.addEventListener('mouseover', main.setConnectectionTarget, true);
+            i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
+        }
 
-            for(let i of main.view.querySelectorAll(".widget"))
-            {
-                i.addEventListener('mouseover', main.setConnectectionTarget, true);
-                i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
-            }
+        for(let i of main.view.querySelectorAll(".widget"))
+        {
+            i.addEventListener('mouseover', main.setConnectectionTarget, true);
+            i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
+        }
     },
 
-    // FIXME USE SINGLE FUNCTION TO SET MODE setMode(edit/view)
-    // Use functions to get mode editMode(), viewMode()
 
     cancelEditMode()
     {
@@ -2833,14 +3028,6 @@ let main =
         }
     },
 
-    /*
-        TODO:
-            Tab: select next component (in main view; not in inspectors)
-            shift+Tab: select previous component (in main view; not in inspectors)
-            PageUp: exit current group
-            Enter/PageDown: jump into selected group
-            Arrow keys: jump between components
-    */
 
     keydown(evt)
     {
@@ -2895,25 +3082,22 @@ let main =
             evt.preventDefault();
             alert("Duplicate selected items and possibly connections. (NOT IMPLEMENTED YET)");
         }
-/*
-        else if (evt.key=="g")
-        {
-            evt.preventDefault();
-            main.toggleGrid();
-            return;
-        }
-*/
         else if (evt.key=="i")
         { 
             evt.preventDefault();
             inspector.toggleComponent();
             return;
         }
+    },
+
+    showCommandInfo()
+    {
+        alert("No info yet");
     }
 }
 
 
-let brainstudio = {
+const brainstudio = {
 
     init()
     {

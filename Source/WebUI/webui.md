@@ -1,7 +1,39 @@
 WebUI
-======
+========================
+
+## Shortcuts
+
+### Keyboard shortcuts
+
+- ESC: show/hide system inspector
+- Cmd-i: toggle inspector
+- Cmd-a: select all
+
+### Keyboard shortcuts (not yet implemented)
+
+- Backspace: delete selected objects
+- Cmd-C: copy
+- Cmd-X: cut
+- Cmd-V: paste and change names if necessary
+- Cmd-D: duplicate
+- Cmd-S: save
+- Cmd-O: open
+- Cmd-E: toggle edit mode
+
+### Clicks
+
+- click on object: select
+- double click on group: open group
+- doulbe click on other object: select and toggle inepctor
+
+### Drag
+- drag from output to input to make connection
+- drag from output to widget to set widget source
+
+
 
 Components of the WebUI
+========================
 
 - Breadcrums
 - Modes
