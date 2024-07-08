@@ -27,4 +27,5 @@
       <parameter default="7" description="parameter x" name="x" type="double" value="10"/>
       <parameter default="9" description="parameter y" name="y" type="double" value="11"/>
    </module>
+   <widget _index_="0" _x="264" _y="120" background="" class="button" color="" command="" commandUp="" enableSource="" file_names="" frame-style="" height="200" icon="" label="Button" multiGroup="" name="Widget_5" parameter="xxx" radioGroup="" show_frame="false" show_title="false" style="" title="Widget_5" type="push" value="55" valueUp="0" width="200" xindex="44" yindex="33"/>
 </group>

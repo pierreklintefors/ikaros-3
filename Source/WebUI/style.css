@@ -491,7 +491,13 @@ main[data-mode="edit"] {
     z-index: 1000;
     top:12px;
     left:515px;
+}
 
+#show_command_info {
+    position:absolute;
+    z-index: 1000;
+    top:12px;
+    left:590px;
 }
 
 
@@ -552,12 +558,12 @@ webui-widget-button button {
     height: 100%;
     font-size: 14px;
 }
-
+/*
 webui-widget-button button:hover
 {
-    /* cursor: pointer; */
+     cursor: pointer; 
 }
-
+*/
 /*
  *
  *  MAIN AREA
