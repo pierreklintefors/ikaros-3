@@ -11,6 +11,10 @@ class ForceCheck: public Module
     matrix present_position;// assumes degrees
     matrix goal_position_in;
     matrix goal_position_out;
+    
+    parameter gain_constant;
+    parameter smooth_factor;
+    parameter error_threshold;
 
     int tickCount;
     int current_increment;
@@ -18,30 +22,47 @@ class ForceCheck: public Module
     int position_margin;
     int current_margin;
     int minimum_current;
-    int element;
-    
-    matrix Limiter(matrix currents, matrix limits, int increment)
+   
+    bool firstTick = true;
+    bool obstacle = false;
+
+    double Tapering(double error, double threshold)
     {
-        for (int i = 0; i < present_position.size(); i++) {
-            int current_value = abs(currents[i]);
-            int limit_value = limits[i];   
-            if ( current_value< limit_value) {
-                current_output[i] = std::min(current_value + increment, limit_value); // Cap at limit_value              
-            } else {
-                current_output[i]= current_output[i];
+        if (abs(error) < threshold)
+            return abs(error)/threshold;
+        else
+            return 1;
+    }
+    
+    matrix SetCurrent(matrix currents, matrix limits, matrix positions, matrix goal_position_in, int gain, int error_threshold, double smooth_factor)
+    {
+        for (int i = 0; i < currents.size(); i++) {
+            int position = positions[i];
+            if (position > 0) 
+            {
+                int current_value = abs(currents[i]);
+                int limit_value = limits[i];
+                int position = positions[i];
+                int goal = goal_position_in[i];
+                double error = goal - position;
+                double error_tapered = Tapering(error, error_threshold);
+                std::cout << "error " << error << std::endl;
+                std::cout << "eroor_tapered" << error_tapered << std::endl;
+                int suggested_current = 5+  current_value + (gain* error * error_tapered);
+                current_output[i] = std::min(suggested_current , limit_value); // Cap at limit_value 
                 
             }
+                         
+            
              
         }
         
         return current_output;
-    }
+}
 
     //Could also be done by using dynamixel_sdk
-    matrix MovingCheck(matrix positions,  matrix current_limits, matrix goal_position_in, matrix goal_position_out )
+    void ObstacleCheck(matrix positions,  matrix current_limits, matrix goal_position_in, matrix goal_position_out )
     {   
-       
-   ;
         for (int i = 0; i < positions.size(); i++) {
             float current_position = positions(i);
             float goal = goal_position_in[i];
@@ -49,22 +70,16 @@ class ForceCheck: public Module
             float limit_value = current_limit[i];
             if (current_position >0){
 
-                if (abs(goal - current_position) > position_margin & abs(limit_value -current_value) < current_margin)
+                if (abs(goal - current_position) > position_margin && abs(limit_value -current_value) < current_margin)
                 {   
                     current_output[i]=0; 
-                    std::cout << "Obstacle detected, lowering current for servo " << i+1 << " to " << current_output(i) << std::endl;
+                    //std::cout << "Obstacle detected, lowering current for servo " << i+1 << " to " << current_output(i) << std::endl;
                     goal_position_out[i] = current_position;
-                    std::cout << "Goal position changed to " << current_position << std::endl;
+                    //std::cout << "Goal position changed to " << current_position << std::endl;
                 }
-                else 
-                {  
-                    current_output[i] = current_value;
-                    
-                }
-
+                
             }
         }
-        return current_output;
     }
 
     void Init()
@@ -76,29 +91,37 @@ class ForceCheck: public Module
         Bind(goal_position_in, "GoalPositionIn");
         Bind(goal_position_out, "GoalPositionOut");
 
+        Bind(gain_constant, "GainConstant");
+        Bind(smooth_factor, "SmoothFactor");
+        Bind(error_threshold, "ErrorThreshold");
       
-        current_increment = 10;
+    
     
         current_margin = 10;
-        position_margin = 10;
-        tickCount = 0;
-        minimum_current = 5;
+        position_margin = 5;
+        gain_constant = 0.5;
+        smooth_factor = 1;
+        error_threshold = 5;
+        
+    
 
     }
 
 
     void Tick()
     {   
-       
+        if (firstTick){
+            goal_position_out.copy(goal_position_in);
+        }
 
-        if (!present_position.empty() & !present_current.empty() & !goal_position_in.empty()) {
-            current_output = MovingCheck(present_position, current_limit, goal_position_in, goal_position_out);
-            current_output = Limiter(present_current, current_limit, current_increment);
+        if (present_position.connected() && present_current.connected() && goal_position_in.connected()) {
+            ObstacleCheck(present_position, current_limit, goal_position_in, goal_position_out);
+            current_output = SetCurrent(present_current, current_limit, present_position, goal_position_in, gain_constant, error_threshold, smooth_factor);
         }
         
-        
+        current_output.print();
        
-      
+        firstTick=false;
             
     }
 };

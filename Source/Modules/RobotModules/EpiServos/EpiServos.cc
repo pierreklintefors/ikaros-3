@@ -726,7 +726,7 @@ class EpiServos : public Module
             }
             else
             {
-                Notify(msg_debug, "Simulating EpiTorso");
+                //Notify(msg_debug, "Simulating EpiTorso");
                 for (int i = 0; i < EPI_TORSO_NR_SERVOS; i++)
                     if (!goalPosition.empty() && !goalCurrent.empty()){
                         presentCurrent(i) = presentCurrent(i) + 0.06 * (goalCurrent(i) - presentCurrent(i));

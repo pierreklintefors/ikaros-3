@@ -1,14 +1,12 @@
-<group name="ServoCurrentLimiter" start="false" stop="-1" webui_port="8000">
+<group filename="servo_test.ikg" name="ServoCurrentLimiter" start="true" stop="-1" webui_port="8000">
    <connection delay_range="1" source="PositionSelection.PositionOutput" source_range="" target="Servos.GOAL_POSITION" target_range=""/>
-   <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="PositionSelection.PositionInput1" target_range=""/>
-   <connection delay_range="1" source="ForceCheck.GoalPositionOut" source_range="" target="PositionSelection.PositionInput2" target_range=""/>
+   <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="PositionSelection.PositionInput[0][]" target_range=""/>
+   <connection delay_range="1" source="ForceCheck.GoalPositionOut" source_range="" target="PositionSelection.PositionInput[1][]" target_range=""/>
    <connection delay_range="1" source="Servos.PRESENT_POSITION" source_range="" target="ForceCheck.PresentPosition" target_range=""/>
    <connection delay_range="1" source="Servos.PRESENT_CURRENT" source_range="" target="ForceCheck.PresentCurrent" target_range=""/>
    <connection delay_range="1" source="Limit.OUTPUT" source_range="" target="ForceCheck.CurrentLimit" target_range=""/>
    <connection delay_range="1" source="ForceCheck.CurrentOutput" source_range="" target="Servos.GOAL_CURRENT" target_range=""/>
-   <connection delay_range="1" source="Servos.GOAL_POSITION" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
    <connection delay_range="1" source="GoalPosition.OUTPUT" source_range="" target="ForceCheck.GoalPositionIn" target_range=""/>
-
    <module _x="240" _y="336" class="EpiServos" description="Robot servo control module" log_level="2" name="Servos" robot="EpiBlack" simulate="false">
       <author>
          <affiliation/>
@@ -62,8 +60,8 @@
          <file/>
          <file/>
       </files>
-      <input description="Position array" name="PositionInput1"/>
-      <input description="Position array" name="PositionInput2"/>
+      <input description="Position array" name="PositionInput"/>
+      <input description="Ranking of position array" name="InputRanking"/>
       <output description="The position array that will be sent to the motors as goal position" name="PositionOutput" size="19"/>
    </module>
    <widget _index_="0" _x="120" _y="480" class="table" colorize="true" decimals="0" direction="normal" frame-style="" height="73" label_x="" label_y="" name="Widget_7" scrollable="false" show_frame="false" show_title="true" source="Servos.PRESENT_POSITION" style="" title="Position" width="1201"/>
