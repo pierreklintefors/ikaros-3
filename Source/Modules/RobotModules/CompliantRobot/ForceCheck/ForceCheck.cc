@@ -29,7 +29,7 @@ class ForceCheck: public Module
     double Tapering(double error, double threshold)
     {
         if (abs(error) < threshold)
-            return abs(error)/threshold;
+            return sin(M_PI_2)*(abs(error)/threshold);
         else
             return 1;
     }
@@ -44,11 +44,11 @@ class ForceCheck: public Module
                 int limit_value = limits[i];
                 int position = positions[i];
                 int goal = goal_position_in[i];
-                double error = goal - position;
+                double error = abs(goal - position);
                 double error_tapered = Tapering(error, error_threshold);
                 std::cout << "error " << error << std::endl;
-                std::cout << "eroor_tapered" << error_tapered << std::endl;
-                int suggested_current = 5+  current_value + (gain* error * error_tapered);
+                std::cout << "error_tapered" << error_tapered << std::endl;
+                int suggested_current = smooth_factor * current_value + (gain* error * error_tapered);
                 current_output[i] = std::min(suggested_current , limit_value); // Cap at limit_value 
                 
             }
@@ -64,15 +64,15 @@ class ForceCheck: public Module
     void ObstacleCheck(matrix positions,  matrix current_limits, matrix goal_position_in, matrix goal_position_out )
     {   
         for (int i = 0; i < positions.size(); i++) {
-            float current_position = positions(i);
+            float current_position = abs(positions(i));
             float goal = goal_position_in[i];
-            float current_value = current_output[i];
+            float current_value = abs(current_output[i]);
             float limit_value = current_limit[i];
             if (current_position >0){
 
                 if (abs(goal - current_position) > position_margin && abs(limit_value -current_value) < current_margin)
                 {   
-                    current_output[i]=0; 
+                    
                     //std::cout << "Obstacle detected, lowering current for servo " << i+1 << " to " << current_output(i) << std::endl;
                     goal_position_out[i] = current_position;
                     //std::cout << "Goal position changed to " << current_position << std::endl;
@@ -99,10 +99,7 @@ class ForceCheck: public Module
     
         current_margin = 10;
         position_margin = 5;
-        gain_constant = 0.5;
-        smooth_factor = 1;
-        error_threshold = 5;
-        
+        minimum_current = 15;
     
 
     }
