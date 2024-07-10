@@ -32,7 +32,6 @@ function isEmpty(obj)
     return true;
 }
 
-
 function deepCopy(source) {
     if (source === null || typeof source !== 'object') {
       return source;
@@ -65,7 +64,6 @@ function deepCopy(source) {
     }
   }
   
-
   function toggleStrings(array, toggleItems)
     {
     toggleItems.forEach(item => {
@@ -77,7 +75,6 @@ function deepCopy(source) {
     });
   }
 
-
   function removeStringFromStart(mainString, stringToRemove)
   {
     if (mainString.startsWith(stringToRemove))
@@ -85,25 +82,11 @@ function deepCopy(source) {
     return mainString;
   }
 
-  String.prototype.rsplit = function(sep, maxsplit) {
+    String.prototype.rsplit = function(sep, maxsplit) {
     var split = this.split(sep || /\s+/);
     return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;
 }
 
-/*
-function toURLParams(obj)
-{
-    s = "";
-    sep = "";
-    const keys = Object.keys(obj)
-    keys.forEach((key) => {
-        s+= sep+`${key}=${obj[key]}`;
-        sep="&";
-    });
-
-    return encodeURIComponent(s);
-}
-*/
 
 function toURLParams(params) {
     return Object.keys(params).map((key) => {
@@ -111,7 +94,6 @@ function toURLParams(params) {
         return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
     }).join('&');
 }
-
 
 function setType(x, t)
 {
@@ -188,7 +170,6 @@ function changeNameInPath(path, name)
 }
 
 
-
 function nameInPath(path)
 {
     const ix = path.lastIndexOf('.');
@@ -196,7 +177,6 @@ function nameInPath(path)
         return "";
     return path.substring(ix + 1);
 }
-
 
 function parentPath(path)
 {
@@ -206,7 +186,6 @@ function parentPath(path)
     
 }
 
-
 function getStringUpToBracket(str)
 {
     const index = str.indexOf('[');
@@ -214,11 +193,7 @@ function getStringUpToBracket(str)
       return str;
     }
     return str.substring(0, index);
-  }
-
-
-
-// COOKIES FOR PERSISTENT STATE
+}
 
 function setCookie(name,value,days=100)
 {
@@ -250,91 +225,13 @@ function resetCookies()
     setCookie('current_view', "");
 }
 
-
-
-/*
- *
- * Dialog Scrips
- *
- *
- */
-/*
-let dialog = {
-    confirmOpen: function()
-    {
-        try
-        {
-            let sys = document.getElementById("openDialogSystemItems");
-            if(sys.style.display=='block')
-            {
-                let sel = document.getElementById("openDialogSystemItems");
-                let text= sel.options[sel.selectedIndex].text;
-                dialog.window.close(text);
-                    if(dialog.callback)
-                        dialog.callback(text, 'system');
-            }
-            else
-            {
-                let sel = document.getElementById("openDialogUserItems");
-                let text= sel.options[sel.selectedIndex].text;
-                dialog.window.close(text);
-                    if(dialog.callback)
-                        dialog.callback(text, 'user');
-            }
-        }
-        catch(err)
-        {
-            alert("error opening file");
-        }
-    },
-        
-    cancelOpen: function()
-    {
-        dialog.window.close(null);
-    },
-
-    showOpenDialog: function (file_list, callback, message)
-    {
-        dialog.callback = callback;
-        dialog.window = document.getElementById('openDialog');
-        let sel = document.getElementById('openDialogSystemItems');
-        sel.innerHTML = '';
-        let usel = document.getElementById('openDialogUserItems');
-        usel.innerHTML = '';
-
-        if(file_list.system_files)
-            for(i of file_list.system_files)
-            {
-                var opt = document.createElement('option');
-                opt.value = i;
-                opt.innerHTML = i;
-                document.getElementById('openDialogSystemItems').appendChild(opt);
-            }
-
-            if(file_list.user_files)
-                for(i of file_list.user_files)
-                {
-                    var opt = document.createElement('option');
-                    opt.value = i;
-                    opt.innerHTML = i;
-                    document.getElementById('openDialogUserItems').appendChild(opt);
-                }
-
-            if(message)
-            {
-                document.getElementById('openDialogTitle').innerText = message;
-            }
-        dialog.window.showModal();
-    }
-}
-
-*/
-
-let dialog = {
+let dialog = 
+{
     window: null,
     callback: null,
 
-    confirmOpen: function() {
+    confirmOpen()
+    {
         try {
             const dialogType = this.getDialogType();
             const sel = document.getElementById(`open_dialog_${dialogType}_items`);
@@ -345,16 +242,19 @@ let dialog = {
             if (this.callback) {
                 this.callback(text, dialogType);
             }
-        } catch (err) {
+        } 
+        catch (err) 
+        {
             alert("Error opening file");
         }
     },
 
-    cancelOpen: function() {
+    cancelOpen() 
+    {
         this.window.close(null);
     },
 
-    showOpenDialog: function(callback, message) 
+    showOpenDialog(callback, message) 
     {
         fetch('/files', {method: 'GET', headers: {"Session-Id": controller.session_id, "Client-Id": controller.client_id}})
         .then(response => {
@@ -375,30 +275,30 @@ let dialog = {
             alert("ould not get file list from server.");
             console.log("Could not get file list from server.");
         })
-
-
-
-
     },
 
-    getDialogType: function() 
+    getDialogType() 
     {
         const sys = document.getElementById("open_dialog_system_items");
         return sys.style.display === 'block' ? 'system' : 'user';
     },
 
-    setupDialog: function(callback) {
+    setupDialog(callback) 
+    {
         this.callback = callback;
         this.window = document.getElementById('open_dialog');
     },
 
-    populateFileList: function(file_list) {
+    populateFileList(file_list) 
+    {
         this.populateOptions('system', file_list.system_files);
         this.populateOptions('user', file_list.user_files);
     },
 
-    populateOptions: function(type, files) {
-        if (files) {
+    populateOptions(type, files) 
+    {
+        if (files) 
+        {
             let sel = document.getElementById(`open_dialog_${type}_items`);
             sel.innerHTML = '';  // Clear previous options
             files.forEach(file => {
@@ -410,14 +310,15 @@ let dialog = {
         }
     },
 
-    displayMessage: function(message) {
+    displayMessage(message)
+    {
         if (message) {
             document.getElementById('open_dialog_title').innerText = message;
         }
     },
 
-    showSystemFileList: function() {
-
+    showSystemFileList() 
+    {
         system_file_button
 
         document.getElementById('system_file_button').classList.add("selected");
@@ -427,7 +328,8 @@ let dialog = {
 
     },
 
-    showUserFileList: function() {
+    showUserFileList()
+    {
         document.getElementById('system_file_button').classList.remove("selected");
         document.getElementById('user_file_button').classList.add("selected");
         document.getElementById('open_dialog_system_items').style.display='none';
@@ -435,8 +337,8 @@ let dialog = {
     }
 };
 
-
-let network = {
+const network = 
+{
     network: null,
     classes: null,
     classinfo: {},
@@ -482,18 +384,31 @@ let network = {
             "source": source,
             "target": target,
             delay: "1"
-
-            /*
-            "source_range":"",
-            "target_range": "",
-            
-            */
         };
         let group = network.dict[path];
-        if(group.connections == null) // FIXME: SHOULD NOT BE NECESSARY
-        group.connections = [];
+        if(group.connections == null)
+            group.connections = [];
         group.connections.push(connection);
         network.dict[path+"."+source+"*"+path+"."+target]=connection;
+    },
+
+    inputOutputExist(name)
+    {
+        
+    },
+
+    pruneConnections()
+    {
+        for(let c of this.dict)
+            if(c.str.includes('*'))
+            {
+                const s_t = c.split('*');
+                const source = s_t[0];
+                const target = s_t[1];
+                if(source in network.dict && target in network.dict)
+                    continue;
+                // DELETE CONNECTION HERE ********
+            }
     },
 
     changeModuleClass(module, new_class)
@@ -508,7 +423,7 @@ let network = {
         new_module._y = old_module._y;
         // TODO: Check that all properties are in the class
         network.dict[module] = new_module;
-        // Update existing connections if possible
+        // FIXME: Update existing connections if possible
     },
 
 
@@ -526,34 +441,28 @@ let network = {
             'height': old_widget.height
         };
         replaceProperties(network.dict[widget], new_widget);
-        //network.dict[widget] = new_widget;
     },
 
 
     renameGroupOrModule(group, old_name, new_name)
     {
-        network.dict[new_name] = network.dict[old_name]; // inspector.item; // FIME: Should also change item here and not in inspector
+        network.dict[new_name] = network.dict[old_name];
         delete network.dict[old_name];
 
         // Update connections to and from this group or module
-
         let parent_path = parentPath(old_name);
         let parent_group = network.dict[group];
         let connection_parent = "";
         for(let c of parent_group.connections || [])
         {
             // Update if source (without output) == old_name
-
             connection_parent = parentPath(c.source);
             if(connection_parent == nameInPath(old_name))
             {
                 let p = c.source.split('.');
                 c.source = nameInPath(new_name)+'.'+p[1];
             }
-
             // Update of target == this
-
-
             connection_parent = parentPath(c.target);
             if(connection_parent == nameInPath(old_name))
             {
@@ -602,8 +511,8 @@ let network = {
             {
                 c.source = changeNameInPath(c.source, inspector.item.name);
             }
-            network.rebuildDict();
-            nav.populate();
+        network.rebuildDict();
+        nav.populate();
     },
 
     debug_json()
@@ -623,7 +532,8 @@ let network = {
     }
 }
 
-const webui_widgets = {
+const webui_widgets =
+{
     constructors: {},
     add: function(element_name, class_object) {
         customElements.define(element_name, class_object);
@@ -631,7 +541,8 @@ const webui_widgets = {
     }
 };
 
-let controller = {
+let controller = 
+{
     run_mode: 'pause',
     commandQueue: [['update', "",{}]],
     tick: 0,
@@ -673,36 +584,36 @@ let controller = {
         {
             const jsonString = JSON.stringify(network.network,null,2);
     
-        fetch("save", {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Session-Id': controller.session_id,
-                'Client-Id': controller.client_id
-            },
-            body: jsonString
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok ' + response.statusText);
-            }
-            return response.json(); // Assuming the server responds with JSON
-        })
-        .then(data => {
-            // SUCCESS
-            main.setViewMode(); // Pressing edit mode again will taint the network
-            network.tainted = false;    // Only place to prevent saving again
-            //alert(data);
-            //console.log('Success:', data);
-            // Now request network!
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("Save failed");
-        });
+            fetch("save", {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Session-Id': controller.session_id,
+                    'Client-Id': controller.client_id
+                },
+                body: jsonString
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json(); // Assuming the server responds with JSON
+            })
+            .then(data => {
+                // SUCCESS
+                main.setViewMode(); // Pressing edit mode again will taint the network
+                network.tainted = false;    // Only place to prevent saving again
+                //alert(data);
+                //console.log('Success:', data);
+                // Now request network!
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Save failed");
+            });
     },
     
-    get: function (url, callback)
+    get (url, callback)
     {
         controller.send_stamp = Date.now();
         var last_request = url;
@@ -727,48 +638,47 @@ let controller = {
         }
     },
 
-    init: function ()
+    init()
     {
-        //controller.getFiles();
         controller.getClasses();
         controller.getClassInfo();
         controller.requestUpdate();
         controller.reconnect_timer = setInterval(controller.reconnect, controller.reconnect_interval);
     },
     
-    queueCommand: function (command, path="", dictionary={}) {
+    queueCommand(command, path="", dictionary={}) {
         controller.commandQueue.push([command, path, dictionary]);
     },
 
-    new: function () {
+    new() 
+    {
         controller.queueCommand('new');
     },
 
-    openCallback: function(filename, where)
+    openCallback(filename, where)
     {
         controller.get("open?where="+where+"&file="+filename, controller.update);
     },
 
-    open: function () {
+    open() 
+    {
 
         dialog.showOpenDialog(controller.openCallback, "Select file to open");
     },
 
-    save: function () {
-        //controller.get("save", controller.update);
+    save() 
+    {
     if(network.network.filename=="")
-            controller.saveas();
+        controller.saveas();
     else
         controller.saveNetwork();
     },
 
-    saveas: function() 
+    saveas() 
     {
         const filename = prompt("Save as:");
         if (filename !== null)
         {
-            //console.log("User input:", userInput);
-            // FIXME: check name validity *************** blanks and .ikg **********
             network.network.filename = filename;
             controller.save();
         } 
@@ -778,17 +688,17 @@ let controller = {
         }
     },
 
-    quit: function () {
+    quit() {
         controller.run_mode = 'quit';
         controller.get("quit", controller.update);
      },
 
-    stop: function () {
+    stop() {
         controller.run_mode = 'stop';
         controller.get("stop", controller.update);
      },
     
-    pause: function () // Save and at set at step 0 if not running
+    pause() // Save and at set at step 0 if not running
     {
         if(network.tainted)
             {
@@ -803,7 +713,7 @@ let controller = {
         controller.queueCommand('pause');
     },
     
-    step: function ()
+    step()
     {
         if(network.tainted)
         {
@@ -819,7 +729,7 @@ let controller = {
         controller.queueCommand('step');
     },
     
-    play: function ()
+    play()
     {
         if(network.tainted)
         {
@@ -834,7 +744,7 @@ let controller = {
         controller.queueCommand('play');
     },
     
-    realtime: function ()// ********************* HERE
+    realtime()// ********************* HERE
     {
         if(network.tainted)
             {
@@ -849,20 +759,7 @@ let controller = {
             main.setViewMode(); // FIXME: Probably not necessary
         controller.queueCommand('realtime');
     },
-/*
-    start: function () {// ********************* HERE - WHAT IS THIS
-        if(network.network.filename=="")
-        {
-            controller.saveas();
-            return;
-        }
-        else
-            controller.save();
 
-
-        controller.play();  // FIXME: possibly start selected mode play/fast-forward/realtime
-    },
-*/
     clear_wait()
     {
         controller.load_count = 0;
@@ -997,17 +894,7 @@ let controller = {
             nav.populate();
             let top = network.network.name;
             selector.selectItems([], top);
-            //controller.views = {};
-            //controller.buildViewDictionary(response, "");
-            
             let v = getCookie('current_view');
-
-            /*
-            if(Object.keys(controller.views).includes(v))
-                controller.selectView(v);
-            else
-                controller.selectView(Object.keys(controller.views)[0]);
-            */
        }
 
         // NEW SESSION
@@ -1073,7 +960,7 @@ let controller = {
             catch(err)
             {}
 
-        group_path = selector.selected_background; // interaction.currentViewName.split('#')[0].split('/').toSpliced(0,1).join('.');
+        group_path = selector.selected_background;
         data_string = ""; // should be added to names to support multiple clients
         let sep = "";
         for(s of data_set)
@@ -1108,7 +995,7 @@ let controller = {
             if(url_params != "")
                 s += "?" + url_params;
 
-            controller.get(s, controller.update); // FIXME: ADD id in header; "?id="+controller.client_id+
+            controller.get(s, controller.update);
         }
 
         controller.queueCommand('update');
@@ -1148,7 +1035,8 @@ let controller = {
         })
     },
 
-    getFiles() { // not called
+    getFiles() // not called
+    { 
         fetch('/files', {method: 'GET', headers: {"Session-Id": controller.session_id, "Client-Id": controller.client_id}})
         .then(response => {
             if (!response.ok) {
@@ -1163,7 +1051,6 @@ let controller = {
             console.log("Could not get file list from server.");
         })
     },
-
 
     updateWidgets(data)
     {
@@ -1229,8 +1116,8 @@ const breadcrumbs =
  *
  */
 
-const nav = {
-
+const nav =
+{
     init() 
     {
         nav.navigator = document.getElementById('navigator');
@@ -1244,6 +1131,7 @@ const nav = {
         else 
             nav.navigator.style.display = 'none';
     },
+
     toggleGroup(e)
     {
         if(e.target.classList.contains("group-open"))
@@ -1253,6 +1141,7 @@ const nav = {
 
         e.stopPropagation();
     },
+
     openGroup(item)
     {
         const g = nav.navigator.querySelector("[data-name='"+item+"']");
@@ -1265,14 +1154,16 @@ const nav = {
             g = g.parentElement;
         }
     },
+
     selectItem(item)
     {
         nav.traverseAndSelect(nav.navigator, item);
         nav.traverseAndOpen(nav.navigator, item);
-    },
+    },  
+
     selectModule(evt)
     {
-    
+        // FIXME: Check if ever called
     },
     navClick(e)
     {
@@ -1281,7 +1172,8 @@ const nav = {
         e.stopPropagation();
     },
 
-    buildList(group, name) {
+    buildList(group, name) 
+    {
         if (isEmpty(group)) return "";
     
         let fullName = name ? `${name}.${group.name}` : group.name;
@@ -1297,11 +1189,11 @@ const nav = {
             s +=  "</li>";
             return s;
          }
-      },
+    },
 
-      traverseAndSelect(element, data_name)
-      {
-        if (!element) 
+    traverseAndSelect(element, data_name)
+    {
+        if(!element) 
             return;
         if(element.dataset.name == data_name)
             element.classList.add("selected");
@@ -1322,7 +1214,8 @@ const nav = {
     }
 }
 
-const inspector = {
+const inspector = 
+{
     subview: {},
     current_t_body: null,
     component: null,
@@ -1432,12 +1325,8 @@ const inspector = {
 
     /* type, name, control */
 
-    addDataRows: function (item, template, notify=null) // TODO: Add exclude list - attributes already added or added afterward
+    addDataRows(item, template, notify=null)
     {
-
-        //let widget = component.widget;
-        //let parameters = widget.parameters;
-
         inspector.item = item;
         inspector.template = template;
         inspector.notify = notify;      // object that will be notified on change
@@ -1499,8 +1388,6 @@ const inspector = {
                             else
                             {
                                 item[p.name] = evt.target.innerText.replace(String.fromCharCode(10), "").replace(String.fromCharCode(13), "");
-                            // if(p.name == "style") widget.updateStyle(widget, evt.target.innerText);     // FIXME ***********
-                                //if(p.name == "frame-style") widget.updateStyle(component, evt.target.innerText);   // FIXME ***********
                             }
                             if(inspector.notify)
                             inspector.notify.parameterChangeNotification(p);
@@ -1674,7 +1561,7 @@ const inspector = {
             case "module":
                 inspector.addHeader("MODULE");
                 if (editMode) {
-                    inspector.addDataRows(item, commonDataRow);
+                    inspector.addDataRows(item, commonDataRow, inspector);
                     inspector.addMenu("class", item.class, network.classes).addEventListener('change', function () {
                         network.changeModuleClass(selector.selected_foreground[0], this.value);
                         selector.selectItems(selector.selected_foreground);
@@ -1683,7 +1570,7 @@ const inspector = {
                     for (let key in template) {
                         template[key].control = "textedit";
                     }
-                    inspector.addDataRows(item, template);
+                    inspector.addDataRows(item, template, inspector);
                 } else {
                     inspector.addAttributeValue("name", item.name);
                     inspector.addAttributeValue("class", item.class);
@@ -1693,7 +1580,7 @@ const inspector = {
             case "group":
                 inspector.addHeader("GROUP");
                 if (editMode) {
-                    inspector.addDataRows(item, commonDataRow);
+                    inspector.addDataRows(item, commonDataRow, inspector);
                 } else {
                     inspector.addAttributeValue("name", item.name);
                 }
@@ -1702,7 +1589,7 @@ const inspector = {
             case "input":
                 inspector.addHeader("INPUT");
                 if (editMode) {
-                    inspector.addDataRows(item, commonDataRow);
+                    inspector.addDataRows(item, commonDataRow, inspector);
                 } else {
                     inspector.addAttributeValue("name", item.name);
                 }
@@ -1711,7 +1598,7 @@ const inspector = {
             case "output":
                 inspector.addHeader("OUTPUT");
                 if (editMode) {
-                    inspector.addDataRows(item, commonDataRow);
+                    inspector.addDataRows(item, commonDataRow, inspector);
                 } else {
                     inspector.addAttributeValue("name", item.name);
                 }
@@ -1738,111 +1625,6 @@ const inspector = {
                 break;
         }
     },
-
-    
-    /*
-    showSingleSelection(c)
-    {
-        let item = network.dict[c];
-        inspector.hideSubviews();
-        inspector.setTable(inspector.subview.table);
-        inspector.subview.table.style.display = 'block';
-
-        //let edit_mode = main.grid.style.display == 'block'; // FIXME: use main edit mode
-        if(item == undefined)
-        {
-            inspector.addHeader("Internal Error");
-        }
-        else if(item._tag == undefined)
-        {
-            inspector.addHeader("Unknown Component");
-            inspector.addAttributeValue("name", item.name);
-            inspector.addDataRows(item, inspector.createTemplate(item));
-        }
-        else if(item._tag=="module")
-        {
-            inspector.addHeader("MODULE");
-            if(main.edit_mode)
-            {
-                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}]); // , this
-                inspector.addMenu("class", item.class, network.classes).addEventListener('change', function ()  
-                { 
-                    network.changeModuleClass(selector.selected_foreground[0], this.value); 
-                    selector.selectItems(selector.selected_foreground);
-                });
-                let template = item.parameters || [];
-                Object.keys(template).forEach(key => {
-                    template[key].control = "textedit";
-                  });
-
-                inspector.addDataRows(item, template, this);
-            }
-            else
-            {
-                inspector.addAttributeValue("name", item.name);
-                inspector.addAttributeValue("class", item.class);
-            }
-        }
-
-        else if(item._tag=="group")
-        {
-            inspector.addHeader("GROUP");
-            if(main.edit_mode)
-            {
-                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
-            }
-            else
-            {
-                inspector.addAttributeValue("name", item.name);
-            }
-        }
-
-        else if(item._tag=="input")
-        {
-            inspector.addHeader("INPUT");
-            if(main.edit_mode)
-                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this);
-            else
-                inspector.addAttributeValue("name", item.name); 
-        }
-
-        else if(item._tag=="output")
-        {
-            inspector.addHeader("OUTPUT");
-
-            if(main.edit_mode)
-            {
-                inspector.addDataRows(item, [{'name':'name', 'control':'textedit', 'type':'source'}], this); //  {'name':'size', 'control':'textedit', 'type':'source'}
-            }
-            else
-            {
-                inspector.addAttributeValue("name", item.name);
-                //inspector.addAttributeValue("size", item.size);
-            }
-        }
-        else if(item._tag=="widget")
-        {
-            let widget_container = document.getElementById(selector.selected_background+'.'+item.name);
-
-            inspector.addHeader("WIDGET");
-            if(main.edit_mode)
-                {
-                inspector.addMenu("class", item.class, widget_classes).addEventListener('change', function ()  
-                { 
-                        network.changeWidgetClass(selector.selected_foreground[0], this.value); 
-                        selector.selectItems(selector.selected_foreground);
-                    });
-                    let template = widget_container.widget.parameter_template;
-                    inspector.addDataRows(item, template, widget_container.widget);
-                }
-                else
-                {
-                    inspector.addAttributeValue("name", item.name);
-                }
-        }
-    },
-*/
-
 
     showConnection(connection)
     {
@@ -1898,7 +1680,6 @@ const log =
 {
     init()
     {
-
         log.view = document.querySelector('footer');
     },
 
@@ -1922,7 +1703,6 @@ const log =
  * Selector     -       select in 'navigator', 'breadcrums', 'inspector' and 'main'
  * 
  */
-
 
 const selector =
 {
@@ -2201,7 +1981,6 @@ const main =
             'width': 200,
             'height': 200
         };
-
         const full_name = selector.selected_background+'.'+name;
 
         network.dict[selector.selected_background].widgets.push(w);
@@ -2215,84 +1994,6 @@ const main =
             main.new_position_x -= 350;
             main.new_position_y = 100;   
         }
-
-
-
-        return; // The rest should be moved to view building
-
-        let newObject = document.createElement("div");
-        newObject.setAttribute("class", "frame visible");
-
-        let newTitle = document.createElement("div");
-        newTitle.setAttribute("class", "title");
-        newTitle.innerHTML = w.name;
-        newObject.appendChild(newTitle);
-
-        let index = main.view.querySelectorAll(".widget").length;
-        main.view.appendChild(newObject);
-        newObject.addEventListener('mousedown', main.startDragComponents, false);
-
-        let constr = webui_widgets.constructors["webui-widget-"+w['class']];
-        if(!constr)
-        {
-            console.log("Internal Error: No constructor found for "+"webui-widget-"+w['class']);
-            newObject.widget = new webui_widgets.constructors['webui-widget-text'];
-            newObject.widget.element = newObject; // FIXME: why not also below??
-            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
-            newObject.widget.parameters['text'] = "\""+"webui-widget-"+w['class']+"\" not found. Is it included in index.html?";
-            newObject.widget.parameters['_index_'] = index;
-        }
-        else
-        {
-            newObject.widget = new webui_widgets.constructors["webui-widget-"+w['class']];
-            //newObject.widget.groupName = this.currentViewName.split('#')[0].split('/').slice(1).join('.');   // get group name - temporary ugly solution
-            // Add default parameters from CSS - possibly...
-            for(let k in newObject.widget.parameters)
-            if(w[k] === undefined)
-            {
-                w[k] = newObject.widget.parameters[k];
-            }
-            else
-            {
-                let tp = newObject.widget.param_types[k]
-                w[k] = setType(w[k], tp);
-            }
-
-            newObject.widget.parameters = w;
-            newObject.widget.parameters['_index_'] = index;
-        }
-
-        newObject.widget.setAttribute('class', 'widget');
-        newObject.appendChild(newObject.widget);    // must append before next section
-
-        // Section below should not exists - probably...
-
-        newObject.style.top = w._y+"px";
-        newObject.style.left = w._x+"px";
-        newObject.style.width = (w.width || 200) +"px";
-        newObject.style.height = (w.height || 200) +"px";
-
-        newObject.handle = document.createElement("div");
-        newObject.handle.setAttribute("class", "handle");
-        newObject.handle.onmousedown = main.startResize;
-        newObject.appendChild(newObject.handle);
-
-        newObject.setAttribute("id", full_name);
-        
-        network.dict[full_name]=w;
-
-        selector.selectItems([full_name]);
-
-        try
-        {
-            newObject.widget.updateAll();
-        }
-        catch(err)
-        {
-            console.log(err);
-        }
-        
-        return newObject;
     },
 
     deleteGroup(g)
@@ -2338,30 +2039,28 @@ const main =
             this.deleteConnection(selector.selected_connection);
             selector.selectItems([], null);
         }
-
         else
-        for(let c of selector.selected_foreground)
-        {
-            switch(network.dict[c]._tag)
+            for(let c of selector.selected_foreground)
             {
-                case 'module':
-                    this.deleteModule(c);
-                    break;
-                case 'group':
-                    this.deleteGroup(c);
-                    break;
-                case 'input':
-                    this.deleteInput(c);
-                    break; 
-                case 'output':
-                    this.deleteOutput(c);
-                    break; 
-                case 'widget':
-                    this.deleteWidget(c);
-                    break; 
+                switch(network.dict[c]._tag)
+                {
+                    case 'module':
+                        this.deleteModule(c);
+                        break;
+                    case 'group':
+                        this.deleteGroup(c);
+                        break;
+                    case 'input':
+                        this.deleteInput(c);
+                        break; 
+                    case 'output':
+                        this.deleteOutput(c);
+                        break; 
+                    case 'widget':
+                        this.deleteWidget(c);
+                        break; 
+                }
             }
-        }
-
         network.rebuildDict();
     },
 
@@ -2420,7 +2119,6 @@ const main =
         main.addConnections();
     },
 
-
     releaseComponents(evt)
     {
         const main_view = main.view;
@@ -2469,7 +2167,7 @@ const main =
         return false;
     },
 
-    resizeComponent: function (evt) {
+    resizeComponent(evt) {
         const dX = evt.clientX - main.initialMouseX;
         const dY = evt.clientY - main.initialMouseY;
         main.changeComponentSize(dX,dY);
@@ -2507,7 +2205,6 @@ const main =
 
         return false;
     },
-
 
     startTrackConnection(evt)
     {
@@ -2550,68 +2247,8 @@ const main =
         main.addConnections();
     },
 
-
-/*
-startTrackConnection(evt) {
-    if (!main.edit_mode) {
-        return;
-    }
-
-    this.style.backgroundColor = "orange";
-    evt.stopPropagation();
-    
-    const id = this.id;
-    const e = document.getElementById(id);
-    const viewRect = main.view.getBoundingClientRect();
-    const elementRect = e.getBoundingClientRect();
-    const x = elementRect.left - viewRect.left + 4.5;
-    const y = elementRect.top - viewRect.top + 4.5;
-
-    main.tracked_connection = {
-        x1: x,
-        y1: y,
-        x2: x,
-        y2: y,
-        source: id.split(':')[0],
-        target: null,
-        source_element: e
-    };
-
-    main.view.addEventListener('mousemove', main.moveTrackedConnection, true);
-    main.view.addEventListener('mouseup', main.releaseTrackedConnection, true);
-},
-*/
-    /*
-    releaseTrackedConnection(evt)
+    releaseTrackedConnection(evt) 
     {
-        evt.stopPropagation();
-        if(!main.tracked_connection)
-            return;
-
-        if(main.tracked_connection.target==null)
-        {
-            main.tracked_connection = null;
-        }
-        else  if(main.tracked_connection.target in network.dict && network.dict[main.tracked_connection.target]._tag=='widget') // set source of widget
-        {
-            network.dict[main.tracked_connection.target].source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".");
-            let target = main.tracked_connection.target;
-            main.tracked_connection = null;
-            selector.selectItems([target], null);
-
-        }
-        else // make new connection
-        {
-            let source = removeStringFromStart(main.tracked_connection.source.split(':')[0], selector.selected_background+".")
-            let target = removeStringFromStart(main.tracked_connection.target.split(':')[0], selector.selected_background+".")
-            network.newConnection(selector.selected_background, source, target);
-            main.tracked_connection = null;
-            selector.selectConnection(selector.selected_background+"."+source+"*"+selector.selected_background+"."+target);
-        }
-    },
-    */
-
-    releaseTrackedConnection(evt) {
         evt.stopPropagation();
     
         if (!main.tracked_connection)
@@ -2665,22 +2302,22 @@ startTrackConnection(evt) {
     },
 
     addGroup(g,path)
-    {
+        {
         const fullName = `${path}.${g.name}`;
         let s = "";
         s += `<div class='gi module group' style='top:${g._y}px;left:${g._x}px;'  id='${fullName}' data-name='${fullName}'>`;
         s += `<table>`;
         s += `<tr><td class='title' colspan='3'>${g.name}</td></tr>`;
 
-       for(let i of g.inputs || [])
-           s += `<tr><td class='input'><div class='i_spot' id='${path}.${g.name}.${i.name}:in' onclick='alert(this.id)'></div></td><td>${i.name}</td><td></td></tr>`;
- 
-       for(let o of g.outputs || [])
-           s += `<tr><td></td><td>${o.name}</td><td class='output'><div  class='o_spot' id='${path}.${g.name}.${o.name}:out'></div></td></tr>`;
+        for(let i of g.inputs || [])
+            s += `<tr><td class='input'><div class='i_spot' id='${path}.${g.name}.${i.name}:in' onclick='alert(this.id)'></div></td><td>${i.name}</td><td></td></tr>`;
+
+        for(let o of g.outputs || [])
+            s += `<tr><td></td><td>${o.name}</td><td class='output'><div  class='o_spot' id='${path}.${g.name}.${o.name}:out'></div></td></tr>`;
 
         s += `</table>`;
         s += `</div>`;
-       main.view.innerHTML += s;
+        main.view.innerHTML += s;
    },
 
     addInput(i,path)
@@ -2713,82 +2350,6 @@ startTrackConnection(evt) {
          s += `</div>`;
         main.view.innerHTML += s;
     },
-
-
-
-
-/*
-    addWidget(w,path)
-    {
-        let newObject = document.createElement("div");
-        newObject.setAttribute("class", "frame visible gi widget");
-
-        let newTitle = document.createElement("div");
-        newTitle.setAttribute("class", "title");
-        newTitle.innerHTML = w.name;
-        newObject.appendChild(newTitle);
-
-        let index = main.view.querySelectorAll(".widget").length;
-        main.view.appendChild(newObject);
-        newObject.addEventListener('mousedown', main.startDragComponents, false);
-
-        let constr = webui_widgets.constructors["webui-widget-"+w['class']];
-        if(!constr)
-        {
-            console.log("Internal Error: No constructor found for "+"webui-widget-"+w['class']);
-            newObject.widget = new webui_widgets.constructors['webui-widget-text'];
-            newObject.widget.element = newObject;
-            newObject.widget.parameters['text'] = "\""+"webui-widget-"+w['class']+"\" not found. Is it included in index.html?";
-            newObject.widget.parameters['_index_'] = index;
-        }
-        else
-        {
-            newObject.widget = new webui_widgets.constructors["webui-widget-"+w['class']];
-            for(let k in newObject.widget.parameters)
-            if(w[k] === undefined)
-            {
-                w[k] = newObject.widget.parameters[k];
-            }
-            else
-            {
-                let tp = newObject.widget.param_types[k]
-                w[k] = setType(w[k], tp);
-            }
-
-            newObject.widget.parameters = w;
-            newObject.widget.parameters['_index_'] = index;
-        }
-
-        newObject.widget.setAttribute('class', 'widget');
-        newObject.appendChild(newObject.widget);    // must append before next section
-
-        // Section below should not exists - probably...
-
-        newObject.style.top = w._y+"px";
-        newObject.style.left = w._x+"px";
-        newObject.style.width = (w.width || 200) +"px";
-        newObject.style.height = (w.height || 200) +"px";
-
-        newObject.handle = document.createElement("div");
-        newObject.handle.setAttribute("class", "handle");
-        newObject.handle.onmousedown = main.startResize;    // SET IN ADD COMPONENTS
-        newObject.appendChild(newObject.handle);
-
-        let full_name = `${path}.${w.name}`;
-        newObject.setAttribute("id", full_name);
-        newObject.setAttribute("data-name", full_name);
-
-        try
-        {
-            newObject.widget.updateAll();
-        }
-        catch(err)
-        {
-            console.log(err);
-        } 
-    },
-    */
-
 
     addWidget(w, path) {
         const newObject = document.createElement("div");
@@ -2852,7 +2413,6 @@ startTrackConnection(evt) {
             console.log(err);
         }
     },
-
 
     addConnection(c,path)
     {
@@ -2952,7 +2512,6 @@ startTrackConnection(evt) {
          for(let e of main.view.querySelectorAll(".gi"))
         {
             e.addEventListener('mousedown', main.startDragComponents, false);
-
             if(e.classList.contains("group"))
                 e.ondblclick = function(evt) {  
                 selector.selectItems([], this.dataset.name); // Jump into group
@@ -2969,7 +2528,6 @@ startTrackConnection(evt) {
             else
                 e.classList.remove("selected");
         }
-
         for(let o of main.view.querySelectorAll(".o_spot"))
             o.addEventListener('mousedown', main.startTrackConnection, false);
 
@@ -2985,7 +2543,6 @@ startTrackConnection(evt) {
             i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
         }
     },
-
 
     cancelEditMode()
     {
@@ -3028,7 +2585,6 @@ startTrackConnection(evt) {
         }
     },
 
-
     keydown(evt)
     {
         if(evt.key== "Escape")
@@ -3057,26 +2613,21 @@ startTrackConnection(evt) {
             let comps = [...g.groups||[], ...g.modules||[], ...g.inputs||[], ...g.outputs||[], ...g.widgets||[]];
             selector.selectItems(comps.map((x) => bg+'.'+x.name), null, false, true);
         }
-
         else if (evt.key=="c")
         {
             evt.preventDefault();
             alert("Copy selected items. (NOT IMPLEMENTED YET)");
         }
-
         else if (evt.key=="x")
         {
             evt.preventDefault();
             alert("Cut selected items. (NOT IMPLEMENTED YET)");
         }
-
-
         else if (evt.key=="v")
         {
             evt.preventDefault();
             alert("Paste copied items. (NOT IMPLEMENTED YET)");
         }
-
         else if (evt.key=="d")
         {
             evt.preventDefault();
@@ -3096,9 +2647,8 @@ startTrackConnection(evt) {
     }
 }
 
-
-const brainstudio = {
-
+const brainstudio = 
+{
     init()
     {
         log.init();
