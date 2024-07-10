@@ -1024,7 +1024,7 @@ class EpiServos : public Module
         }
 
         // D
-        param_default_2Byte = 450;
+        param_default_2Byte = 1000;
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_D, param_default_2Byte, &dxl_error)){
                 std::cout << "D (PID) not set for head servo ID: " << i << std::endl;
