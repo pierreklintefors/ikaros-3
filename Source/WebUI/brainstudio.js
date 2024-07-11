@@ -2362,7 +2362,7 @@ const main =
     
         const index = main.view.querySelectorAll(".widget").length;
         main.view.appendChild(newObject);
-        newObject.addEventListener('mousedown', main.startDragComponents, false);
+        //newObject.addEventListener('mousedown', main.startDragComponents, false);
     
         const widgetClass = `webui-widget-${w.class}`;
         let constr = webui_widgets.constructors[widgetClass];
@@ -2507,8 +2507,76 @@ const main =
 
         main.addConnections();
 
-        // Add object handlers
+        // Add object handlers for all visible elements in main view depending on mode and tyep
 
+        if(main.edit_mode)
+        {
+            for (let e of main.view.querySelectorAll(".gi")) 
+            {
+                // Main drag function
+                e.addEventListener('mousedown', main.startDragComponents, false);
+            
+                // Double click behaviors
+                if (e.classList.contains("group")) 
+                    e.ondblclick = function (evt) { selector.selectItems([], this.dataset.name); } // Jump into group
+                else 
+                    e.ondblclick = function (evt) { selector.selectItems([this.dataset.name]); inspector.toggleComponent(); } // Select item and toggle inspector
+     
+                // Set selection class if selected
+                if(selectionList.includes(e.dataset.name))
+                    e.classList.add("selected")
+                else
+                    e.classList.remove("selected"); // FIXME: is this ever necessary?
+            }
+
+            // Add handlerer to outputs
+            for(let o of main.view.querySelectorAll(".o_spot"))
+                o.addEventListener('mousedown', main.startTrackConnection, false);
+    
+            // Add handlers to inputs
+
+            for(let i of main.view.querySelectorAll(".i_spot"))
+            {
+                i.addEventListener('mouseover', main.setConnectectionTarget, true);
+                i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
+            }
+    
+            // Add handlers to widgets
+
+            for(let i of main.view.querySelectorAll(".widget"))
+            {
+                i.addEventListener('mouseover', main.setConnectectionTarget, true);
+                i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
+            }
+        }
+        else // View mode
+        {
+            for (let e of main.view.querySelectorAll(".gi"))
+                if(!e.classList.contains("widget"))
+                {
+                    // Main drag function
+                    e.addEventListener('mousedown', main.startDragComponents, false);   // FIXME: Change to select only hete
+                
+                    // Double click behaviors
+                    if (e.classList.contains("group")) 
+                        e.ondblclick = function (evt) { selector.selectItems([], this.dataset.name); } // Jump into group
+                    else 
+                        e.ondblclick = function (evt) { selector.selectItems([this.dataset.name]); inspector.toggleComponent(); } // Select item and toggle inspector
+        
+                    // Set selection class if selected
+                    if(selectionList.includes(e.dataset.name))
+                        e.classList.add("selected")
+                    else
+                        e.classList.remove("selected"); // FIXME: is this ever necessary?
+                }
+
+            // Add handlerer to outputs - pssoibly some form of inspection function hete
+                /*
+            for(let o of main.view.querySelectorAll(".o_spot"))
+                o.addEventListener('mousedown', main.startTrackConnection, false);
+         */
+        }
+/*
          for(let e of main.view.querySelectorAll(".gi"))
         {
             e.addEventListener('mousedown', main.startDragComponents, false);
@@ -2542,6 +2610,7 @@ const main =
             i.addEventListener('mouseover', main.setConnectectionTarget, true);
             i.addEventListener('mouseleave', main.resetConnectectionTarget, true);
         }
+        */
     },
 
     cancelEditMode()
