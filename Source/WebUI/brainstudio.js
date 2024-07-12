@@ -429,8 +429,9 @@ const network =
 
     changeWidgetClass(widget, new_class)
     {
-        let old_widget = deepCopy(network.dict[widget]);
-        let new_widget  = {
+        const old_widget = deepCopy(network.dict[widget]);
+        let new_widget  = 
+        {
             "_tag": "widget",
             "name": old_widget.name,
             "title": old_widget.title,
@@ -438,8 +439,15 @@ const network =
             '_x':old_widget._x,
             '_y':old_widget._y,
             'width': old_widget.width,
-            'height': old_widget.height
+            'height': old_widget.height,
+
+            source: old_widget.source || "",
+            min: old_widget.widget.min || "",
+            max: old_widget.max || "",
+            select: old_widget.select || "",
         };
+
+
         replaceProperties(network.dict[widget], new_widget);
     },
 
@@ -2181,6 +2189,8 @@ const main =
                 evt.stopPropagation();
                 return;
         }
+
+       // this.style.pointerEvents = "none";
 
         main.initialMouseX = evt.clientX;
         main.initialMouseY = evt.clientY;
