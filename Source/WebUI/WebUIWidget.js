@@ -461,7 +461,7 @@ class WebUIWidget extends HTMLElement
     {
         //alert("parameterChangeNotification");
         this.updateAll();
-        interaction.setWidgetParameter(p);
+        // interaction.setWidgetParameter(p); // FIXME: is this needed?
     }
 
     send_control_change(parameter, value=0, index_x=0, index_y=0)

@@ -281,114 +281,6 @@ namespace ikaros
         }
     }
 
-/*
-    static void 
-    copy_from_json(dictionary & d, const std::unordered_map<std::string, JSON>& json);
-    
-    static void 
-    copy_from_json(list & l, const std::vector<JSON> & json)
-    {
-        for (auto& value : json)
-        {
-            if(value.isString())
-            {
-                //std::cout << value.asString() << std::endl;
-                l.push_back(value.asString());
-            }
-            else if(value.isNull())
-            {
-                //std::cout << "NULL" << std::endl;
-                l.push_back(null());
-            }
-            else if(value.isBool())
-            {
-                //std::cout << "BOOL" << std::endl;
-                if(value.asBool())
-                    l.push_back("true");
-                else
-                    l.push_back("false");
-            }
-            else if(value.isNumber())
-            {
-                //std::cout << "NUMBER" << std::endl;
-                l.push_back(std::to_string(value.asNumber()));
-            }
-            else if(value.isArray())
-            {
-                //std::cout << "ARRAY" << std::endl;
-                list ll;
-                copy_from_json(ll, value.asArray());
-                l.push_back(ll);
-            }
-            else if(value.isObject())
-            {
-                //std::cout << "OBJECT" << std::endl;
-                dictionary dd;
-                copy_from_json(dd, value.asObject());
-                l.push_back(dd);
-            }
-        }
-    }
-    
-    static void 
-    copy_from_json(dictionary & d, const std::unordered_map<std::string, JSON>& json)
-    {
-        for (auto& [key, value] : json)
-        {
-            if(value.isString())
-            {
-                //std::cout << key << ": " << value.asString() << std::endl;
-                d[key] = value.asString();
-            }
-            else if(value.isNull())
-            {
-                //std::cout << key << ": " << "NULL" << std::endl;
-                d[key] = null();
-            }
-            else if(value.isBool())
-            {
-                //std::cout << key << ": " << "BOOL" << std::endl;
-                if(value.asBool())
-                    d[key] ="true";
-                else
-                    d[key] = "false";
-            }
-            else if(value.isNumber())
-            {
-                //std::cout << key << ": " << "NUMBER" << std::endl;
-                d[key] = std::to_string(value.asNumber());
-            }
-            else if(value.isArray())
-            {
-                //std::cout << key << ": " << "ARRAY" << std::endl;
-                list l;
-                copy_from_json(l, value.asArray());
-                d[key] = l;
-            }
-            else if(value.isObject())
-            {
-                //std::cout << key << ": " << "OBJECT" << std::endl;
-                dictionary dd;
-                copy_from_json(dd, value.asObject());
-                d[key] = dd;
-            }
-        }
-    }
-
-*/
-/*
-    void
-    dictionary::parse_json(std::string s)
-    {
-    // JSON json = JSON::parse(s);
-    // std::cout << "Parsed JSON successfully." << std::endl;
-    // copy_from_json(*this, json.asObject());
-
-    (*this) = parse_json(s);
-    }
-*/
-
-
     dictionary dictionary::copy() const
     {
         dictionary new_dict;
@@ -587,30 +479,7 @@ namespace ikaros
             return value(std::get<dictionary>(value_).copy());    
         return value();
     }
-/*
-        void  
-        value::print()
-        {
-            std::cout << "*";
-        }
-*/
 
-
-
-//
-// EXPERIMENTAL JSON PARSING
-//
-
-
-
-// Helper functions for parsing
-/*
-    void skip_whitespace(const std::string& s, size_t& pos)
-    {
-        while (pos < s.length() && std::isspace(s[pos]))
-            ++pos;
-    }
-*/
     std::string parse_string(const std::string& s, size_t& pos)
     {
         if(s[pos] != '"')
