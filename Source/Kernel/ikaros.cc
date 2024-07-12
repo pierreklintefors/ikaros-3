@@ -764,7 +764,13 @@ namespace ikaros
     bool
     Component::Notify(int msg, std::string message)
     {
-        return kernel().Notify(msg, message);
+        int ll = msg_warning;
+        if(info_.contains("log_level"))
+            ll = info_["log_level"];
+
+        if(msg <= ll) 
+             return kernel().Notify(msg, message);
+        return true;
     }
 
 

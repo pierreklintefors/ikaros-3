@@ -182,7 +182,6 @@ public:
 
     bool Notify(int msg, std::string message);
 
-
     void AddInput(dictionary parameters);
     void AddOutput(dictionary parameters);
     void AddParameter(dictionary parameters);
@@ -209,9 +208,8 @@ public:
 
     std::string Evaluate(const std::string & s, bool is_string=false);     // Evaluate an expression in the current context
     bool LookupParameter(parameter & p, const std::string & name);
-    //std::string Lookup(const std::string & name) const;
     
-    int EvaluateIntExpression(std::string & s); // deprecated
+    int EvaluateIntExpression(std::string & s);
 
     std::vector<int> EvaluateSizeList(std::string & s);
     std::vector<int> EvaluateSize(std::string & s);
