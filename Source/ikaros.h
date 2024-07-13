@@ -45,6 +45,7 @@ const int run_mode_restart = 5;     // Kernel is restarting
 
 // Messages to use with Notify
 
+const int    msg_quiet		    =    0;
 const int    msg_exception		=    1;
 const int    msg_end_of_file	=    2;
 const int    msg_terminate		=    3;

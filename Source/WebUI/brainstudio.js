@@ -421,6 +421,7 @@ const network =
         new_module.name = old_module.name;
         new_module._x = old_module._x;
         new_module._y = old_module._y;
+        new_module.log_level = old_module.log_level;
         // TODO: Check that all properties are in the class
         network.dict[module] = new_module;
         // FIXME: Update existing connections if possible
@@ -1574,6 +1575,7 @@ const inspector =
                         network.changeModuleClass(selector.selected_foreground[0], this.value);
                         selector.selectItems(selector.selected_foreground);
                     });
+
                     const template = item.parameters || [];
                     for (let key in template) {
                         template[key].control = "textedit";
@@ -1583,6 +1585,9 @@ const inspector =
                     inspector.addAttributeValue("name", item.name);
                     inspector.addAttributeValue("class", item.class);
                 }
+                const alternatives = ["quiet","exception","end_of_file","terminate","fatal_error","warning","print","debug","trace"];
+                inspector.addMenu("log_level", alternatives[item.log_level], alternatives).addEventListener('change', function () { item.log_level=alternatives.indexOf(this.value) });
+
                 break;
             
             case "group":
@@ -1871,14 +1876,15 @@ const main =
         const name = "Untitled_"+(Object.keys(network.dict).length+1);
         const m =
         {
-            'name':name,
-            'class':"Module",
-            '_tag':"module",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y,
-            'inputs': [],
-            'outputs': [],
-            'parameters':[]
+            name:name,
+            class:"Module",
+            log_level: 5,
+            _tag:"module",
+            _x:main.new_position_x,
+            _y:main.new_position_y,
+            inputs: [],
+            outputs: [],
+            parameters:[]
         };
         const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].modules.push(m);
