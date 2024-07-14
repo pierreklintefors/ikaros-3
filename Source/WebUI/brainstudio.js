@@ -443,7 +443,7 @@ const network =
             'height': old_widget.height,
 
             source: old_widget.source || "",
-            min: old_widget.widget.min || "",
+            min: old_widget.min || "",
             max: old_widget.max || "",
             select: old_widget.select || "",
         };
