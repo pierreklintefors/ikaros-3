@@ -146,6 +146,12 @@ namespace ikaros
         return (*dict_)[s].is_true();
     }
 
+    bool
+    dictionary::is_not_set(std::string s)
+    {
+        return !is_set(s);
+    }
+
     bool 
     dictionary::contains(std::string s)
         {
