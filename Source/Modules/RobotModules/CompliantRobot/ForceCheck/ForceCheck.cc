@@ -25,6 +25,7 @@ class ForceCheck: public Module
    
     bool firstTick = true;
     bool obstacle = false;
+    long obstacle_time =0;
 
     double Tapering(double error, double threshold)
     {
@@ -46,21 +47,18 @@ class ForceCheck: public Module
                 int goal = goal_position_in[i];
                 double error = abs(goal - position);
                 double error_tapered = Tapering(error, error_threshold);
-                std::cout << "error " << error << std::endl;
-                std::cout << "error_tapered" << error_tapered << std::endl;
                 int suggested_current = smooth_factor * current_value + (gain* error * error_tapered);
                 current_output[i] = std::min(suggested_current , limit_value); // Cap at limit_value 
                 
             }
-                         
-            
+                           
              
         }
         
         return current_output;
 }
 
-    //Could also be done by using dynamixel_sdk
+    
     void ObstacleCheck(matrix positions,  matrix current_limits, matrix goal_position_in, matrix goal_position_out )
     {   
         for (int i = 0; i < positions.size(); i++) {
@@ -70,15 +68,23 @@ class ForceCheck: public Module
             float limit_value = current_limit[i];
             if (current_position >0){
 
-                if (abs(goal - current_position) > position_margin && abs(limit_value -current_value) < current_margin)
+                if (!obstacle && abs(goal - current_position) > position_margin && current_value > limit_value*0.8)
                 {   
                     
-                    //std::cout << "Obstacle detected, lowering current for servo " << i+1 << " to " << current_output(i) << std::endl;
+                    obstacle = true;
+                    obstacle_time = std::time(nullptr);
                     goal_position_out[i] = current_position;
-                    //std::cout << "Goal position changed to " << current_position << std::endl;
+                    std::cout << "Goal position changed to " << current_position << std::endl;
+                    
                 }
                 
             }
+            else if(abs(obstacle_time - std::time(nullptr)) > 3)
+            {
+                obstacle = false;
+            }
+
+
         }
     }
 
@@ -115,10 +121,12 @@ class ForceCheck: public Module
             ObstacleCheck(present_position, current_limit, goal_position_in, goal_position_out);
             current_output = SetCurrent(present_current, current_limit, present_position, goal_position_in, gain_constant, error_threshold, smooth_factor);
         }
+
+       
         
-        current_output.print();
        
         firstTick=false;
+        std::cout << "Obstacle time: " << obstacle_time -std::time(nullptr) << std::endl;
             
     }
 };
