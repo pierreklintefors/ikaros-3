@@ -1380,6 +1380,7 @@ const inspector =
                                     inspector.notify.parameterChangeNotification(p);
                                 return;
                             }
+                            /* Allow all types of characters to allow indirection
                             if(p.type == 'int' && "-0123456789".indexOf(evt.key) == -1)
                                 evt.preventDefault();
                             else if(p.type == 'float' && "-0123456789.".indexOf(evt.key) == -1)
@@ -1388,6 +1389,11 @@ const inspector =
                                 evt.preventDefault();
                             else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
                                 evt.preventDefault();
+                            */
+                            if("@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/_.0123456789".indexOf(evt.key) == -1)
+                                evt.preventDefault();
+
+
                         });
                         cell2.addEventListener("blur", function(evt) {
                             if(p.type == 'int')
