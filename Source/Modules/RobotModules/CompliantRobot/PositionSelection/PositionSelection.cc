@@ -13,7 +13,7 @@ class PositionSelection: public Module
 
 
     int difference_margin;
-    bool new_goal;
+    
 
 
 
@@ -30,7 +30,7 @@ class PositionSelection: public Module
 
         
         difference_margin=1;
-        new_goal = false;
+        
 
     }
 
@@ -46,7 +46,7 @@ class PositionSelection: public Module
             
             if(changed)
             {   
-                std::cout << "new goal" << std::endl;
+                
                 position_output.copy(position_input[changed_row]);
             }
             
