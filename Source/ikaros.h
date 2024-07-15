@@ -147,22 +147,17 @@ class Message
 {
     public:
 
-        std::string     type;  // M: msg, W: warning, E: fatal error
-        std::string     msg;
+        int         level_;
+        std::string message_;
 
-        Message(std::string m):
-            msg(m),
-            type("M")
-        {}
-
-        Message(std::string t, std::string m):
-            msg(m),
-            type(t)
+        Message(std::string message, int level=msg_print):
+            message_(message),
+            level_(level)
         {}
 
         std::string json()
         {
-            return "[\""s+type+"\",\""s+msg+"\"]"s;
+            return "[\""+std::to_string(level_)+"\",\""+message_+"\"]";
         }
 };
 
@@ -182,6 +177,13 @@ public:
     virtual ~Component() {};
 
     bool Notify(int msg, std::string message);
+
+    // Shortcut function for mwssages and logging
+    
+    bool Print(std::string message) { return Notify(msg_print, message); }
+    bool Warning(std::string message) { return Notify(msg_warning, message); }
+    bool Debug(std::string message) { return Notify(msg_debug, message); }
+    bool Trace(std::string message) { return Notify(msg_trace, message); }
 
     void AddInput(dictionary parameters);
     void AddOutput(dictionary parameters);

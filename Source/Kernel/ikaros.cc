@@ -720,8 +720,6 @@ namespace ikaros
     }
 
 
-
-
   Component::Component():
     parent_(nullptr),
     info_(kernel().current_component_info),
@@ -1409,7 +1407,7 @@ INSTALL_CLASS(Module)
     void Kernel::PrintLog()
     {
         for(auto & s : log)
-            std::cout << "IKAROS: " << s.type << ": " << s.msg << std::endl;
+            std::cout << "IKAROS: " << s.level_ << ": " << s.message_ << std::endl;
         log.clear();
     }
 
@@ -1493,9 +1491,10 @@ INSTALL_CLASS(Module)
 
         if(classes[classname].module_creator == nullptr)
         {
-            std::cout << "Class \""<< classname << "\" has no installed code. Creating group." << std::endl; // throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
+            if(info.is_not_set("no_code"))
+             std::cout << "Class \""<< classname << "\" has no installed code. Creating group." << std::endl; // throw exception("Class \""+classname+"\" has no installed code. Check that it is included in CMakeLists.txt."); // TODO: Check that this works for classes that are allowed to have no code
             info["_tag"]="module";
-            BuildGroup(info, path);
+            BuildGroup(info, path); // FIXME: This is probably not working correctly
         }
         else
             components[current_component_path] = classes[classname].module_creator();
