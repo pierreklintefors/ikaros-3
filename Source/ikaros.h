@@ -45,6 +45,7 @@ const int run_mode_restart = 5;     // Kernel is restarting
 
 // Messages to use with Notify
 
+const int    msg_quiet		    =    0;
 const int    msg_exception		=    1;
 const int    msg_end_of_file	=    2;
 const int    msg_terminate		=    3;
@@ -146,22 +147,17 @@ class Message
 {
     public:
 
-        std::string     type;  // M: msg, W: warning, E: fatal error
-        std::string     msg;
+        int         level_;
+        std::string message_;
 
-        Message(std::string m):
-            msg(m),
-            type("M")
-        {}
-
-        Message(std::string t, std::string m):
-            msg(m),
-            type(t)
+        Message(std::string message, int level=msg_print):
+            message_(message),
+            level_(level)
         {}
 
         std::string json()
         {
-            return "[\""s+type+"\",\""s+msg+"\"]"s;
+            return "[\""+std::to_string(level_)+"\",\""+message_+"\"]";
         }
 };
 
@@ -182,6 +178,12 @@ public:
 
     bool Notify(int msg, std::string message);
 
+    // Shortcut function for mwssages and logging
+    
+    bool Print(std::string message) { return Notify(msg_print, message); }
+    bool Warning(std::string message) { return Notify(msg_warning, message); }
+    bool Debug(std::string message) { return Notify(msg_debug, message); }
+    bool Trace(std::string message) { return Notify(msg_trace, message); }
 
     void AddInput(dictionary parameters);
     void AddOutput(dictionary parameters);
@@ -209,9 +211,8 @@ public:
 
     std::string Evaluate(const std::string & s, bool is_string=false);     // Evaluate an expression in the current context
     bool LookupParameter(parameter & p, const std::string & name);
-    //std::string Lookup(const std::string & name) const;
     
-    int EvaluateIntExpression(std::string & s); // deprecated
+    int EvaluateIntExpression(std::string & s);
 
     std::vector<int> EvaluateSizeList(std::string & s);
     std::vector<int> EvaluateSize(std::string & s);
@@ -510,4 +511,3 @@ public:
 
 }; // namespace ikaros
 #endif
-
