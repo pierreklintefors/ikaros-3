@@ -421,6 +421,7 @@ const network =
         new_module.name = old_module.name;
         new_module._x = old_module._x;
         new_module._y = old_module._y;
+        new_module.log_level = old_module.log_level;
         // TODO: Check that all properties are in the class
         network.dict[module] = new_module;
         // FIXME: Update existing connections if possible
@@ -429,8 +430,9 @@ const network =
 
     changeWidgetClass(widget, new_class)
     {
-        let old_widget = deepCopy(network.dict[widget]);
-        let new_widget  = {
+        const old_widget = deepCopy(network.dict[widget]);
+        let new_widget  = 
+        {
             "_tag": "widget",
             "name": old_widget.name,
             "title": old_widget.title,
@@ -438,8 +440,15 @@ const network =
             '_x':old_widget._x,
             '_y':old_widget._y,
             'width': old_widget.width,
-            'height': old_widget.height
+            'height': old_widget.height,
+
+            source: old_widget.source || "",
+            min: old_widget.min || "",
+            max: old_widget.max || "",
+            select: old_widget.select || "",
         };
+
+
         replaceProperties(network.dict[widget], new_widget);
     },
 
@@ -1371,6 +1380,7 @@ const inspector =
                                     inspector.notify.parameterChangeNotification(p);
                                 return;
                             }
+                            /* Allow all types of characters to allow indirection
                             if(p.type == 'int' && "-0123456789".indexOf(evt.key) == -1)
                                 evt.preventDefault();
                             else if(p.type == 'float' && "-0123456789.".indexOf(evt.key) == -1)
@@ -1379,6 +1389,11 @@ const inspector =
                                 evt.preventDefault();
                             else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
                                 evt.preventDefault();
+                            */
+                            if("@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/_.0123456789".indexOf(evt.key) == -1)
+                                evt.preventDefault();
+
+
                         });
                         cell2.addEventListener("blur", function(evt) {
                             if(p.type == 'int')
@@ -1566,6 +1581,7 @@ const inspector =
                         network.changeModuleClass(selector.selected_foreground[0], this.value);
                         selector.selectItems(selector.selected_foreground);
                     });
+
                     const template = item.parameters || [];
                     for (let key in template) {
                         template[key].control = "textedit";
@@ -1575,6 +1591,9 @@ const inspector =
                     inspector.addAttributeValue("name", item.name);
                     inspector.addAttributeValue("class", item.class);
                 }
+                const alternatives = ["quiet","exception","end_of_file","terminate","fatal_error","warning","print","debug","trace"];
+                inspector.addMenu("log_level", alternatives[item.log_level], alternatives).addEventListener('change', function () { item.log_level=alternatives.indexOf(this.value) });
+
                 break;
             
             case "group":
@@ -1863,14 +1882,15 @@ const main =
         const name = "Untitled_"+(Object.keys(network.dict).length+1);
         const m =
         {
-            'name':name,
-            'class':"Module",
-            '_tag':"module",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y,
-            'inputs': [],
-            'outputs': [],
-            'parameters':[]
+            name:name,
+            class:"Module",
+            log_level: 5,
+            _tag:"module",
+            _x:main.new_position_x,
+            _y:main.new_position_y,
+            inputs: [],
+            outputs: [],
+            parameters:[]
         };
         const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].modules.push(m);
@@ -2181,6 +2201,8 @@ const main =
                 evt.stopPropagation();
                 return;
         }
+
+       // this.style.pointerEvents = "none";
 
         main.initialMouseX = evt.clientX;
         main.initialMouseY = evt.clientY;
@@ -2730,4 +2752,3 @@ const brainstudio =
         document.onkeydown = function (evt){ main.keydown(evt) };
     }
 }
-
