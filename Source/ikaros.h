@@ -179,7 +179,7 @@ public:
     bool Notify(int msg, std::string message);
 
     // Shortcut function for mwssages and logging
-    
+
     bool Print(std::string message) { return Notify(msg_print, message); }
     bool Warning(std::string message) { return Notify(msg_warning, message); }
     bool Debug(std::string message) { return Notify(msg_debug, message); }
@@ -415,6 +415,7 @@ public:
 
     void AllocateInputs();
     void InitComponents();
+    void PruneConnections();
     void SetUp();
     void SetCommandLineParameters(dictionary & d);
     void LoadFile();

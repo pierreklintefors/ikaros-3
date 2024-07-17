@@ -1728,7 +1728,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::InitSocket(long port)
+    void
+    Kernel::InitSocket(long port)
     {
         try
         {
@@ -1742,6 +1743,22 @@ INSTALL_CLASS(Module)
     }
 
 
+    void 
+    Kernel::PruneConnections()
+    {
+        for (auto it = connections.begin(); it != connections.end(); ) 
+        {
+            if (buffers.count(it->source) && buffers.count(it->target))
+                it++;
+            else
+            {
+                Notify(msg_print, u8"Pruning "  + it->source + "=>" + it->target);
+                it = connections.erase(it);
+            }
+        }
+    }
+
+
     void
     Kernel::SetUp()
     {
@@ -1750,9 +1767,12 @@ INSTALL_CLASS(Module)
             ResolveParameters();
             CalculateDelays();
             CalculateSizes();
+
+            PruneConnections();
             InitCircularBuffers();
             InitComponents();
- /*
+
+     /*
             ListComponents();
             ListConnections();
             //ListInputs();
@@ -1773,24 +1793,24 @@ INSTALL_CLASS(Module)
     }
 
 
-        void
-        Kernel::Run()
+    void
+    Kernel::Run()
+    {
+        if(options_.filename.empty())
+            New();
+        else
+            LoadFile();
+
+        // Check start-up arguments
+
+        if(info_.is_set("start"))
         {
-            if(options_.filename.empty())
-                New();
+            if(info_.is_set("realtime"))
+                run_mode = run_mode_restart_realtime;
             else
-                LoadFile();
-
-            // Check start-up arguments
-
-            if(info_.is_set("start"))
-            {
-                if(info_.is_set("realtime"))
-                    run_mode = run_mode_restart_realtime;
-                else
-                    run_mode = run_mode_restart_play;
-            }
-            
+                run_mode = run_mode_restart_play;
+        }
+        
             timer.Restart();
             tick = -1; // To make first tick 0 after increment
 
