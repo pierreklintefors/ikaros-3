@@ -29,11 +29,11 @@ class CurrentPositionMapping: public Module
 
     std::random_device rd;
     
-    bool goalReached;
+   
     int position_margin = 4;
     int transition = 0;
     int current_increment = 2;
-    int starting_current = 10;
+    int starting_current = 30;
     int current_limit = 1200;
     
 
@@ -103,18 +103,23 @@ class CurrentPositionMapping: public Module
             }
         }
         std::cout << "Reached goal" << std::endl;
+        if (present_position(0) > 210)
+            starting_current *= 10;
+        else
+            starting_current = 30;
         
         return true;
     }
 
-    bool Moving(matrix present_position, matrix previous_positionm, int margin){
-        for (int i =0; i < present_position.size_x(); i++){
-            if (abs(present_position(i)) - previous_position(i) > margin){
-                Notify(msg_debug, "Moving");
+    bool ApproximatingGoal(matrix present_position, matrix previous_position, matrix goal_position, int margin){
+        for (int i =0; i < current_controlled_servos.size(); i++){
+            //Checking if distance to goal is decreasing
+            if (abs(present_position(current_controlled_servos(i)) - goal_position(current_controlled_servos(i))) < abs(previous_position(current_controlled_servos(i))  - goal_position(current_controlled_servos(i)))){
+                Notify(msg_debug, "Approximating Goal");
                 return true;
             }
             else{
-                Notify(msg_debug, "Not moving");
+                Notify(msg_debug, "Not Approximating Goal");
                 return false;
             }
         }
@@ -134,50 +139,51 @@ class CurrentPositionMapping: public Module
         
         file.open(filePath, std::ios::app);
     
-        if (transition==1 && !fileExists){
+        if (transition==0 && !fileExists){
             file << "{\n";
             file << "\"Mapping\": [\n";
         }
-        file << "{\"StartingPosition\": [";
-        for (int i = 0; i < current_controlled_servos.size(); i++){
-            file << start_position(current_controlled_servos(i));
-            if (i < current_controlled_servos.size()-1){
-                file << ", ";
-            }     
-        }
-        file << "],";
-        file << "\"GoalPosition\": [";
-        for (int i = 0; i < current_controlled_servos.size(); i++){
-            file << goal_positions(current_controlled_servos(i));
-            if (i < current_controlled_servos.size()-1){
-                file << ", ";
+        else if(transition>0){
+            file << "{\"StartingPosition\": [";
+            for (int i = 0; i < current_controlled_servos.size(); i++){
+                file << int(start_position(current_controlled_servos(i)));
+                if (i < current_controlled_servos.size()-1){
+                    file << ", ";
+                }     
+            }
+            file << "],";
+            file << "\"GoalPosition\": [";
+            for (int i = 0; i < current_controlled_servos.size(); i++){
+                file << int(goal_positions(current_controlled_servos(i)));
+                if (i < current_controlled_servos.size()-1){
+                    file << ", ";
+                }
+            }
+            file << "],";
+            file << "\"MaxCurrent\": ["; 
+            for (int i = 0; i < current_controlled_servos.size(); i++){
+                file << int(max_current(current_controlled_servos(i)));
+                if (i < current_controlled_servos.size()-1){
+                    file << ", ";
+                }
+            }
+            
+            file << "],";
+            file << "\"MinMovingCurrent\": ["; 
+            for (int i = 0; i < current_controlled_servos.size(); i++){
+                file << int(min_current(current_controlled_servos(i)));
+                if (i < current_controlled_servos.size()-1){
+                    file << ", ";
+                }
+            }
+            //if transiiton is not the last one, add a comma
+            if (transition < number_num_transitions-1){
+                file << "]},";
+            }
+            else{
+                file << "]}\n]\n}";
             }
         }
-        file << "],";
-        file << "\"MaxCurrent\": ["; 
-        for (int i = 0; i < current_controlled_servos.size(); i++){
-            file << max_current(current_controlled_servos(i));
-            if (i < current_controlled_servos.size()-1){
-                file << ", ";
-            }
-        }
-        
-        file << "],";
-        file << "\"MinMovingCurrent\": ["; 
-        for (int i = 0; i < current_controlled_servos.size(); i++){
-            file << min_current(current_controlled_servos(i));
-            if (i < current_controlled_servos.size()-1){
-                file << ", ";
-            }
-        }
-        //if transiiton is not the last one, add a comma
-        if (transition < number_num_transitions){
-            file << "]},";
-        }
-        else{
-            file << "]}\n]\n}";
-        }
-
         file << std::endl;
     
         file.close();
@@ -209,7 +215,7 @@ class CurrentPositionMapping: public Module
         max_present_current.set_name("MaxPresentCurrent");
         max_present_current.copy(present_current);
         min_moving_current.set_name("MinMovingCurrent");
-        min_moving_current.copy(present_current);
+        min_moving_current.copy(starting_current);
      
         time_prev_position= std::time(nullptr);
 
@@ -231,38 +237,42 @@ class CurrentPositionMapping: public Module
     void Tick()
     {   
         if (present_current.connected() && present_position.connected()){
-            goal_current.copy(SetCurrent(present_current, current_increment, current_limit));
-            goal_current.print();
             
-            if (!Moving(present_position, previous_position, position_margin)){
-            
-                if (ReachedGoal(present_position, goal_positions_out, position_margin)){
-                    transition++;
-                    std::cout << "Transition: " << transition << std::endl;
-                    //save starting position, goal position and current in json file
-                    SavePositionsJson(goal_positions_out,start_position, max_present_current, min_moving_current, robotType, transition);
-
-                    Sleep(1);
-                    if (transition < number_num_transitions){
-                        goal_positions_out.copy(position_transitions[transition]);
-                    }
-                    else{
-                        Notify(msg_end_of_file, "All transitions completed");
-                        std::exit(1); //terminate the program
-                    }
-                    start_position.copy(present_position);
-                    goal_current.set(starting_current);
-                    max_present_current.set(starting_current);
-                    min_moving_current.set(starting_current);
-                }
-            }
-            else{
+            if (ApproximatingGoal(present_position, previous_position, goal_positions_out, position_margin)){
+                
+                //Check minumum current while approximating goal
                 for (int i = 0; i < current_controlled_servos.size(); i++){
-                    if(min_moving_current(current_controlled_servos(i)) > abs(present_current(current_controlled_servos(i)))){
+                    if(abs(present_current(current_controlled_servos(i))) < min_moving_current(current_controlled_servos(i)) && abs(present_current(current_controlled_servos(i))) > 0)
+                    {
                         min_moving_current(current_controlled_servos(i)) = abs(present_current(current_controlled_servos(i)));
                     }
-                }
+                }      
             }
+            else if (ReachedGoal(present_position, goal_positions_out, position_margin)){
+                
+                //save starting position, goal position and current in json file
+                SavePositionsJson(goal_positions_out,start_position, max_present_current, min_moving_current, robotType, transition);
+                transition++;
+                std::cout << "Transition: " << transition << std::endl;
+                Sleep(0.5);
+                if (transition < number_num_transitions){
+                    goal_positions_out.copy(position_transitions[transition]);
+                }
+                else{
+                    Notify(msg_end_of_file, "All transitions completed");
+                    std::exit(1); //terminate the program
+                }
+                start_position.copy(present_position);
+                goal_current.set(starting_current);
+                max_present_current.set(starting_current);
+                min_moving_current.set(starting_current);  
+                
+            }
+            else{
+                goal_current.copy(SetCurrent(present_current, current_increment, current_limit));
+                goal_current.print();
+            }
+            
 
 
 
@@ -274,13 +284,10 @@ class CurrentPositionMapping: public Module
                 time_prev_position = std::time(nullptr);
                 previous_position.copy(present_position);
             
-             }
+            }
          
-        
         }
     }
-
-    
 
 };
 
