@@ -21,6 +21,9 @@ const widget_classes =
     "epi-head"
 ]
 
+const identifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_.0123456789";
+
+
 function isEmpty(obj) 
 {
     if(obj)
@@ -348,48 +351,57 @@ const network =
 
     init(n)
     {
-        network.network = n;
-        network.rebuildDict();
-        network.component_count = Object.keys(network.dict).length+1;
+        this.network = n;
+        this.rebuildDict();
+        this.component_count = Object.keys(this.dict).length+1;
     },
 
     uniqueID(name, list) // FIXME: Should check that it is really unique in list of names
     {
-        return name+network.component_count++;
+        return name+this.component_count++;
     },
 
     rebuildDict()
     {
-        network.dict = {};
-        network.buildDict(network.network, "");
+        this.dict = {};
+        this.buildDict(this.network, "");
     },
+
+ 
+
+    addComponentsToDict(path, components)
+    {
+        for(let c of components || [])
+            this.dict[path+'.'+c.name] = c;
+    },
+
 
     buildDict(o, path)
     {
-        network.dict[(path+'.'+o.name).substring(1)] = o;
+        const new_path = (path+'.'+o.name).substring(1);
+        network.dict[new_path] = o;
+
         for(let g of o.groups || [])
-            network.buildDict(g, path+'.'+o.name)
+            this.buildDict(g, new_path)
 
-        for(let i of o.inputs || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+i.name] = i;
-        for(let i of o.outputs || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+i.name] = i;
-
-        for(let m of o.modules || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+m.name] = m;
-        for(let w of o.widgets || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+w.name] = w;
         for(let c of o.connections || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+getStringUpToBracket(c.source)+'*'+(path+'.'+o.name).substring(1)+'.'+getStringUpToBracket(c.target)] = c;
+            this.dict[new_path+'.'+getStringUpToBracket(c.source)+'*'+new_path+'.'+getStringUpToBracket(c.target)] = c;
+
+        this.addComponentsToDict(new_path, o.inputs);
+        this.addComponentsToDict(new_path, o.outputs);
+        this.addComponentsToDict(new_path, o.modules);
+        this.addComponentsToDict(new_path, o.widgets);
     },
+
+
 
     newConnection(path, source, target)
     {
         const connection = 
         {
-            "_tag": "connection",
-            "source": source,
-            "target": target,
+            _tag: "connection",
+            source: source,
+            target: target,
             delay: "1"
         };
         let group = network.dict[path];
@@ -433,14 +445,14 @@ const network =
         const old_widget = deepCopy(network.dict[widget]);
         let new_widget  = 
         {
-            "_tag": "widget",
-            "name": old_widget.name,
-            "title": old_widget.title,
-            "class": new_class,
-            '_x':old_widget._x,
-            '_y':old_widget._y,
-            'width': old_widget.width,
-            'height': old_widget.height,
+            _tag: "widget",
+            name: old_widget.name,
+            title: old_widget.title,
+            class: new_class,
+            _x:old_widget._x,
+            _y:old_widget._y,
+            width: old_widget.width,
+            height: old_widget.height,
 
             source: old_widget.source || "",
             min: old_widget.min || "",
@@ -1390,9 +1402,19 @@ const inspector =
                             else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
                                 evt.preventDefault();
                             */
-                            if("@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/_.0123456789".indexOf(evt.key) == -1)
-                                evt.preventDefault();
 
+                            if((",:@+*-/,;"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                /*
+                            else if(p.type == 'source' && ("@"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(p.type == 'delay' && (",:@+*-/"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(p.type == 'matrix' && ("@,;"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(("@+*-/"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                */
 
                         });
                         cell2.addEventListener("blur", function(evt) {
@@ -1907,16 +1929,16 @@ const main =
         const name = network.uniqueID("Group_");
         const m =
         {
-            'name':name,
-            '_tag':"group",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y,
-            'inputs': [],
-            'outputs': [],
-            'parameters':[],
-            'modules': [],
-            'groups':[],
-            'widgets':[]
+            name:name,
+            _tag:"group",
+            _x:main.new_position_x,
+            _y:main.new_position_y,
+            inputs: [],
+            outputs: [],
+            parameters:[],
+            modules: [],
+            groups:[],
+            widgets:[]
         };
         const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].groups.push(m);
@@ -1939,10 +1961,10 @@ const main =
         const name = network.uniqueID("Input_");
         const m =
         {
-            'name':name,
-            '_tag':"input",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y
+            name:name,
+            _tag:"input",
+            _x:main.new_position_x,
+            _y:main.new_position_y
         };
         let full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].inputs.push(m);
@@ -1963,11 +1985,11 @@ const main =
         const name = network.uniqueID("Output_");
         const m =
         {
-            'name':name,
-            //'size':"1",
-            '_tag':"output",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y
+            name:name,
+            //size:"1",
+            _tag:"output",
+            _x:main.new_position_x,
+            _y:main.new_position_y
         };
         const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].outputs.push(m);
@@ -1991,10 +2013,10 @@ const main =
             "name": name,
             "title": name,
             "class": "bar-graph",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y,
-            'width': 200,
-            'height': 200
+            _x:main.new_position_x,
+            _y:main.new_position_y,
+            width: 200,
+            height: 200
         };
         const full_name = selector.selected_background+'.'+name;
 
