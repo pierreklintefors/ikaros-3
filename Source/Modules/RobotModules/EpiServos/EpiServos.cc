@@ -936,8 +936,8 @@ class EpiServos : public Module
                     return false;
         }
 
-        // Profile accelration
-        param_default_4Byte = 20;
+        // Profile acceleration
+        param_default_4Byte = 0;
 
     for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, i, ADDR_PROFILE_ACCELERATION, param_default_4Byte, &dxl_error)){
@@ -960,7 +960,7 @@ class EpiServos : public Module
 
         // Common settings for the servos
         // Profile velocity (210)
-        param_default_4Byte = 50;
+        param_default_4Byte = 0;
 
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, i, ADDR_PROFILE_VELOCITY, param_default_4Byte, &dxl_error)){
@@ -982,7 +982,7 @@ class EpiServos : public Module
         }
 
         // P (100)
-        param_default_2Byte = 150;
+        param_default_2Byte = 100;
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_P, param_default_2Byte, &dxl_error)){
                 std::cout << "P (PID) not set for head servo ID: " << i <<std::endl;
@@ -1003,7 +1003,7 @@ class EpiServos : public Module
         }
 
         // I
-        param_default_2Byte = 5; // The I value almost killed Epi.
+        param_default_2Byte = 10; // The I value almost killed Epi.
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_I, param_default_2Byte, &dxl_error)){
                 std::cout << "I (PID) not set for head servo ID: " << i<< std::endl;
@@ -1024,7 +1024,7 @@ class EpiServos : public Module
         }
 
         // D
-        param_default_2Byte = 1100;
+        param_default_2Byte = 1000;
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
             if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_D, param_default_2Byte, &dxl_error)){
                 std::cout << "D (PID) not set for head servo ID: " << i << std::endl;
