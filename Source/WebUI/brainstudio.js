@@ -21,6 +21,9 @@ const widget_classes =
     "epi-head"
 ]
 
+const identifier = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_.0123456789";
+
+
 function isEmpty(obj) 
 {
     if(obj)
@@ -344,45 +347,61 @@ const network =
     classinfo: {},
     dict: {},
     tainted: false,
+    component_count: 0,
 
     init(n)
     {
-        network.network = n;
-        network.rebuildDict();
+        this.network = n;
+        this.rebuildDict();
+        this.component_count = Object.keys(this.dict).length+1;
+    },
+
+    uniqueID(name, list) // FIXME: Should check that it is really unique in list of names
+    {
+        return name+this.component_count++;
     },
 
     rebuildDict()
     {
-        network.dict = {};
-        network.buildDict(network.network, "");
+        this.dict = {};
+        this.buildDict(this.network, "");
     },
+
+ 
+
+    addComponentsToDict(path, components)
+    {
+        for(let c of components || [])
+            this.dict[path+'.'+c.name] = c;
+    },
+
 
     buildDict(o, path)
     {
-        network.dict[(path+'.'+o.name).substring(1)] = o;
+        const new_path = (path+'.'+o.name).substring(1);
+        network.dict[new_path] = o;
+
         for(let g of o.groups || [])
-            network.buildDict(g, path+'.'+o.name)
+            this.buildDict(g, new_path)
 
-        for(let i of o.inputs || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+i.name] = i;
-        for(let i of o.outputs || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+i.name] = i;
-
-        for(let m of o.modules || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+m.name] = m;
-        for(let w of o.widgets || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+w.name] = w;
         for(let c of o.connections || [])
-            network.dict[(path+'.'+o.name).substring(1)+'.'+getStringUpToBracket(c.source)+'*'+(path+'.'+o.name).substring(1)+'.'+getStringUpToBracket(c.target)] = c;
+            this.dict[new_path+'.'+getStringUpToBracket(c.source)+'*'+new_path+'.'+getStringUpToBracket(c.target)] = c;
+
+        this.addComponentsToDict(new_path, o.inputs);
+        this.addComponentsToDict(new_path, o.outputs);
+        this.addComponentsToDict(new_path, o.modules);
+        this.addComponentsToDict(new_path, o.widgets);
     },
+
+
 
     newConnection(path, source, target)
     {
         const connection = 
         {
-            "_tag": "connection",
-            "source": source,
-            "target": target,
+            _tag: "connection",
+            source: source,
+            target: target,
             delay: "1"
         };
         let group = network.dict[path];
@@ -392,24 +411,18 @@ const network =
         network.dict[path+"."+source+"*"+path+"."+target]=connection;
     },
 
-    inputOutputExist(name)
+
+    getParentGroup(fullComponentName)
     {
-        
+
     },
+
 
     pruneConnections()
     {
-        for(let c of this.dict)
-            if(c.str.includes('*'))
-            {
-                const s_t = c.split('*');
-                const source = s_t[0];
-                const target = s_t[1];
-                if(source in network.dict && target in network.dict)
-                    continue;
-                // DELETE CONNECTION HERE ********
-            }
+        // Handled in kernel
     },
+
 
     changeModuleClass(module, new_class)
     {
@@ -427,20 +440,19 @@ const network =
         // FIXME: Update existing connections if possible
     },
 
-
     changeWidgetClass(widget, new_class)
     {
         const old_widget = deepCopy(network.dict[widget]);
         let new_widget  = 
         {
-            "_tag": "widget",
-            "name": old_widget.name,
-            "title": old_widget.title,
-            "class": new_class,
-            '_x':old_widget._x,
-            '_y':old_widget._y,
-            'width': old_widget.width,
-            'height': old_widget.height,
+            _tag: "widget",
+            name: old_widget.name,
+            title: old_widget.title,
+            class: new_class,
+            _x:old_widget._x,
+            _y:old_widget._y,
+            width: old_widget.width,
+            height: old_widget.height,
 
             source: old_widget.source || "",
             min: old_widget.min || "",
@@ -1390,9 +1402,19 @@ const inspector =
                             else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
                                 evt.preventDefault();
                             */
-                            if("@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/_.0123456789".indexOf(evt.key) == -1)
-                                evt.preventDefault();
 
+                            if((",:@+*-/,;"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                /*
+                            else if(p.type == 'source' && ("@"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(p.type == 'delay' && (",:@+*-/"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(p.type == 'matrix' && ("@,;"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                            else if(("@+*-/"+identifier).indexOf(evt.key) == -1)
+                                evt.preventDefault();
+                */
 
                         });
                         cell2.addEventListener("blur", function(evt) {
@@ -1794,11 +1816,6 @@ const main =
     edit_mode: false,
     map: {},
 
-    module_counter: 1,
-    group_counter: 1,
-    input_counter: 1,
-    output_counter: 1,
-    widget_counter: 1,
     new_position_x: 100,
     new_position_y: 100,
 
@@ -1879,7 +1896,7 @@ const main =
     
     newModule()
     {
-        const name = "Untitled_"+(Object.keys(network.dict).length+1);
+        const name = network.uniqueID("Untitled_");
         const m =
         {
             name:name,
@@ -1909,19 +1926,19 @@ const main =
 
     newGroup() // FIXME: Move to network
     {
-        const name = "Group_"+(Object.keys(network.dict).length+1);
+        const name = network.uniqueID("Group_");
         const m =
         {
-            'name':name,
-            '_tag':"group",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y,
-            'inputs': [],
-            'outputs': [],
-            'parameters':[],
-            'modules': [],
-            'groups':[],
-            'widgets':[]
+            name:name,
+            _tag:"group",
+            _x:main.new_position_x,
+            _y:main.new_position_y,
+            inputs: [],
+            outputs: [],
+            parameters:[],
+            modules: [],
+            groups:[],
+            widgets:[]
         };
         const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].groups.push(m);
@@ -1941,13 +1958,13 @@ const main =
 
     newInput() // FIXME: Move to network
     {
-        const name = "Input_"+(Object.keys(network.dict).length+1);
+        const name = network.uniqueID("Input_");
         const m =
         {
-            'name':name,
-            '_tag':"input",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y
+            name:name,
+            _tag:"input",
+            _x:main.new_position_x,
+            _y:main.new_position_y
         };
         let full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].inputs.push(m);
@@ -1965,14 +1982,14 @@ const main =
 
     newOutput() // FIXME: Move to network
     {
-        const name = "Output_"+(Object.keys(network.dict).length+1);
+        const name = network.uniqueID("Output_");
         const m =
         {
-            'name':name,
-            //'size':"1",
-            '_tag':"output",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y
+            name:name,
+            //size:"1",
+            _tag:"output",
+            _x:main.new_position_x,
+            _y:main.new_position_y
         };
         const full_name = selector.selected_background+'.'+name;
         network.dict[selector.selected_background].outputs.push(m);
@@ -1990,16 +2007,16 @@ const main =
 
     newWidget()
     {
-        const name = "Widget_"+(Object.keys(network.dict).length+1);
+        const name = network.uniqueID("Widget_");
         const w = {
             "_tag": "widget",
             "name": name,
             "title": name,
             "class": "bar-graph",
-            '_x':main.new_position_x,
-            '_y':main.new_position_y,
-            'width': 200,
-            'height': 200
+            _x:main.new_position_x,
+            _y:main.new_position_y,
+            width: 200,
+            height: 200
         };
         const full_name = selector.selected_background+'.'+name;
 
@@ -2018,27 +2035,42 @@ const main =
 
     deleteGroup(g)
     {
-        alert("CANNOT DELETE GROUP: "+g);
+        let group = network.dict[selector.selected_background];
+        const name = nameInPath(g);
+        group.groups = group.groups.filter(function(g) { return g.name !== name; });
+        selector.selectItems([], null);
     },
 
     deleteModule(m)
     {
-        alert("CANNOT DELETE MODULE: "+m);
+        let group = network.dict[selector.selected_background];
+        const name = nameInPath(m);
+        group.modules = group.modules.filter(function(m) { return m.name !== name; });
+        selector.selectItems([], null);
     },
 
     deleteInput(i)
     {
-        alert("CANNOT DELETE INPUT: "+i);
+        let group = network.dict[selector.selected_background];
+        const name = nameInPath(i);
+        group.inputs = group.inputs.filter(function(i) { return i.name !== name; });
+        selector.selectItems([], null);
     },
 
     deleteOutput(o)
     {
-        alert("CANNOT DELETE OUTPUT: "+o);
+        let group = network.dict[selector.selected_background];
+        const name = nameInPath(o);
+        group.outputs = group.outputs.filter(function(o) { return o.name !== name; });
+        selector.selectItems([], null);
     },
 
     deleteWidget(w)
     {
-        alert("CANNOT DELETE WIDGET: "+w);
+        let group = network.dict[selector.selected_background];
+        const name = nameInPath(w);
+        group.widgets = group.widgets.filter(function(w) { return w.name !== name; });
+        selector.selectItems([], null);
     },
 
     deleteConnection(c)
