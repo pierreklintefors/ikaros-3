@@ -55,17 +55,19 @@ namespace ikaros
         return buffer_[(buffer_.size()+index_-i) % buffer_.size()];
     }
 
+
+
 // Parameter
 
     parameter::parameter(dictionary info):
-        info_(info), type(no_type)
+        info_(info), 
+        type(no_type), 
+        has_options(info_.contains("options"))
     {
         std::string type_string = info_["type"];
 
-        if(type_string=="float")
-                type_string = "double";
-        if(type_string=="int")
-            type_string = "double";
+        if(type_string=="float" || type_string=="int" || type_string=="double")  // Temporary
+            type_string = "number";
 
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
         if(type_index == parameter_strings.end())
@@ -73,77 +75,119 @@ namespace ikaros
 
         type = parameter_type(std::distance(parameter_strings.begin(), type_index));
 
-        // Init shared pointers: Use only for matrices in the future *********** check parameter type in info_ dictionary and use these instad of separate shared pointers
+        // Init shared pointers
         switch(type)
         {
-            case double_type: double_value = std::make_shared<double>(0); break;
-            case bool_type: bool_value = std::make_shared<bool>(false); break;
-            case string_type: string_value = std::make_shared<std::string>(""); break;
-            case matrix_type: matrix_value = std::make_shared<matrix>(); break;
-            case rate_type: double_value = std::make_shared<double>(0); break;
-            case options_type: double_value = std::make_shared<double>(0); break;
-            
-            default: break;
+            case number_type:
+            case rate_type:
+            case bool_type:
+                number_value = std::make_shared<double>(0); 
+                break;
+
+            case string_type: 
+                string_value = std::make_shared<std::string>(""); 
+                break;
+
+            case matrix_type: 
+                matrix_value = std::make_shared<matrix>(); 
+                break;
+
+            default: 
+                break;
         } 
     }
+
+
+
+    parameter::parameter(const std::string type, const std::string options):
+        parameter(options.empty() ? dictionary({{"type", type}}) : dictionary({{"type", type},{"options", options}}))
+    {}
+
 
     void 
     parameter::operator=(parameter & p) // this shares data with p 
     {
         info_ = p.info_;
         type = p.type;
-        double_value = p.double_value;
-        bool_value = p.bool_value;
+        has_options = p.has_options;
+
+        number_value = p.number_value;
         matrix_value = p.matrix_value;
         string_value = p.string_value;
     }
 
-    int 
-    parameter::operator=(int v)
-    {
-        if(double_value) 
-            *double_value = double(v);
-        else if(bool_value) 
-            *bool_value = bool(v);
-        else if(string_value) 
-            *string_value = std::to_string(v);
-        return v;
-    }
+
 
     double 
     parameter::operator=(double v)
     {
-       if(double_value) 
-            *double_value = v;
-        else if(bool_value) 
-            *bool_value = bool(v);
-        else if(string_value) 
-            *string_value = std::to_string(v);
+            if(has_options)
+        {
+            int c = info_["options"].size();
+            if(v > c-1)
+                v = c-1;
+        }
+
+        switch(type)
+        {
+            case number_type:
+            case rate_type:
+            case bool_type:
+                *number_value = double(v);
+                break;
+            case string_type:
+                if(has_options)
+                {
+                    auto options = split(info_["options"],",");
+                    *string_value = options[round(v)];
+                }
+                else
+                    *string_value = std::to_string(v);
+                break;
+            default:
+                break; // FIXME: error?
+        }
         return v;
     }
-
 
     std::string 
     parameter::operator=(std::string v)
     {
-        if(type==options_type)
+        double val = 0;
+        if(has_options)
         {
             auto options = split(info_["options"],",");
             auto it = std::find(options.begin(), options.end(), v);
             if (it != options.end())
-                *double_value = std::distance(options.begin(), it);
+                val = std::distance(options.begin(), it);
             else
-                ; // FIXME: throw invalid options value – or ignore like now
+                throw exception("Invalid parameter value");
         }
-            
-        else if(double_value) 
-            *double_value = stod(v);
-        else if(bool_value) 
-            *bool_value = is_true(v);
-        else if(string_value) 
-            *string_value = v;
-        else if(matrix_value)
-            *matrix_value = v;
+        else if(is_number(v))
+            val = stod(v);
+
+        switch(type)
+        {
+            case number_type:
+            case rate_type:
+                *number_value = val;
+                break;
+
+            case bool_type:
+                *number_value = (val!=0 ? 1 : 0);
+                break;
+
+            case string_type:
+                *string_value = v;
+                break;
+
+            case matrix_type:
+                *matrix_value = v;
+                break;
+
+            default:
+                break; // FIXME: error? Handle matrix with single element
+        }
         return v;
     }
 
@@ -159,23 +203,27 @@ namespace ikaros
 
     parameter::operator std::string()
     {
+        if(string_value)
+            return  *string_value;
+
+        if(has_options)
+        {
+            int index = int(*number_value);
+            auto options = split(info_["options"],","); // FIXME: Check trim in split
+            if(index < 0 || index>= options.size())
+                return std::to_string(index)+" (OUT-OF-RANGE)";
+            else
+                return options[index];
+        } 
+
         switch(type)
         {
             case no_type: throw exception("Uninitialized or unbound parameter.");
-            case double_type: if(double_value) return std::to_string(*double_value);
-            case bool_type: if(bool_value) return (*bool_value? "true" : "false");
-            case rate_type: if(double_value) return std::to_string(*double_value);
+            case number_type: if(number_value) return std::to_string(*number_value);
+            case bool_type: if(number_value) return (*number_value>0 ? "true" : "false");
+            case rate_type: if(number_value) return std::to_string(*number_value);
             case string_type: if(string_value) return *string_value;
             case matrix_type: return matrix_value->json();
-            case options_type:
-            {
-                int index = int(*double_value);
-                auto options = split(info_["options"],","); // FIXME: Check trim in split
-                if(index < 0 || index>= options.size())
-                    return std::to_string(index)+" (OUT-OF-RANGE)";
-                else
-                    return options[index];
-            } 
             default:  throw exception("Type conversion error for parameter.");
         }
     }
@@ -184,13 +232,23 @@ namespace ikaros
     parameter::operator double()
     {
         if(type==rate_type)
-            return *double_value * kernel().tick_duration;
-        if(double_value) 
-            return *double_value;
-        else if(bool_value) 
-            return *bool_value;
+            return *number_value * kernel().tick_duration;
+        if(number_value) 
+            return *number_value;
         else if(string_value) 
-            return stod(*string_value); // FIXME: may fail ************
+        {
+            if(has_options)
+            {
+                auto options = split(info_["options"],","); // FIXME: Check trim in split
+            auto it = std::find(options.begin(), options.end(), *string_value);
+            if (it != options.end())
+                return std::distance(options.begin(), it);
+            else
+                return 0;
+            }
+            else
+                return stod(*string_value); // FIXME: may fail ************
+        }
         else if(matrix_value)
             return 0;// FIXME check 1x1 matrix ************
         else
@@ -198,50 +256,15 @@ namespace ikaros
     }
 
 
-
-/*
-    parameter::operator bool()
-    {
-        if(double_value) 
-            return (*double_value!= 0);
-        else if(bool_value) 
-            return *bool_value;
-        else if(string_value) 
-            return is_true(*string_value);
-        else if(matrix_value)
-            return !(*matrix_value).empty();
-        else
-            throw exception("Type conversion error for parameter.");
-    }
-*/
-/*
-    parameter::operator int()
-    {
-        switch(type)
-        {
-            case no_type: throw exception("Uninitialized_parameter.");
-            case int_type: if(int_value) return *int_value;
-            case options_type: if(int_value) return *int_value;
-            case double_type: if(double_value) return *double_value;
-            case rate_type: if(double_value) return *double_value;    // FIXME: Take care of time base
-            case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
-            case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
-            default: ;
-        }
-        throw exception("Type conversion error for  parameter");
-    }
-*/
-
     int
     parameter::as_int()
     {
         switch(type)
         {
             case no_type: throw exception("Uninitialized_parameter.");
-            case double_type: if(double_value) return *double_value;
-            case rate_type: if(double_value) return *double_value;    // FIXME: Take care of time base
-            case bool_type: if(bool_value) return *bool_value;
-            case options_type: if(double_value) return *double_value;
+            case number_type: if(number_value) return *number_value;
+            case rate_type: if(number_value) return *number_value;    // FIXME: Take care of time base
+            case bool_type: if(number_value) return *number_value;
             case string_type: if(string_value) return stoi(*string_value); // FIXME: Check that it is a number
             case matrix_type: throw exception("Could not convert matrix to int"); // FIXME check 1x1 matrix
             default: ;
@@ -260,15 +283,32 @@ namespace ikaros
     }
 
 
+    void 
+        parameter::print(std::string name)
+    {
+        if(!name.empty())
+            std::cout << name << " = ";
+        std::cout << std::string(*this) << std::endl;
+    }
+
+    void 
+    parameter::info()
+    {
+        std::cout << "type: " << type << std::endl;
+        std::cout << "default: " << info_["default"] << std::endl;
+        std::cout << "has_options: " << has_options << std::endl;
+        std::cout << "options: " << info_["options"] << std::endl;
+        std::cout << "value: " << std::string(*this) << std::endl;
+    }
+
     std::string 
     parameter::json()
     {
         switch(type)     // FIXME: remove if statements and use exception handling
         {
-            case options_type:    if(double_value)   return "[["+std::to_string(int(*double_value))+"]]"; // FIXME: int or string???
-            case double_type:    if(double_value)   return "[["+std::to_string(*double_value)+"]]";
-            case bool_type: if(bool_value)          return (*bool_value? "[[true]]" : "[[false]]");
-            case rate_type:     if(double_value)    return "[["+std::to_string(*double_value)+"]]";
+            case number_type:    if(number_value)   return "[["+std::to_string(*number_value)+"]]";
+            case bool_type:     if(number_value)    return (*number_value!=0 ? "[[true]]" : "[[false]]");
+            case rate_type:     if(number_value)    return "[["+std::to_string(*number_value)+"]]";
             case string_type:   if(string_value)    return "\""+*string_value+"\"";
             case matrix_type:   if(matrix_value)    return matrix_value->json();
             default:            throw exception("Cannot convert parameter to string");
@@ -276,14 +316,13 @@ namespace ikaros
     }
 
 
-    std::ostream& operator<<(std::ostream& os, parameter p)
+    std::ostream& operator<<(std::ostream& os, parameter p) // FIXME: Handle options
     {
         switch(p.type)
         {
-            case options_type:  os << std::string(p); break; 
-            case double_type:    if(p.double_value) os <<  *p.double_value; break; // FIXME: Is string conversion sufficient?
-            case bool_type:     if(p.double_value) os <<  (*p.double_value == 0 ? "false" : "true"); break;
-            case rate_type:    if(p.double_value) os <<  *p.double_value; break; 
+            case number_type:    if(p.number_value) os <<  *p.number_value; break; // FIXME: Is string conversion sufficient?
+            case bool_type:     if(p.number_value) os <<  (*p.number_value == 0 ? "false" : "true"); break;
+            case rate_type:    if(p.number_value) os <<  *p.number_value; break; 
             case string_type:   if(p.string_value) os <<  *p.string_value; break;
             case matrix_type:   if(p.matrix_value) os <<  *p.matrix_value; break;
             default:            throw exception("Cannot convert parameter to string for printing");
