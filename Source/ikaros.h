@@ -68,7 +68,7 @@ class Kernel;
 Kernel& kernel();
 
 //
-// CIRCULAR BUFFER
+// CIRCULAR BUFFER__
 //
 
 class CircularBuffer
@@ -87,25 +87,45 @@ public:
 // PARAMETERS // TODO: add bracket notation to set any type p(x,y) etc
 //
 
-enum parameter_type { no_type=0, double_type, bool_type, string_type, matrix_type, options_type, rate_type };
-static std::vector<std::string> parameter_strings = {"none", "double", "bool", "string", "matrix", "options", "rate"}; 
+enum parameter_type 
+{
+     no_type=0, 
+     number_type,
+     rate_type,
+     bool_type, 
+     string_type, 
+     matrix_type, 
+
+};
+
+static std::vector<std::string> parameter_strings = 
+{
+    "none", 
+    "number",
+    "rate",
+    "bool", 
+    "string", 
+    "matrix", 
+}; 
+
+
 
 class parameter
 {
 private:
 public:
     dictionary                      info_;
+    bool                            has_options;
     parameter_type                  type;
-    std::shared_ptr<double>         double_value;
-    std::shared_ptr<bool>           bool_value;
+    std::shared_ptr<double>         number_value;
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
 
-    parameter(): type(no_type) {}
+    parameter(): type(no_type), has_options(false) {}
     parameter(dictionary info);
+    parameter(const std::string type, const std::string options="");
 
     void operator=(parameter & p); // this shares data with p
-    int operator=(int v);
     double operator=(double v);
     std::string operator=(std::string v);
 
@@ -113,21 +133,8 @@ public:
     operator std::string();
     operator double();
 
-    void print(std::string name="")
-    {
-        if(!name.empty())
-            std::cout << name << " = ";
-        std::cout << std::string(*this) << std::endl;
-    }
-
-    void info()
-    {
-        std::cout << "type: " << type << std::endl;
-        //std::cout << "timebase: " << timebase << std::endl;
-        std::cout << "default: " << info_["default"] << std::endl;
-        std::cout << "options: " << info_["options"] << std::endl;
-        std::cout << "value: " << std::string(*this) << std::endl;
-    }
+    void print(std::string name="");
+    void info();
 
     int as_int();
     const char* c_str() const noexcept;
