@@ -1231,6 +1231,14 @@ INSTALL_CLASS(Module)
 
     bool Kernel::Terminate()
     {
+        if(tick >= stop_after)
+        {
+            if(options_.is_set("batch_mode"))
+                run_mode = run_mode_quit;
+            else
+                run_mode = run_mode_pause;
+            
+        }
         return (stop_after!= -1 &&  tick >= stop_after);
     }
 
@@ -1874,7 +1882,7 @@ INSTALL_CLASS(Module)
                         lag = timer.WaitUntil(double(tick+1)*tick_duration);
                     else if(run_mode == run_mode_play)
                     {
-                        timer.SetTime(double(tick+1)*tick_duration); // Fake time increase
+                        timer.SetTime(double(tick+1)*tick_duration); // Fake time increase // FIXME: remove sleep in batch mode
                         Sleep(0.01);
                     }
                     else
