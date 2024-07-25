@@ -49,15 +49,15 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 
     usage: ikaros [options] [variable=value] [filename]
 
-        Command line options:
+            Command line options:
 
-        -S (start):  start-up automatically without waiting for commands from WebUI [false]
-        -d (tick_duration): duration of each tick [1 s]
-        -h (help): list command line options  [false]
-        -r (real_time): run in real-time mode. Implies -S. [false]
-        -s (stop): stop Ikaros after this tick [-1 = never]
-        -w (webui_port): port for ikaros WebUI [8000]
-
+            -S (start):  start-up automatically without waiting for commands from WebUI
+            -b (batch_mode): start automatically and quit when execution terminates
+            -d (tick_duration): duration of each tick
+            -h (help): list command line options [true]
+            -r (real_time): run in real-time mode
+            -s (stop): stop Ikaros after this tick [-1]
+            -w (webui_port): port for ikaros WebUI [8000]
 
         filename :   ikg-file to load
 
@@ -81,4 +81,4 @@ The following functions should be used for all timing calculations and work both
 | GetRealTime() | double  | timer.GetTime() | tick * tickduration
 | GetLag()  | double  | tick * tickduration - timer.GetTime() | 0
 
-GetLag() resturns the lag at the time of calling and can be used to adjust for jitter within a module. It is not necessarily the same as the *lag* value in the kernel.
+GetLag() returns the lag at the time of calling and can be used to adjust for jitter within a module. It is not necessarily the same as the *lag* value in the kernel.
