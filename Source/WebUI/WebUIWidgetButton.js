@@ -15,7 +15,7 @@ class WebUIWidgetButton extends WebUIWidgetControl
 
             {'name': "CONTROL", 'control':'header'},
 
-            { 'name': 'type', 'default': "push", 'type': 'string', 'control': 'menu', 'values': "push,toggle,radio,multi,input,open" },
+            { 'name': 'type', 'default': "push", 'type': 'string', 'control': 'menu', 'options': "push,toggle,radio,multi,input,open" },
             { 'name':'radioGroup', 'default':"", 'type':'string', 'control': 'textedit'},
             { 'name':'multiGroup', 'default':"", 'type':'string', 'control': 'textedit'},
 
