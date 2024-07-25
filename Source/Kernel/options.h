@@ -81,7 +81,7 @@ namespace ikaros {
 
         void print_help()
         {
-            std::cout << "usage: ikaros [options] [variable=value] [filenames]" << std::endl;
+            std::cout << "usage: ikaros [options] [variable=value] [filename]" << std::endl;
             std::cout << "\tCommand line options:" << std::endl;
             for(auto & p : full)
             {
