@@ -1205,6 +1205,7 @@ INSTALL_CLASS(Module)
         {
         tick_is_running = true; // Flag that state changes are not allowed
         tick++;
+        //std::cout <<" Tick: " << GetTick() << std::endl;
          for(auto & m : components)
             try
             {
@@ -1231,7 +1232,7 @@ INSTALL_CLASS(Module)
 
     bool Kernel::Terminate()
     {
-        if(tick >= stop_after)
+        if(stop_after!= -1 &&  tick >= stop_after)
         {
             if(options_.is_set("batch_mode"))
                 run_mode = run_mode_quit;
@@ -1278,7 +1279,6 @@ INSTALL_CLASS(Module)
                      user_files[name] = p.path(); 
             }
     }
-
 
 
     void Kernel::ListClasses()
@@ -1858,15 +1858,15 @@ INSTALL_CLASS(Module)
                 run_mode = run_mode_restart_play;
         }
         
-            timer.Restart();
-            tick = -1; // To make first tick 0 after increment
+        timer.Restart();
+        tick = -1; // To make first tick 0 after increment
 
-            if(run_mode == run_mode_restart_realtime)
-                Realtime();
-            else if(run_mode == run_mode_restart_play)
-                Play();
-            else
-                Pause();
+        if(run_mode == run_mode_restart_realtime)
+            Realtime();
+        else if(run_mode == run_mode_restart_play)
+            Play();
+        else
+            Pause();
 
             // Main loop
             while(run_mode > run_mode_quit)  // Not quit or restart
@@ -1909,7 +1909,6 @@ INSTALL_CLASS(Module)
                         idle_time = tick_duration - tick_time_usage;
                     }                    
                 }
-
                 Sleep(0.1);
             }
         }

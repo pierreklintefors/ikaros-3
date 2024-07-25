@@ -98,6 +98,11 @@ namespace ikaros {
             return d.count(o)>0;
         }
 
+        void set(std::string o)
+        {
+            d[o] = "true";
+        }
+
         std::string get(std::string o)
         { 
             if(d.count(o)>0)
