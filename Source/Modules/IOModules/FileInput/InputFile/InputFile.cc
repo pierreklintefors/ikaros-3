@@ -58,7 +58,7 @@ public:
     std::vector<int>				column_size;
     std::vector<matrix> 			column_data;
     std::vector<matrix> static_column_data;
-    std::map<std::string, matrix&> outputs;
+
 
 // Initialization must be done in creator
 
