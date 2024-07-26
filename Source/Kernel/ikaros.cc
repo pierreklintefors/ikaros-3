@@ -585,6 +585,18 @@ namespace ikaros
         kernel().AddOutput(output_name, parameters);
       };
 
+    void Component::AddOutput(std::string name, int size, std::string description)
+    {
+        dictionary o = {
+            {"name", name},
+            {"size", std::to_string(size)},
+            {"description", description},
+            {"_tag", "output"}
+        };
+        list(info_["outputs"]).push_back(o);
+        AddOutput(o);
+    }
+
     void Component::AddParameter(dictionary parameters)
     {
         try
@@ -1829,7 +1841,6 @@ INSTALL_CLASS(Module)
             InitComponents();
 
              ListParameters();
-
 
      /*
             ListComponents();
