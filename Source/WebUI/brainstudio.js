@@ -35,10 +35,10 @@ function isEmpty(obj)
     return true;
 }
 
-function deepCopy(source) {
-    if (source === null || typeof source !== 'object') {
+function deepCopy(source) 
+{
+    if (source === null || typeof source !== 'object') 
       return source;
-    }
   
     if (Array.isArray(source)) {
       return source.map(item => deepCopy(item));
@@ -49,9 +49,11 @@ function deepCopy(source) {
       newObject[key] = deepCopy(source[key]);
     }
     return newObject;
-  }
-  
-  function replaceProperties(target, source) {
+}
+
+
+function replaceProperties(target, source) 
+{
     // Remove all properties from the target object
     for (const key in target) {
       if (Object.hasOwnProperty.call(target, key)) {
@@ -60,30 +62,31 @@ function deepCopy(source) {
     }
   
     // Copy properties from the source object to the target object
-    for (const key in source) {
-      if (Object.hasOwnProperty.call(source, key)) {
-        target[key] = deepCopy(source[key]);
-      }
-    }
-  }
+    for (const key in source)
+        if (Object.hasOwnProperty.call(source, key)) 
+            target[key] = deepCopy(source[key]);
+}
   
   function toggleStrings(array, toggleItems)
     {
-    toggleItems.forEach(item => {
-        const index = array.indexOf(item);
-        if (index === -1)
-            array.push(item);
-        else 
-            array.splice(index, 1);
-    });
+        toggleItems.forEach(item => 
+        {
+            const index = array.indexOf(item);
+            if (index === -1)
+                array.push(item);
+            else 
+                array.splice(index, 1);
+        });
   }
+
 
   function removeStringFromStart(mainString, stringToRemove)
   {
     if (mainString.startsWith(stringToRemove))
-      return mainString.slice(stringToRemove.length);
+        return mainString.slice(stringToRemove.length);
     return mainString;
   }
+
 
     String.prototype.rsplit = function(sep, maxsplit) {
     var split = this.split(sep || /\s+/);
@@ -97,6 +100,7 @@ function toURLParams(params) {
         return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
     }).join('&');
 }
+
 
 function setType(x, t)
 {
@@ -1344,7 +1348,133 @@ const inspector =
         return t;
     },
 
-    /* type, name, control */
+
+    checkValueForType(value, type)
+    {
+        return true; // Accept everything for now
+
+        if(type=="string")
+            return true;
+
+        if(value[0]=='@') // Do not check indirection
+            return true;
+
+        return false;
+    },
+
+    /* [{type, name, control}] */
+
+    acreateHeaderRow(item, template)
+    {
+        const row = current_t_body.insertRow(-1);
+        const cell1 = row.insertCell(0);
+        //const cell2 = row.insertCell(1);
+        cell1.innerText = template.name;
+        //cell2.setAttribute('class', p.type);
+    },
+
+
+
+    createTextEditRow(item, p)
+    {
+        const row = current_t_body.insertRow(-1);
+        const value = item[p.name];
+        const cell1 = row.insertCell(0);
+        const cell2 = row.insertCell(1);
+
+        cell1.innerText = p.name;
+        cell2.innerHTML = value != undefined ? value : "";
+        cell2.setAttribute('class', p.type);
+        cell2.addEventListener("paste", function(e) 
+        {
+            e.preventDefault();
+            const text = e.clipboardData.getData("text/plain");
+            document.execCommand("insertHTML", false, text); // FIXME: uses deprecated functions
+        });
+
+        cell2.contentEditable = true;
+        cell2.className += ' textedit';
+        cell2.addEventListener("keypress", function(evt) 
+        {
+            if(evt.keyCode == 13)
+            {
+                evt.target.blur();
+                evt.preventDefault();
+                if(inspector.notify)
+                    inspector.notify.parameterChangeNotification(item);
+                return;
+            }
+        });
+
+        cell2.addEventListener("blur", function(evt) 
+        {
+            if(inspector.checkValueForType(evt.target.innerText, p.type))
+            {
+                if(p.type == 'number')
+                    item[p.name] = parseFloat(evt.target.innerText);
+                else
+                    item[p.name] = evt.target.innerText.replace(String.fromCharCode(10), "").replace(String.fromCharCode(13), "");
+                if(inspector.notify)
+                    inspector.notify.parameterChangeNotification(p);
+            }
+        });
+    },
+
+
+    createMenuRow(item, p)
+    {
+        const row = current_t_body.insertRow(-1);
+        const value = item[p.name];
+        const cell1 = row.insertCell(0);
+        const cell2 = row.insertCell(1);
+
+        cell1.innerText = p.name;
+
+        var opts = p.options.split(',').map(o=>o.trim());
+                        
+        var s = '<select name="'+p.name+'">';
+        for(var j in opts)
+        {
+            let value = p.type == 'int' ? j : opts[j];
+            if(opts[j] == item[p.name])
+                s += '<option value="'+value+'" selected >'+opts[j]+'</option>';
+            else
+                s += '<option value="'+value+'">'+opts[j]+'</option>';
+        }
+        s += '</select>';
+        cell2.innerHTML= s;
+        cell2.addEventListener("input", function(evt) { 
+                item[p.name] = evt.target.value.trim();
+                if(inspector.notify)
+                inspector.notify.parameterChangeNotification(p);
+            });
+    },
+
+    
+
+    createCheckBoxRow(item, p)
+    {
+        const row = current_t_body.insertRow(-1);
+        const value = item[p.name];
+        const cell1 = row.insertCell(0);
+        const cell2 = row.insertCell(1);
+
+        cell1.innerText = p.name;
+        if(value)
+            cell2.innerHTML= '<input type="checkbox" checked />';
+        else
+            cell2.innerHTML= '<input type="checkbox" />';
+        cell2.addEventListener("change", function(evt) { item[p.name] = evt.target.checked; if(this.notify) this.notify.parameterChangeNotification(p);});
+
+    },
+
+    
+
+    createSliderRow(item, p)
+    {
+        this.createTextEditRow(item, p); // FIXME: TEMPORARY
+    },
+
 
     addDataRows(item, template, notify=null)
     {
@@ -1354,19 +1484,175 @@ const inspector =
 
         for(let p of inspector.template)
         {
+            // Set standard controls
+            if(p.control == undefined)
             {
-                let row = current_t_body.insertRow(-1);
-                if(p.name == undefined)
-                    {
-                        console.log("HELP!!!");
-                    }
+                if(p.type=="bool")
+                    p.control = "checkbox";
+                else if(p.options)
+                    p.control = "menu";
+                else
+                    p.control = "textedit";
+            }
+
+            switch(p.control)
+            {
+                case 'header':
+                    this.acreateHeaderRow(item, p); break;
+                case 'textedit':
+                    this.createTextEditRow(item, p); break;
+                case 'menu':
+                    this.createMenuRow(item, p); break;
+                case 'checkbox':
+                    this.createCheckBoxRow(item, p); break;
+                case 'checkbox':
+                    this.createSliderRow(item, p); break;
+            }
+
+
+            /*
+            // Add row
+            {
+                const row = current_t_body.insertRow(-1);
                 const value = item[p.name];
                 const cell1 = row.insertCell(0);
                 const cell2 = row.insertCell(1);
                 cell1.innerText = p.name;
                 cell2.innerHTML = value != undefined ? value : "";
                 cell2.setAttribute('class', p.type);
-                cell2.addEventListener("paste", function(e) {
+                cell2.addEventListener("paste", function(e) 
+                {
+                    e.preventDefault();
+                    const text = e.clipboardData.getData("text/plain");
+                    document.execCommand("insertHTML", false, text); // FIXME: uses deprecated functions
+                });
+
+                switch(p.control)
+                {
+                    case 'header':
+                        cell1.setAttribute("colspan", 2);
+                        cell1.setAttribute("class", "header");
+                        row.deleteCell(1);
+                        break;
+
+                    case 'textedit':
+                        cell2.contentEditable = true;
+                        cell2.className += ' textedit';
+                        cell2.addEventListener("keypress", function(evt) {
+                            if(evt.keyCode == 13)
+                            {
+                                evt.target.blur();
+                                evt.preventDefault();
+                                if(inspector.notify)
+                                    inspector.notify.parameterChangeNotification(p);
+                                return;
+                            }
+
+                        });
+                        cell2.addEventListener("blur", function(evt) {
+                            if(p.type == 'int')
+                            item[p.name] = parseInt(evt.target.innerText);
+                            else if(p.type == 'float')
+                            item[p.name] = parseFloat(evt.target.innerText);
+                            else
+                            {
+                                item[p.name] = evt.target.innerText.replace(String.fromCharCode(10), "").replace(String.fromCharCode(13), "");
+                            }
+                            if(inspector.notify)
+                            inspector.notify.parameterChangeNotification(p);
+                        });
+                        break;
+
+                    case 'slider':
+                        if(p.type == 'int' || p.type == 'float')
+                        {
+                            cell2.innerHTML= '<div>'+value+'</div><input type="range" value="'+value+'" min="'+p.min+'" max="'+p.max+'" step="'+(p.type == 'int' ?  1: 0.01)+'"/>';
+                            cell2.addEventListener("input", function(evt) {
+                                evt.target.parentElement.querySelector('div').innerText = evt.target.value;
+                                item[p.name] = evt.target.value;
+                                if(inspector.notify) inspector.notify.parameterChangeNotification(p);
+                            });
+                        }
+                        break;
+                    
+                    case 'menu':
+                        var opts = p.values.split(',').map(o=>o.trim());
+                        
+                        var s = '<select name="'+p.name+'">';
+                        for(var j in opts)
+                        {
+                            let value = p.type == 'int' ? j : opts[j];
+                            if(opts[j] == item[p.name])
+                                s += '<option value="'+value+'" selected >'+opts[j]+'</option>';
+                            else
+                                s += '<option value="'+value+'">'+opts[j]+'</option>';
+                        }
+                        s += '</select>';
+                        cell2.innerHTML= s;
+                        cell2.addEventListener("input", function(evt) { 
+                                component[p.name] = evt.target.value.trim();
+                                if(inspector.notify)
+                                inspector.notify.parameterChangeNotification(p);
+                            });
+                        break;
+                    
+                    case 'checkbox':
+                        if(p.type == 'bool')
+                        {
+                            if(value)
+                                cell2.innerHTML= '<input type="checkbox" checked />';
+                            else
+                                cell2.innerHTML= '<input type="checkbox" />';
+                            cell2.addEventListener("change", function(evt) { item[p.name] = evt.target.checked; if(notify) notify.parameterChangeNotification(p);});
+                        }
+                        break;
+                    
+                    case 'number':
+                        if(p.type == 'int')
+                        {
+                            cell2.innerHTML= '<input type="number" value="'+value+'" min="'+p.min+'" max="'+p.max+'"/>';
+                            cell2.addEventListener("input", function(evt) { 
+                                item[p.name] = evt.target.value; if(inspector.notify) inspector.notify.parameterChangeNotification(p);});
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }  */
+        }
+           
+    },
+
+
+/*
+    addDataRows_OLD(item, template, notify=null)
+    {
+        inspector.item = item;
+        inspector.template = template;
+        inspector.notify = notify;      // object that will be notified on change
+
+        for(let p of inspector.template)
+        {
+            // Set standard controls
+
+            if(p.control == undefined)
+            {
+                p.control = "textedit";
+
+            }
+        
+            // Add row
+            {
+                const row = current_t_body.insertRow(-1);
+                const value = item[p.name];
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
+                cell1.innerText = p.name;
+                cell2.innerHTML = value != undefined ? value : "";
+                cell2.setAttribute('class', p.type);
+                cell2.addEventListener("paste", function(e) 
+                {
                     e.preventDefault();
                     const text = e.clipboardData.getData("text/plain");
                     document.execCommand("insertHTML", false, text); // FIXME: uses deprecated functions
@@ -1401,11 +1687,11 @@ const inspector =
                                 evt.preventDefault();
                             else if(p.type == 'source' && "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_.0123456789*".indexOf(evt.key) == -1)
                                 evt.preventDefault();
-                            */
+                            
 
                             if((",:@+*-/,;"+identifier).indexOf(evt.key) == -1)
                                 evt.preventDefault();
-                /*
+                
                             else if(p.type == 'source' && ("@"+identifier).indexOf(evt.key) == -1)
                                 evt.preventDefault();
                             else if(p.type == 'delay' && (",:@+*-/"+identifier).indexOf(evt.key) == -1)
@@ -1414,7 +1700,7 @@ const inspector =
                                 evt.preventDefault();
                             else if(("@+*-/"+identifier).indexOf(evt.key) == -1)
                                 evt.preventDefault();
-                */
+                
 
                         });
                         cell2.addEventListener("blur", function(evt) {
@@ -1429,7 +1715,7 @@ const inspector =
                             if(inspector.notify)
                             inspector.notify.parameterChangeNotification(p);
                         });
-                    break;
+                        break;
 
                     case 'slider':
                         if(p.type == 'int' || p.type == 'float')
@@ -1441,7 +1727,7 @@ const inspector =
                                 if(inspector.notify) inspector.notify.parameterChangeNotification(p);
                             });
                         }
-                    break;
+                        break;
                     
                     case 'menu':
                         var opts = p.values.split(',').map(o=>o.trim());
@@ -1462,7 +1748,7 @@ const inspector =
                                 if(inspector.notify)
                                 inspector.notify.parameterChangeNotification(p);
                             });
-                    break;
+                        break;
                     
                     case 'checkbox':
                         if(p.type == 'bool')
@@ -1473,7 +1759,7 @@ const inspector =
                                 cell2.innerHTML= '<input type="checkbox" />';
                             cell2.addEventListener("change", function(evt) { item[p.name] = evt.target.checked; if(notify) notify.parameterChangeNotification(p);});
                         }
-                    break;
+                        break;
                     
                     case 'number':
                         if(p.type == 'int')
@@ -1482,16 +1768,15 @@ const inspector =
                             cell2.addEventListener("input", function(evt) { 
                                 item[p.name] = evt.target.value; if(inspector.notify) inspector.notify.parameterChangeNotification(p);});
                         }
-                    break;
+                        break;
 
                     default:
-
-                    break;
+                        break;
                 }
             }
         }
     },
-
+*/
     parameterChangeNotification(p)
     {
         if(inspector.item._tag == "connection")
@@ -1579,7 +1864,8 @@ const inspector =
         inspector.setTable(inspector.subview.table);
         inspector.subview.table.style.display = 'block';
     
-        if (!item) {
+        if (!item) 
+        {
             inspector.addHeader("Internal Error");
             return;
         }
@@ -1606,7 +1892,7 @@ const inspector =
 
                     const template = item.parameters || [];
                     for (let key in template) {
-                        template[key].control = "textedit";
+                        //template[key].control = "textedit";
                     }
                     inspector.addDataRows(item, template, inspector);
                 } else {
@@ -2784,4 +3070,5 @@ const brainstudio =
         document.onkeydown = function (evt){ main.keydown(evt) };
     }
 }
+
 

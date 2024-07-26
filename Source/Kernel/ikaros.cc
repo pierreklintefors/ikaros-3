@@ -119,13 +119,28 @@ namespace ikaros
 
 
     double 
-    parameter::operator=(double v)
+    parameter::operator=(double v) // FIXME: handle matrix type as well
     {
-            if(has_options)
+        if(has_options)
         {
-            int c = info_["options"].size();
+            auto options = split(info_["options"],",");
+            int c = options.size();
             if(v > c-1)
                 v = c-1;
+            switch(type)
+            {
+                case number_type:
+                case rate_type:
+                case bool_type:
+                    *number_value = double(v);
+                    break;
+                case string_type:
+                    *string_value = options[round(v)];
+                    break;
+                default:
+                    break; // FIXME: error?
+            }
+            return v;
         }
 
         switch(type)
@@ -136,12 +151,6 @@ namespace ikaros
                 *number_value = double(v);
                 break;
             case string_type:
-                if(has_options)
-                {
-                    auto options = split(info_["options"],",");
-                    *string_value = options[round(v)];
-                }
-                else
                     *string_value = std::to_string(v);
                 break;
             default:
@@ -376,7 +385,7 @@ namespace ikaros
             // Lookup normal value in current component-context
 
             std::string v = GetValue(name);
-            if(!v.empty())  // ****************** this does dot work for string that are allowed to be empty
+            if(!v.empty())  // ****************** this does not work for string that are allowed to be empty
             {
                 std::string val = v; // Evaluate(v, p.type == string_type); ***********
                 if(!val.empty())
@@ -575,6 +584,18 @@ namespace ikaros
         std::string output_name = path_+"."+validate_identifier(parameters["name"]);
         kernel().AddOutput(output_name, parameters);
       };
+
+    void Component::AddOutput(std::string name, int size, std::string description)
+    {
+        dictionary o = {
+            {"name", name},
+            {"size", std::to_string(size)},
+            {"description", description},
+            {"_tag", "output"}
+        };
+        list(info_["outputs"]).push_back(o);
+        AddOutput(o);
+    }
 
     void Component::AddParameter(dictionary parameters)
     {
@@ -1819,6 +1840,8 @@ INSTALL_CLASS(Module)
             InitCircularBuffers();
             InitComponents();
 
+             ListParameters();
+
      /*
             ListComponents();
             ListConnections();
@@ -1887,7 +1910,6 @@ INSTALL_CLASS(Module)
                     }
                     else
                         Sleep(0.01); // Wait 10 ms to avoid wasting cycles if there are no requests
-
 
                     // Run_mode may have changed during the delay - needs to be checked again
 
@@ -2304,7 +2326,7 @@ INSTALL_CLASS(Module)
         std::string s = "{\"status\":\"ok\"}"; 
         Dictionary rtheader;
         rtheader.Set("Session-Id", std::to_string(session_id).c_str());
-        rtheader.Set("Package-Type", "network");
+        rtheader.Set("Package-Type", "network"); // FIXME: wrong packade type
         rtheader.Set("Content-Type", "application/json");
         rtheader.Set("Content-Length", int(s.size()));
         socket->SendHTTPHeader(&rtheader);

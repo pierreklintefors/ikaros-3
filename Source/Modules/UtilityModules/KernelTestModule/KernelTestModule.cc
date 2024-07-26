@@ -101,11 +101,12 @@ class KernelTestModule: public Module
         std::cout << "f1: " << f1.json() << std::endl;
         f1= 17;
         std::cout << "f1: " << f1 << std::endl;   
-
+        f1= 0;
+        std::cout << "f1: " << f1 << std::endl; 
 
         g.print("g");
         double gg = g;
-        std::cout << "g scaled: " << gg << std::endl; 
+        std::cout << "g rate scaled: " << gg << std::endl; 
 
 
         data.print("data");

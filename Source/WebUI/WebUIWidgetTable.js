@@ -8,7 +8,7 @@ class WebUIWidgetTable extends WebUIWidget {
             { 'name': "STYLE", 'control': 'header' },
             { 'name': 'label_x', 'default': "", 'type': 'string', 'control': 'textedit' },
             { 'name': 'label_y', 'default': "", 'type': 'string', 'control': 'textedit' },
-            { 'name': 'direction', 'default': "normal", 'type': 'string', 'control': 'menu', 'values': "normal,flip x/y" },
+            { 'name': 'direction', 'default': "normal", 'type': 'string', 'control': 'menu', 'options': "normal,flip x/y" },
             { 'name': 'decimals', 'default': 4, 'type': 'int', 'control': 'textedit' },
             { 'name': 'colorize', 'default': true, 'type': 'bool', 'control': 'checkbox' },
             { 'name': 'scrollable', 'default': false, 'type': 'bool', 'control': 'checkbox' },
