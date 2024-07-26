@@ -175,7 +175,7 @@ namespace ikaros
             dict_(std::make_shared<std::map<std::string, value>>())
         {};
 
-        dictionary::dictionary(const std::vector<std::pair<std::string, std::string>>& init_list)
+        dictionary::dictionary(const std::initializer_list<std::pair<std::string, std::string>>& init_list)
         {
             dict_ = std::make_shared<std::map<std::string, value>>();
             for (const auto& [key, val] : init_list)

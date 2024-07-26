@@ -18,7 +18,7 @@
 #include "utilities.h"
 #include "xml.h"
 
-namespace ikaros
+namespace ikaros 
 {
     struct null;
     struct dictionary;
@@ -47,7 +47,7 @@ namespace ikaros
         mapPtr dict_;
 
         using iterator = std::map<std::string, value>::iterator;
-        using const_iterator = std::map<std::string, value>::const_iterator; // Initialize from ley value list; both key and value must be strings
+        using const_iterator = std::map<std::string, value>::const_iterator;
 
         iterator begin() { return dict_->begin(); }
         iterator end() { return dict_->end(); }
@@ -59,7 +59,8 @@ namespace ikaros
         dictionary();
         dictionary(XMLElement * xml);
         dictionary(std::string filename);
-        dictionary(const std::vector<std::pair<std::string, std::string>>& init_list);
+        dictionary(const std::initializer_list<std::pair<std::string, std::string>>& init_list);
+
         //dictionary(const dictionary & d);
     
         value & operator[](std::string s);
