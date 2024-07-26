@@ -1,0 +1,3 @@
+<group name="Top">
+   <module class="InputFile" name="InputFile"/>
+</group>

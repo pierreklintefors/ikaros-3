@@ -1,0 +1,4 @@
+<class name="InputFile" description="reads from a file">
+	<parameter name="filename" type="string" description="the file to read from" />
+</class>
+
