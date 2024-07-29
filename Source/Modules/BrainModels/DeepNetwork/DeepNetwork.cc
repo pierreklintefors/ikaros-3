@@ -14,6 +14,7 @@ class DeepNetwork: public Module
     matrix t_target;
     matrix loss;
     matrix output;
+    matrix effort;
 
     NeuralNetwork *network;
 
@@ -28,6 +29,7 @@ class DeepNetwork: public Module
         Bind(input, "INPUT");
         Bind(t_input, "T_INPUT");
         Bind(t_target, "T_TARGET");
+        Bind(effort, "EFFORT");
         Bind(loss, "loss");
 
         Bind(output, "OUTPUT");
@@ -40,15 +42,16 @@ class DeepNetwork: public Module
 
     void Tick()
     {
-        network->forward(input);
-        output.copy(network->get_output());
-        if(!t_input.empty() && t_target.empty()){
-            network->backward(t_input, t_target);
-            network->update(learning_rate);
-            loss[0] = network->compute_loss(t_target);
+        if(effort.empty() || effort > 0){
+            network->forward(input);
+            output.copy(network->get_output());
+            if(!t_input.empty() && t_target.empty()){
+                network->backward(t_input, t_target);
+                network->update(learning_rate);
+                loss[0] = network->compute_loss(t_target);
+            }
         }
     }
 };
 
 INSTALL_CLASS(DeepNetwork)
-
