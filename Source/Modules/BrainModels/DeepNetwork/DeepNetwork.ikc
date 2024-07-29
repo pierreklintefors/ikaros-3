@@ -1,0 +1,12 @@
+<class name="DeepNetwork" description="outputs a constant value">
+	<parameter name="spec_filename" type="string" default="network_spec.json" description="specification of layers" />
+	<parameter name="weights_filename" type="string" default="network_weights.dat" description="network weights" />
+	<parameter name="load_weights" type="boolean" default="yes" description="whether to load weights" />
+	<parameter name="save_weights" type="boolean" default="no" description="whether to save weights" />
+	<parameter name="learning_rate" type="float" default="0.001" description="learning rate when training" />
+	<input name="INPUT" description="Input for inference" />
+	<input name="T_INPUT" description="Input for training" />
+	<input name="T_TARGET" description="Target for training" />
+	<output name="OUTPUT" description="The inference output" size="10"/>
+	<output name="LOSS" description="Training loss" size="1" />
+</class>
