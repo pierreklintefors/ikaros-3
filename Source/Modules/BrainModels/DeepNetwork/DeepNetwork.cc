@@ -30,8 +30,7 @@ class DeepNetwork: public Module
         Bind(t_input, "T_INPUT");
         Bind(t_target, "T_TARGET");
         Bind(effort, "EFFORT");
-        Bind(loss, "loss");
-
+        Bind(loss, "LOSS");
         Bind(output, "OUTPUT");
 
         // TODO make input to network dynamic 
