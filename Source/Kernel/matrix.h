@@ -760,6 +760,24 @@ namespace ikaros
             info_->labels_.resize(info_->shape_.size());
             return *this;
         }
+        
+        template <typename... Args>
+        matrix & 
+        reshape(std::vector<int> new_shape)
+        {
+            int n = 1;
+            for(int i : new_shape)
+                n *= i;
+            
+            if(n != data_->size())
+                throw std::out_of_range(get_name()+"Incompatible matrix sizes.");
+
+            info_->shape_ = new_shape;
+            info_->stride_ = info_->shape_;
+            info_->max_size_ = info_->shape_;
+            info_->labels_.resize(info_->shape_.size());
+            return *this;
+        }
         // Push & pop
 
         matrix & 
