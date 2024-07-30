@@ -405,7 +405,7 @@ namespace ikaros
         }
         catch(std::exception & e)
         {
-            Notify(msg_fatal_error, "ERROR: Could not resolve parameter \""s +name + "\" .");  
+            Notify(msg_fatal_error, "ERROR: Could not resolve parameter \""s +name + "\" .", name);  
         }
         return false;
     }
@@ -600,12 +600,7 @@ namespace ikaros
     void Component::AddParameter(dictionary parameters)
     {
         try
-        {
-           // std::string pn = parameters["name"];    // FIXME: Can probably be removed
-            //if(pn=="name")                          // FIXME: Add comparison to dictionary value
-            //    return;
-            //if(pn=="class")
-             //   return;            
+        {         
             std::string parameter_name = path_+"."+validate_identifier(parameters["name"]);
             kernel().AddParameter(parameter_name, parameters);
         }
@@ -823,7 +818,7 @@ namespace ikaros
 
 
     bool
-    Component::Notify(int msg, std::string message)
+    Component::Notify(int msg, std::string message, std::string path)
     {
         int ll = msg_warning;
         if(info_.contains("log_level"))
@@ -1025,7 +1020,7 @@ INSTALL_CLASS(Module)
                 for(int i=0; i < shape.size(); i++)
                     if(shape[i]<0)
                     {
-                        kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i)); // FIXME: throw
+                        kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i), n); // FIXME: throw
                         return 0;
                     }
 
@@ -1193,7 +1188,6 @@ INSTALL_CLASS(Module)
         Kernel::New()
         {
             //std::cout << "Kernel::New" << std::endl;
-            //log.push_back(Message("New file"));
             Notify(msg_print, "New file");
        
             Clear();
@@ -1389,10 +1383,6 @@ INSTALL_CLASS(Module)
                 max_delays[c.source] = c.delay_range_.extent()[0];
             }
         }
-
-        //std::cout << "\nDelays:" << std::endl;
-        //for(auto & o : buffers)
-        //    std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
     }
 
 
@@ -1491,7 +1481,6 @@ INSTALL_CLASS(Module)
         tick_duration(1),
         shutdown(false),
         session_id(new_session_id())
-        //webui_dir("../Source/WebUI/") // FIXME: get from somewhere else
     {
         cpu_cores = std::thread::hardware_concurrency();
     }
@@ -1657,20 +1646,6 @@ INSTALL_CLASS(Module)
 
         if(d.contains("tick_duration"))
             tick_duration = d["tick_duration"];
-
-//                if(run_mode >= run_mode_stop) // only look at below command line arguments started from command line
-//                    {
-/*
-        if(d.contains("start"))
-            start = is_true(d["start"]);
-
-                    if(d.contains("real_time"))
-                        if(is_true(d["real_time"]))
-                        {
-                            run_mode = run_mode_restart_realtime;
-                            start = true;
-                        }
-*/
     }
 
 
@@ -1688,14 +1663,11 @@ INSTALL_CLASS(Module)
                 Notify(msg_print, u8"Loaded "s+options_.filename);
 
                 CalculateCheckSum();
-                ListBuffers();
-                ListConnections();
+                //ListBuffers();
+                //ListConnections();
             }
             catch(const exception& e)
             {
-                //log.push_back(Message("E", e.what()));
-                // log.push_back(Message("E", "Load file failed for "s+options_.filename));
-                //Notify(msg_fatal_error, e.what());
                 Notify(msg_fatal_error, u8"Load file failed for "s+options_.filename);
                 CalculateCheckSum();
                 New();
@@ -1705,7 +1677,6 @@ INSTALL_CLASS(Module)
 
     void Kernel::CalculateCheckSum()
     {
-        return; // ****************************TEMPORARY *****************
         if(!info_.contains("check_sum"))
             return;
 
@@ -1840,13 +1811,12 @@ INSTALL_CLASS(Module)
             InitCircularBuffers();
             InitComponents();
 
-             ListParameters();
-
-     /*
+  /*
+            ListParameters();
             ListComponents();
             ListConnections();
-            //ListInputs();
-            //ListOutputs();
+            ListInputs();
+            ListOutputs();
             ListBuffers();
             ListCircularBuffers();
             ListParameters();
@@ -1936,9 +1906,9 @@ INSTALL_CLASS(Module)
         }
 
         bool
-        Kernel::Notify(int msg, std::string message)
+        Kernel::Notify(int msg, std::string message, std::string path)
         {
-            log.push_back(Message(message));
+            log.push_back(Message(msg, message, path));
             if(msg <= msg_fatal_error)
             {
                     std::cout << "ikaros: " << message << std::endl;
@@ -2053,27 +2023,6 @@ INSTALL_CLASS(Module)
     }
 
 
-
-/*
-    void
-    Kernel::Play()
-    {
-        while(tick_is_running)
-            {}
-
-        if(run_mode == run_mode_stop)
-        {
-            run_mode = run_mode_pause;
-            request_restart = true;
-            requested_restart_mode = run_mode_play;
-            return;
-        }
-
-        run_mode = run_mode_play;
-        timer.Pause();
-        timer.SetPauseTime(GetTime()+tick_duration);
-    }
-*/
 
     void
     Kernel::Realtime()
@@ -2343,7 +2292,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoQuit(Request & request)
     {
-        log.push_back(Message("quit"));
+        Notify(msg_print, "quit");
         Stop();
         run_mode = run_mode_quit;
         DoUpdate(request);
@@ -2353,7 +2302,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoStop(Request & request)
     {
-        log.push_back(Message("stop"));
+        Notify(msg_print, "stop");
         Stop();
         DoUpdate(request);
     }
@@ -2402,7 +2351,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoPause(Request & request)
     {
-        log.push_back(Message("pause"));
+        Notify(msg_print, "pause");
         Pause();
         DoSendData(request);
     }
@@ -2411,7 +2360,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoStep(Request & request)
     {
-        log.push_back(Message("step"));
+        Notify(msg_print, "step");
         Pause();
         run_mode = run_mode_pause;
         Tick();
@@ -2420,23 +2369,12 @@ INSTALL_CLASS(Module)
     }
 
 
-/*
-    void
-    Kernel::DoPlay(Request & request)
-    {
-        log.push_back("play");
-        Play();
-        run_mode = run_mode_play;
-        timer.SetPauseTime(GetTime()+tick_duration);
-        DoSendData(request);
-    }
-*/
 
 
     void
     Kernel::DoRealtime(Request & request)
     {
-        log.push_back(Message("realtime"));
+        Notify(msg_print, "realtime");
         Realtime();
         DoSendData(request);
     }
@@ -2445,7 +2383,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoPlay(Request & request)
     {
-        log.push_back(Message("play"));
+        Notify(msg_print, "play");
         Play();
         DoSendData(request);
     }
@@ -2621,7 +2559,7 @@ INSTALL_CLASS(Module)
     }
 */
 
-
+/*
     void
     Kernel::DoAddGroup(Request & request)
     {
@@ -2667,7 +2605,7 @@ INSTALL_CLASS(Module)
 
         DoSendData(request);
     }
-
+*/
 
     void
     Kernel::DoUpdate(Request & request)
@@ -2855,36 +2793,6 @@ INSTALL_CLASS(Module)
             DoCommand(request);
         else if(request == "control")
             DoControl(request);
-
-        // View editing
-/*
-        else if(request == "addview")
-            AddView(request);
-        else if(request == "renameview")
-            RenameView(request);
-        else if(request == "addwidget")
-            AddWidget(request);
-        else if(request == "delwidget")
-            DeleteWidget(request);
-        else if(request == "setwidgetparams")
-            SetWidgetParameters(request);
-        else if(request == "widgettofront")
-            WidgetToFront(request);
-        else if(request == "widgettoback")
-            WidgetToBack(request);
-*/
-        // Network editing
-
-        else if(request == "addgroup")
-            DoAddGroup(request);
-        else if(request == "addmodule")
-            DoAddModule(request);
-        else if(request == "setattribute")
-            DoSetAttribute(request);
-        else if(request == "addconnection")
-            DoAddConnection(request);
-        else if(request == "setrange")
-            DoSetRange(request);
         else 
             DoSendFile(request.url);
     }
