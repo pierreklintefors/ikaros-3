@@ -12,6 +12,7 @@ NeuralNetwork::NeuralNetwork(const std::string &json_spec) {
 
 void NeuralNetwork::forward( matrix &input) {
     matrix current_input = input;
+    // current_input.reshape(1, input.size());
     for (auto &layer : layers) {
         layer->forward(current_input);
         current_input = layer->output;
@@ -21,6 +22,7 @@ void NeuralNetwork::forward( matrix &input) {
 void NeuralNetwork::backward( matrix &t_input, matrix &t_target) {
     // Compute loss and start backward propagation
     matrix d_output = get_output().subtract(t_target);
+    d_output.reshape(1, d_output.size());
     for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
         (*it)->backward(d_output);
         d_output = (*it)->d_input; // Propagate the gradients backward; check correct
@@ -43,23 +45,24 @@ float NeuralNetwork::compute_loss( matrix &t_target) const {
     //predictions.info("===predictions===");
     //t_target.info("===t_target===");
     //std::cout << "NeuralNetwork::compute_loss 0.1\n";
-    if (predictions.rows() != t_target.rows() || predictions.cols() != t_target.cols()) {
-        throw std::invalid_argument("Predictions and target sizes do not match.");
-    }
+    //if (predictions.rows() != t_target.rows() || predictions.cols() != t_target.cols()) {
+    if(predictions.size() != t_target.size())
+        throw std::invalid_argument("NeuralNetwork::compute_loss: Predictions and target sizes do not match.");
+    
     
     float loss = 0.0f;
-    for (int i = 0; i < predictions.rows(); ++i) {
-        for (int j = 0; j < predictions.cols(); ++j) {
-            float prediction = predictions(i, j);
-            float target = t_target(i, j);
+    for (int i = 0; i < predictions.size(); ++i) {
+        //for (int j = 0; j < predictions.cols(); ++j) {
+            float prediction = predictions.data()[i];
+            float target = t_target.data()[i];
 
             // Apply a small value to avoid log(0)
             float epsilon = 1e-8;
             loss -= target * std::log(prediction + epsilon);
-        }
+        //}
     }
     //std::cout << "NeuralNetwork::compute_loss 2\n";
-    return loss / predictions.rows();
+    return loss / predictions.size();
 }
 
 
@@ -114,6 +117,7 @@ FullyConnectedLayer::FullyConnectedLayer(int input_size, int output_size) {
     biases.set_name("FullyConnectedLayer:biases");
     d_weights.set_name("FullyConnectedLayer:d_weights");
     d_biases.set_name("FullyConnectedLayer:d_biases");
+    d_input.set_name("FullyConnectedLayer:d_input");
     input_cache.set_name("FullyConnectedLayer:input_cache");
     output.set_name("FullyConnectedLayer:output");
     
@@ -141,6 +145,7 @@ void FullyConnectedLayer::forward( matrix &input) {
     for (int i = 0; i < output.size(); ++i) {
         output.data()[i] = std::max(0.0f, output.data()[i]); // ReLU activation
     }
+    output.reshape(output.size()); // to array
 }
 
 // Backward method for FullyConnectedLayer
@@ -167,6 +172,7 @@ void FullyConnectedLayer::backward( matrix &d_output) {
     weights.transpose(transp);
     
     // Compute d_input
+    d_input = matrix(1, input_cache.size());
     d_input.matmul(d_output, transp);
 
     // Apply the derivative of the activation function (ReLU in this case)
