@@ -1021,7 +1021,19 @@ namespace ikaros
         float det() { throw std::logic_error("trace(). Not implemented."); return 0; }
         matrix & inv(const matrix & m) { throw std::logic_error("det(). Not implemented."); return *this; }
         matrix & pinv(const matrix & m) { throw std::logic_error("pinv(). Not implemented."); return *this; }
-        matrix & transpose(const matrix & m) { throw std::logic_error("transpose() Not implemented."); return *this; }
+        matrix & transpose(matrix &ret) {
+            int rows = this->rows();
+            int cols = this->cols();
+            ret = matrix(cols, rows);
+
+            for (int i = 0; i < rows; ++i) {
+                for (int j = 0; j < cols; ++j) {
+                    ret(j, i) = (*this)(i, j);
+                }
+            }
+            return ret;
+        }
+        
         matrix & eig(const matrix & m) { throw std::logic_error("eig(). Not implemented."); return *this; }
         // lu
         // chol
