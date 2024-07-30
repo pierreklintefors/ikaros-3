@@ -145,7 +145,6 @@ public:
 };
 
 
-
 //
 // MESSAGE
 //
@@ -156,15 +155,17 @@ class Message
 
         int         level_;
         std::string message_;
+        std::string path_;
 
-        Message(std::string message, int level=msg_print):
+        Message(int level, std::string message, std::string path=""):
+            level_(level),
             message_(message),
-            level_(level)
+            path_(path)
         {}
 
         std::string json()
         {
-            return "[\""+std::to_string(level_)+"\",\""+message_+"\"]";
+            return "[\""+std::to_string(level_)+"\",\""+message_+"\",\""+path_+"\"]";
         }
 };
 
@@ -183,12 +184,12 @@ public:
 
     virtual ~Component() {};
 
-    bool Notify(int msg, std::string message);
+    bool Notify(int msg, std::string message, std::string path=""); // Path to componenet with problem
 
-    // Shortcut function for mwssages and logging
+    // Shortcut function for messages and logging
 
     bool Print(std::string message) { return Notify(msg_print, message); }
-    bool Warning(std::string message) { return Notify(msg_warning, message); }
+    bool Warning(std::string message, std::string path="") { return Notify(msg_warning, message, path); }
     bool Debug(std::string message) { return Notify(msg_debug, message); }
     bool Trace(std::string message) { return Notify(msg_trace, message); }
 
@@ -210,7 +211,7 @@ public:
     std::string json();
     std::string xml();
 
-    bool KeyExists(const std::string & key);  // Check if a key exist her eor in any parent; this means that LookupKey will succeed
+    bool KeyExists(const std::string & key);  // Check if a key exist here or in any parent; this means that LookupKey will succeed
     std::string LookupKey(const std::string & key); // Look up value in dictionary with inheritance
     std::string GetValue(const std::string & name);    // Get value of a attribute/variable in the context of this component
     std::string GetBind(const std::string & name);
@@ -387,7 +388,7 @@ public:
     double GetLag() { return (run_mode == run_mode_realtime) ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
     void CalculateCPUUsage();
 
-    bool Notify(int msg, std::string message);
+    bool Notify(int msg, std::string message, std::string path="");
     bool Terminate();
     void ScanClasses(std::string path);
     void ScanFiles(std::string path, bool system=true);
@@ -461,25 +462,6 @@ public:
     void DoCommand(Request & request);
     void DoControl(Request & request);
     
-    //dictionary GetView(std::string component, std::string view_name);
-    //dictionary GetView(Request & request);
-
-/*
-    //void AddView(Request & request);
-    void AddWidget(Request & request);
-    void DeleteWidget(Request & request);
-    void SetWidgetParameters(Request & request);
-    void WidgetToFront(Request & request);
-    void WidgetToBack(Request & request);
-    //void RenameView(Request & request);
-*/
-
-    void DoAddGroup(Request & request);
-    void DoAddModule(Request & request);
-    void DoSetAttribute(Request & request);
-    void DoAddConnection(Request & request);
-    void DoSetRange(Request & request);
-
     void DoSendNetwork(Request & request);
 
     void DoSendDataHeader();
@@ -512,7 +494,6 @@ class InitClass
 public:
     InitClass(const char * name, ModuleCreator mc)
     {
-        //kernel().classes.at(name).module_creator = mc;
         kernel().classes[name].name = name;
         kernel().classes[name].module_creator = mc;
     }
