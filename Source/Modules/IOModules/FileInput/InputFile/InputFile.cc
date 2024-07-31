@@ -87,7 +87,8 @@ public:
         char col_label[64];
         int	col_size;
         int col_ix;
-        info_["outputs"] = list(); // Temporary fix; check that it does not already exist in AddOutput later
+
+        ClearOutputs();
 
 
         // Count number of columns in input file
