@@ -135,7 +135,7 @@ if (BLAS_FOUND)
   include_directories(${BLAS_INCLUDE_DIRS})
   target_link_libraries (ikaros ${BLAS_LIBRARIES})
 else()
-    message(FATAL_ERROR "\nIkaros require the BLAS library.\nVisit www.ikaros-project.org for information about dependencies")
+    message(FATAL_ERROR "\nIkaros requires the BLAS library.\nVisit www.ikaros-project.org for information about dependencies")
 endif (BLAS_FOUND)
 
 # Threads Not part of the core

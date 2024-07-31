@@ -16,6 +16,11 @@
 #include <iterator>
 #include <numeric>
 
+//#include <cblas.h>
+
+#define ACCELERATE_NEW_LAPACK
+#include <Accelerate/Accelerate.h>
+
 // #define NO_MATRIX_CHECKS   // Define to remove checks of matrix size and index ranges
 
 #include "exceptions.h"
@@ -887,8 +892,11 @@ namespace ikaros
         }
 
         matrix &
-        matmul(matrix & A, matrix & B) // Compute matrix multiplication A*B and put result in current matrix
+        matmul(matrix & A, matrix & B) // Compute matrix multiplication A*B and put result in current matrix // FIXME: realloc() if this.rank() = 0
         {
+            if(empty())
+                realloc(A.rows(), B.cols());
+
                 #ifndef NO_MATRIX_CHECKS
                 if(rank() != 2 || A.rank() !=2 || B.rank() != 2)
                     throw std::invalid_argument("Multiplication requires two-dimensional matrices.");
@@ -901,11 +909,30 @@ namespace ikaros
 
             if(this == &A || this == &B)
                     throw std::invalid_argument("Result cannot be assigned to A or B.");
+            
+            // blas version
+
+            #define USE_BLAS
+            #ifdef USE_BLAS
+
+            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
+                        A.rows(), B.cols(), A.cols(), 1.0, 
+                        A.data(), A.info_->stride_[1],
+                        B.data(), B.info_->stride_[1],
+                        0.0, 
+                        this->data(), this->info_->stride_[1]);
+
+            #else
+
+            // discrete version
             reset();
             for(int j=0; j<A.rows(); j++)
                 for(int i=0; i< B.cols(); i++)
                     for(int k=0; k<B.rows(); k++)
                         (*this)(j, i) += A(j,k) *B(k,i);
+
+            #endif
+
             return *this;
         }
 
