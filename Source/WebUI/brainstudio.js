@@ -202,6 +202,16 @@ function getStringUpToBracket(str)
     return str.substring(0, index);
 }
 
+
+function getStringAfterBracket(str)
+{
+    const index = str.indexOf('[');
+    if (index === -1) {
+      return "";
+    }
+    return str.substring(index, str.length);
+}
+
 function setCookie(name,value,days=100)
 {
     var date = new Date();
@@ -1781,7 +1791,10 @@ const inspector =
     {
         if(inspector.item._tag == "connection")
         {
-            // alert("Connection parameters cannot be edited yet");
+            this.item.source = getStringUpToBracket(this.item.source)+this.item.source_range;
+            this.item.target = getStringUpToBracket(this.item.target)+this.item.target_range;
+            // FIXME: ADD SYNTAX CHECK HERE ********************
+            selector.selectConnection(selector.selected_connection);
         }
         else if(inspector.item._tag == "group" && selector.selected_foreground.length == 0) // background is selected
             {
@@ -1969,6 +1982,8 @@ const inspector =
             {
                 inspector.addDataRows(item, 
                 [
+                    {'name':'source_range', 'control':'textedit', 'type':'range'},
+                    {'name':'target_range', 'control':'textedit', 'type':'range'},
                     {'name':'delay', 'control':'textedit', 'type':'delay'},
                     {'name':'alias', 'control':'textedit', 'type':'source'}     
                 ], this);
