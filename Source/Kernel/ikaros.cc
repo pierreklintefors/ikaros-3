@@ -2396,17 +2396,28 @@ INSTALL_CLASS(Module)
 
 
     void
-    Kernel::DoCommand(Request & request)// FIXME: Not implemented **************
+    Kernel::DoCommand(Request & request)
     {
-        /*
-        float x, y;
-        char command[255];
-        char value[1024]; // FIXME: no range chacks
-        int c = sscanf(uri.c_str(), "/command/%[^/]/%f/%f/%[^/]", command, &x, &y, value);
-        if(c == 4)
-            SendCommand(command, x, y, value);
+        if(!components.count(request.component_path))
+            {
+                Notify(msg_warning, "Component '"+request.component_path+"' could not be found.");
+                DoSendData(request);
+                return;
+            }
 
-            */
+        if(!request.body.empty()) // FIXME: Move to request and check content-type first
+        {
+            request.parameters = parse_json(request.body);
+        }
+
+        if(!request.parameters.contains("command"))
+        {
+                Notify(msg_warning, "No command specified for  '"+request.component_path+"'.");
+                DoSendData(request);
+                return;
+        }
+
+        components.at(request.component_path)->Command(request.parameters["command"], request.parameters);
         DoSendData(request);
     }
 
