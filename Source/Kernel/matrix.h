@@ -15,6 +15,7 @@
 #include <variant>
 #include <iterator>
 #include <numeric>
+#include <limits>
 
 //#include <cblas.h>
 
@@ -435,7 +436,7 @@ namespace ikaros
             return false;
         }
 
-        std::string json() // Generate JSON-representation of matrix // FIXME: Add resolution for floats
+        std::string json() // Generate JSON-representation of matrix // FIXME: Add resolution for floats and trim zero decimals
         {
             if(rank() == 0)
             {
@@ -457,6 +458,43 @@ namespace ikaros
 
             return s;
         }
+
+
+        std::string csv(std::string separator=",") // Generate CSV representation of matrix // FIXME: Add resolution for floats
+        {
+            if(rank() != 2)
+                throw exception("Matrix must have two dimensions for conversion to csv.");
+
+            std::string sep;
+            std::string s;
+
+            // Add header row std::to_string(data_->at(info_->offset_));
+
+            if( info_->labels_.size()>1)
+            {
+                for(auto & header: info_->labels_[1])
+                {
+                    s+= sep+header;
+                    sep = separator; 
+                }
+                s+="\n";
+            }
+
+            // Add data rows         
+
+            for(auto row : *this) // Iterate over rows
+            {
+                std::string sep;
+                for(auto value : row)
+                {
+                    s += sep + std::to_string(value);
+                    sep = separator;
+                }
+                s += "\n";
+            }
+            return s;
+        }
+
 
         void 
         print(std::string n="") // print matrix; n overrides name if set (useful during debugging)
@@ -480,6 +518,21 @@ namespace ikaros
                 print_();
             std::cout << std::endl;
         }
+
+
+        matrix &
+        reduce(std::function< void(float) > f) // Apply a lambda over elements of a matrix
+        {
+            if(empty())
+                return *this;
+            if(is_scalar())
+                f((*data_)[info_->offset_]);
+            else
+                for(int i=0; i<info_->shape_.front(); i++)
+                    (*this)[i].reduce(f);
+            return *this;
+        }
+
 
         matrix &
         apply(std::function< float(float) > f) // Apply a lambda to elements of a matrix
@@ -541,7 +594,7 @@ namespace ikaros
         matrix & 
         set(float v) // Set all element of the matrix to a value
         {
-            return apply([=](float x) {return v;});
+            return apply([=](float x)->float {return v;});
         }
 
         matrix & 
@@ -847,7 +900,7 @@ namespace ikaros
             return  v; 
         }
         
-        // Element-wise function
+        // Element-wise functions
 
         matrix & add(float c) { return apply([c](float x)->float {return x+c;}); }
         matrix & subtract(float c) { return add(-c); }
@@ -1036,11 +1089,11 @@ namespace ikaros
         // Reduce functions
 
         float sum();
-        float product() { throw std::logic_error("product(). Not implemented."); return 0; }
-        float min() { throw std::logic_error("min(). Not implemented."); return 0; }
-        float max() { throw std::logic_error("max(). Not implemented."); return 0; }
+        float product();
+        float min();
+        float max();
         float average();
-        float median() { throw std::logic_error("median(). Not implemented."); return 0; }
+        float median();
 
 
         float matrank() { throw std::logic_error("matrank(). Not implemented."); return 0; }
@@ -1048,7 +1101,9 @@ namespace ikaros
         float det() { throw std::logic_error("trace(). Not implemented."); return 0; }
         matrix & inv(const matrix & m) { throw std::logic_error("det(). Not implemented."); return *this; }
         matrix & pinv(const matrix & m) { throw std::logic_error("pinv(). Not implemented."); return *this; }
-        matrix & transpose(matrix &ret) {
+
+        matrix & transpose(matrix &ret) 
+        {
             int rows = this->rows();
             int cols = this->cols();
             ret = matrix(cols, rows);
@@ -1077,3 +1132,4 @@ namespace ikaros
     };
 }
 #endif
+

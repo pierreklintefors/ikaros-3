@@ -6,19 +6,59 @@
 namespace ikaros {
 
 float
-matrix::sum() // FIXME: May not work for submatrices ***** use apply instead
+matrix::sum()
+{
+    float s = 0;
+    reduce([&s](float x) { s+=x;});
+    return s; 
+}
+
+
+float
+matrix::product()
+{
+    float s = 1;
+    reduce([&s](float x) { s*=x;});
+    return s; 
+}
+
+
+float
+matrix::min()
 {
     if(empty())
-        return 0;
-    if(is_scalar())
-        return (*data_)[info_->offset_];
+        throw std::domain_error("Empty matrix has no min");
+    float s = std::numeric_limits<float>::max();
+    reduce([&s](float x) { if(x<s) s=x;});
+    return s; 
+}
+
+
+float
+matrix::max()
+{
+    if(empty())
+        throw std::domain_error("Empty matrix has no max");
+    float s = -std::numeric_limits<float>::max();
+    reduce([&s](float x) { if(x>s) s=x;});
+    return s; 
+}
+
+
+float
+matrix::median()
+{
+    if(empty())
+        throw std::domain_error("Empty matrix has no median");
+    std::vector<float> vec;
+    reduce([&vec](float x) { vec.push_back(x);});
+    std::sort(vec.begin(), vec.end());
+    size_t size = vec.size();
+    size_t mid = size / 2;
+    if (size % 2 == 0)
+        return (vec[mid - 1] + vec[mid]) / 2.0;
     else
-    {
-        float s = 0;
-        for(int i=0; i<info_->shape_.front(); i++)
-            s += (*this)[i].sum();
-        return s;
-    }
+        return vec[mid];
 }
 
 
