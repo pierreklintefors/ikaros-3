@@ -1,7 +1,5 @@
 // Ikaros 3.0
 
-#include <iostream> 
-
 #include "ikaros.h"
 
 using namespace ikaros;
@@ -1701,6 +1699,16 @@ INSTALL_CLASS(Module)
     }
 
 
+     dictionary 
+     Kernel::GetModuleInstantiationInfo()
+     {
+        dictionary d;
+        d["Constant"] = "1";
+        d["Print"] = "2";
+        return d;
+     }
+
+
     void Kernel::Save() // Simple save function in present file
     {
         //std::cout << "Kernel::Save" << std::endl;
@@ -1804,11 +1812,215 @@ INSTALL_CLASS(Module)
     }
 
 
+/*************************
+ * 
+ *  Task sorting
+ * 
+ *************************/
+
+
+
+    bool 
+    Kernel::dfsCycleCheck(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recStack) 
+    {
+        if (recStack.find(node) != recStack.end())
+            return true;
+
+        if (visited.find(node) != visited.end())
+            return false;
+
+        visited.insert(node);
+        recStack.insert(node);
+
+        if (graph.find(node) != graph.end()) 
+            for (const std::string& neighbor : graph.at(node)) 
+                if (dfsCycleCheck(neighbor, graph, visited, recStack)) 
+                    return true;
+        recStack.erase(node);
+        return false;
+    }
+
+
+
+    bool 
+    Kernel::hasCycle(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges) 
+    {
+        std::unordered_map<std::string, std::vector<std::string>> graph;
+        for (const auto& edge : edges)
+            graph[edge.first].push_back(edge.second);
+
+        std::unordered_set<std::string> visited;
+        std::unordered_set<std::string> recStack;
+
+        for (const std::string& node : nodes)
+            if (visited.find(node) == visited.end() &&  (dfsCycleCheck(node, graph, visited, recStack)))
+                    return true;
+
+        return false;
+    }
+
+    void 
+    Kernel::dfsSubgroup(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::vector<std::string>& component) 
+    {
+        visited.insert(node);
+        component.push_back(node);
+
+        if (graph.find(node) != graph.end()) 
+        {
+            for (const std::string& neighbor : graph.at(node)) 
+            {
+                if (visited.find(neighbor) == visited.end()) 
+                    dfsSubgroup(neighbor, graph, visited, component);
+            }
+        }
+    }
+
+
+    std::vector<std::vector<std::string>> 
+    Kernel::findSubgraphs(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges) 
+    {
+        std::unordered_map<std::string, std::vector<std::string>> graph;
+        for (const auto& edge : edges) {
+            graph[edge.first].push_back(edge.second);
+            graph[edge.second].push_back(edge.first);
+        }
+
+        std::unordered_set<std::string> visited;
+        std::vector<std::vector<std::string>> components;
+
+        for (const std::string& node : nodes) {
+            if (visited.find(node) == visited.end()) {
+                std::vector<std::string> component;
+                dfsSubgroup(node, graph, visited, component);
+                components.push_back(component);
+            }
+        }
+
+        return components;
+    }
+
+
+    void 
+    Kernel::topologicalSortUtil(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::stack<std::string>& Stack) 
+    {
+        visited.insert(node);
+
+        if (graph.find(node) != graph.end()) {
+            for (const std::string& neighbor : graph.at(node)) {
+                if (visited.find(neighbor) == visited.end()) {
+                    topologicalSortUtil(neighbor, graph, visited, Stack);
+                }
+            }
+        }
+        Stack.push(node);
+    }
+
+
+
+    std::vector<std::string> 
+    Kernel::topologicalSort(const std::vector<std::string>& component, const std::unordered_map<std::string, std::vector<std::string>>& graph) 
+    {
+        std::unordered_set<std::string> visited;
+        std::stack<std::string> Stack;
+
+        for (const std::string& node : component) 
+            if (visited.find(node) == visited.end())
+                topologicalSortUtil(node, graph, visited, Stack);
+
+        std::vector<std::string> sortedSubgraph;
+        while (!Stack.empty()) 
+        {
+            sortedSubgraph.push_back(Stack.top());
+            Stack.pop();
+        }
+
+        return sortedSubgraph;
+    }
+
+
+    std::vector<std::vector<std::string>>
+    Kernel::sort(std::vector<std::string> nodes, std::vector<std::pair<std::string, std::string>> edges)
+    {
+            if (hasCycle(nodes, edges)) 
+            {
+            std::cout << "Graph has a cycle" << std::endl;
+            throw;
+        } else 
+        {
+
+            std::vector<std::vector<std::string>> components = findSubgraphs(nodes, edges);
+
+            // Rebuild the original graph for directed edges
+            std::unordered_map<std::string, std::vector<std::string>> graph;
+            for (const auto& edge : edges) {
+                graph[edge.first].push_back(edge.second);
+            }
+
+            std::vector<std::vector<std::string>>  result;
+
+            for (const auto& component : components) {
+                std::vector<std::string> sortedSubgraph = topologicalSort(component, graph);
+                result.push_back(sortedSubgraph);
+                for (const auto& node : sortedSubgraph) {
+                }
+                std::cout << std::endl;
+            }
+
+            return result;
+        }
+    }
+
+
+
+    void
+    Kernel::SortTasks()
+    {
+        std::vector<std::string> nodes;
+        std::vector<std::pair<std::string, std::string>> arcs;
+
+        for(auto & [s,_] : components)
+        {
+            nodes.push_back(s);
+        }
+
+        for(auto & c : connections)
+        {
+            std::string s = rhead(c.source,".");
+            std::string t = rhead(c.target,".");
+            std::string cc = "CON("+s+","+t+")"; // Connection node name
+
+            nodes.push_back(cc);
+            arcs.push_back({s, cc});
+            arcs.push_back({cc, t});
+        }
+
+       for(auto & s : nodes)
+            std::cout <<  "NODE: " << s << std::endl;
+       for(const auto [s,t] : arcs)
+            std::cout <<  "ARC: " << s << "->" << t << std::endl;
+
+    auto r = sort(nodes, arcs);
+
+    for(auto s : r)
+    {
+        for(auto ss: s)
+            std::cout << ss << " ";
+            std::cout  << std::endl;
+    }
+    std::cout  << std::endl;
+    }
+
+
+
     void
     Kernel::SetUp()
     {
         try
         {
+            if(info_.is_set("experimental"))
+                SortTasks();
+
+
             ResolveParameters();
             CalculateDelays();
             CalculateSizes();

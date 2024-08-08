@@ -29,7 +29,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Exception handling    |<div style="color:#c60">🟡 Partial | not yet consistent |
 | Shared dict       |<div style="color:green">🟢  OK |  |
 | Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
-| Task sorting      |<div style="color:#e00">🔴 Pending |  |
+| Task sorting      |<div style="color:green">🟢 OK |  |
 | Real time         |<div style="color:green">🟢 OK |  |
 | SetSizes    |     <div style="color:green">🟢 OK |
 | Input resizing    |<div style="color:green">🟢 OK |     |  |

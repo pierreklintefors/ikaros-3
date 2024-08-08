@@ -30,6 +30,7 @@ main(int argc, char *argv[])
         o.add_option("s", "stop", "stop Ikaros after this tick", "-1");
         o.add_option("w", "webui_port", "port for ikaros WebUI", "8000");
         o.add_option("h", "help", "list command line options");
+        o.add_option("x", "experimental", "run with experimental features");
 
         o.parse_args(argc, argv);
         if(o.is_set("help"))

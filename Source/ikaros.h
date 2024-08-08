@@ -11,6 +11,14 @@
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
+#include <iostream> 
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <stack>
+
+#include <unordered_set>
+
 
 using namespace std::literals;
 
@@ -248,6 +256,7 @@ public:
     virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
     void CalculateCheckSum(long & check_sum, prime & prime_number); // Calculates a value that depends on all parameters and buffer sizes
+
 };
 
 typedef std::function<Module *()> ModuleCreator;
@@ -432,6 +441,7 @@ public:
     void AllocateInputs();
     void InitComponents();
     void PruneConnections();
+    void SortTasks();
     void SetUp();
     void SetCommandLineParameters(dictionary & d);
     void LoadFile();
@@ -453,6 +463,7 @@ public:
     void Restart(); // Save and reload
 
     void CalculateCheckSum();
+    dictionary GetModuleInstantiationInfo(); // Used for profiling
 
     void DoNew(Request & request);
     void DoOpen(Request & request);
@@ -490,6 +501,16 @@ public:
     void HandleHTTPThread();
     void Tick();
     void Run();
+
+    // TASK SORTING
+
+    bool dfsCycleCheck(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recStack);
+    bool hasCycle(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges);
+    void dfsSubgroup(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::vector<std::string>& component) ;
+    std::vector<std::vector<std::string>> findSubgraphs(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges);
+    void topologicalSortUtil(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::stack<std::string>& Stack);
+    std::vector<std::string>  topologicalSort(const std::vector<std::string>& component, const std::unordered_map<std::string, std::vector<std::string>>& graph);
+    std::vector<std::vector<std::string>> sort(std::vector<std::string> nodes, std::vector<std::pair<std::string, std::string>> edges);
 };
 
 //
