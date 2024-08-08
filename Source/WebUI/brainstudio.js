@@ -1515,7 +1515,7 @@ const inspector =
                     this.createMenuRow(item, p); break;
                 case 'checkbox':
                     this.createCheckBoxRow(item, p); break;
-                case 'checkbox':
+                case 'slider':
                     this.createSliderRow(item, p); break;
             }
 
@@ -1787,13 +1787,32 @@ const inspector =
         }
     },
 */
+
+    checkRangeSyntax(s) // FIXME: Should check full syntax
+    {
+        if(!s)
+            return "";
+        if(s=="")
+            return "";
+        if(s[0]!="[")
+        {
+            alert("Range must start with [");
+            return "";
+        }
+        if(s[s.length-1]!="]")
+        {
+            alert("Range must end with ]");
+            return "";
+        }
+        return s;
+    },
+
     parameterChangeNotification(p)
     {
         if(inspector.item._tag == "connection")
         {
-            this.item.source = getStringUpToBracket(this.item.source)+this.item.source_range;
-            this.item.target = getStringUpToBracket(this.item.target)+this.item.target_range;
-            // FIXME: ADD SYNTAX CHECK HERE ********************
+            this.item.source = getStringUpToBracket(this.item.source)+this.checkRangeSyntax(this.item.source_range);
+            this.item.target = getStringUpToBracket(this.item.target)+this.checkRangeSyntax(this.item.target_range);
             selector.selectConnection(selector.selected_connection);
         }
         else if(inspector.item._tag == "group" && selector.selected_foreground.length == 0) // background is selected
