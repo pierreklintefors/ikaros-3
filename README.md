@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - 1 June, 2024
+## Ikaros 3 Status - 9 August, 2024
 
 | Component | State | Comments |
 | ----|----|----|
@@ -26,7 +26,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Expressions       |<div style="color:green">🟢 OK |  |
 | XML               |<div style="color:green">🟢 OK | |
 | Kernel            |<div style="color:green">🟢 OK |
-| Exception handling    |<div style="color:#c60">🟡 Partial | not yet consistent |
+| Exception handling    |<div style="color:#c60">🟡 Partial | sometimes quits instead of stops |
 | Shared dict       |<div style="color:green">🟢  OK |  |
 | Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
 | Task sorting      |<div style="color:green">🟢 OK |  |
