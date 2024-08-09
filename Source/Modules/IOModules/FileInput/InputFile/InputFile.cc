@@ -64,10 +64,9 @@ public:
 
     InputFile()
     {
-        std::cout << "0\n";
         std::string fname = GetValue("filename");
         // Bind(filename, "filename");
-        std::cout << "fname: " << fname << "\n";
+        std::cout << "Initfile loading fname: " << fname << "\n";
         if(fname.empty()){
              Notify(msg_fatal_error, "No input file parameter supplied.\n");
              return;
@@ -104,7 +103,7 @@ public:
             printf("  Counting column \"%s\" with width %d in file \"%s\".\n", col_label, col_size, filename);
     #endif
         }
-        std::cout << "1\n";
+        
         // new format: label:0 label:1 label2:0 label2:1
         // or          label:0:0 label:0:1 label2:0 label2:1
         while (fscanf(file, "%[^/\n\r]:%d", col_label, &col_ix) == 2)
@@ -118,7 +117,7 @@ public:
         
         if(type == 0) // dynamic
         {
-            std::cout << "2\n";
+           
             column_name.resize(no_of_columns);
             column_size.resize(no_of_columns);
             column_data.resize(no_of_columns);
@@ -147,7 +146,7 @@ public:
                 column_name[col] = create_string(col_label);		// Allocate memory for the column name
                 column_size[col] = col_size;
                 // AddOutput(column_name[col], false, col_size);
-                std::cout << "3\n";
+                
                 AddOutput(column_name[col], col_size, "programatically added output for column");
                 col++;
                 fscanf(file, "%*[^A-Za-z\n\r]");		// Skip until letter or end of line
@@ -219,7 +218,7 @@ public:
 
     void Init()
     {
-        std::cout << "InputFile::Init" << std::endl;
+        //std::cout << "InputFile::Init" << std::endl;
         
         Bind(iterations, "iterations");
         Bind(repetitions, "repetitions");
