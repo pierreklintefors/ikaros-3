@@ -1548,7 +1548,7 @@ INSTALL_CLASS(Module)
         if(!classes.count(classname))
             throw exception("Class \""+classname+"\" does not exist.");
 
-         info.merge(dictionary(classes[classname].path));  // merge with class data structure
+         info.merge(dictionary(classes[classname].path), true);  // merge with class data structure; overwrite from class
 
         if(classes[classname].module_creator == nullptr)
         {
