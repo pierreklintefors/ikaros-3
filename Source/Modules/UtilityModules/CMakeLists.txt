@@ -16,7 +16,7 @@ add_subdirectory(Protocol)
 add_subdirectory(Print)
 add_subdirectory(OutputFile)
 
-# add_subdirectory(ClearSkyIrradiance)
+add_subdirectory(AmbientLight)
 
 
 set(SOURCE ${SOURCE} PARENT_SCOPE)
