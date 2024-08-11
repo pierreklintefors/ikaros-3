@@ -46,10 +46,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   find_library(ACCELERATE_LIBRARY Accelerate) # Hardware Acceleration
   find_library(COCOA_LIBRARY Cocoa)           # Wrapper for including the Cocoa frameworks AppKit.framework, Foundation.framework, and CoreData.framework.
   find_library(QUARTZ_LIBRARY QuartzCore)     # Contains the interfaces for Core Image, Core Animation, and Core Video. See Quartz Core Framework Reference. Used by CIFaceDetector
-
+  find_library(AUDIO_LIBRARY AudioToolbox)
   # An advanced variable will not be displayed in any of the cmake GUIs
-  mark_as_advanced(ACCELERATE_LIBRARY COCOA_LIBRARY QUARTZ_LIBRARY)
-    set(EXTRA_LIBS ${ACCELERATE_LIBRARY} ${COCOA_LIBRARY} ${QUARTZ_LIBRARY} )
+  mark_as_advanced(ACCELERATE_LIBRARY COCOA_LIBRARY QUARTZ_LIBRARY AUDIO_LIBRARY)
+    set(EXTRA_LIBS ${ACCELERATE_LIBRARY} ${COCOA_LIBRARY} ${QUARTZ_LIBRARY} ${AUDIO_LIBRARY})
 
   # CoreMIDI Not part of the core
   #add_definitions(-D__MACOSX_CORE__)
