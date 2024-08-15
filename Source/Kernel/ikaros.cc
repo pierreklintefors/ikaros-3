@@ -779,46 +779,46 @@ namespace ikaros
     }
 
 
-  Component::Component():
-    parent_(nullptr),
-    info_(kernel().current_component_info),
-    path_(kernel().current_component_path)
-{
-          // FIXME: Make sure there are empty lists. None of this should be necessary when dictionary is fixed
+    Component::Component():
+        parent_(nullptr),
+        info_(kernel().current_component_info),
+        path_(kernel().current_component_path)
+    {
+              // FIXME: Make sure there are empty lists. None of this should be necessary when dictionary is fixed
 
-    if(info_["inputs"].is_null())
-        info_["inputs"] = list();
+        if(info_["inputs"].is_null())
+            info_["inputs"] = list();
 
-    if(info_["outputs"].is_null())
-        info_["outputs"] = list();
+        if(info_["outputs"].is_null())
+            info_["outputs"] = list();
 
-    if(info_["parameters"].is_null())
-        info_["parameters"] = list();
+        if(info_["parameters"].is_null())
+            info_["parameters"] = list();
 
-    if(info_["groups"].is_null())
-        info_["groups"] = list();
+        if(info_["groups"].is_null())
+            info_["groups"] = list();
 
-    if(info_["modules"].is_null())
-        info_["modules"] = list();
+        if(info_["modules"].is_null())
+            info_["modules"] = list();
 
-    for(auto p: info_["parameters"])
-        AddParameter(p);
+        for(auto p: info_["parameters"])
+            AddParameter(p);
 
-    for(auto input: info_["inputs"])
-        AddInput(input);
+        for(auto input: info_["inputs"])
+            AddInput(input);
 
-    for(auto output: info_["outputs"])
-        AddOutput(output);
+        for(auto output: info_["outputs"])
+            AddOutput(output);
 
-    if(!info_.contains("log_level"))
-        info_["log_level"] = "5";
+        if(!info_.contains("log_level"))
+            info_["log_level"] = "5";
 
-   // Set parent
+    // Set parent
 
-    auto p = path_.rfind('.');
-    if(p != std::string::npos)
-        parent_ = kernel().components.at(path_.substr(0, p));
-}
+        auto p = path_.rfind('.');
+        if(p != std::string::npos)
+            parent_ = kernel().components.at(path_.substr(0, p));
+    }
 
 
     bool
@@ -835,15 +835,12 @@ namespace ikaros
 
 
 
-  Module::Module()
+    Module::Module()
     {
   
     }
 
-
-
-
-INSTALL_CLASS(Module)
+    INSTALL_CLASS(Module)
 
 // The following lines will create the kernel the first time it is accessed by one of the components
 
@@ -867,7 +864,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
+    void 
+    Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
     {
         for(auto & c : ingoing_connections) // Copy source size to source_range if not set
         {
@@ -880,7 +878,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
+    void 
+    Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
     {
         SetSourceRanges(name, ingoing_connections);
         int begin_index = 0;
@@ -913,7 +912,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
+    void 
+    Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
     {
             SetSourceRanges(name, ingoing_connections);
             int max_delay = 0;
@@ -972,7 +972,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
+    void 
+    Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
     {
             Kernel& k = kernel();
             std::string input_name = path_ + "." + std::string(d["name"]);
@@ -1097,150 +1098,226 @@ INSTALL_CLASS(Module)
 
     // Connection
 
-        Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
+    Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
+    {
+        source = peek_head(s, "[");
+        source_range = range(peek_tail(s, "[", true));
+        target = peek_head(t, "[");
+        target_range = range(peek_tail(t, "[", true));
+        delay_range_ = delay_range;
+        flatten_ = false;
+        alias_ = alias;
+    }
+
+
+    void 
+    Connection::Tick()
+    {
+        auto & k = kernel();
+
+        if(delay_range_.is_delay_0())
         {
-            source = peek_head(s, "[");
-            source_range = range(peek_tail(s, "[", true));
-            target = peek_head(t, "[");
-            target_range = range(peek_tail(t, "[", true));
-            delay_range_ = delay_range;
-            flatten_ = false;
-            alias_ = alias;
+            k.buffers[target].copy(k.buffers[source], target_range, source_range);
+            //std::cout << source << " =0=> " << target << std::endl; 
+        }
+        else if(delay_range_.empty() || delay_range_.is_delay_1())
+        {
+            //std::cout << source << " =1=> " << target << std::endl; 
+            k.buffers[target].copy(k.buffers[source], target_range, source_range);
         }
 
-
-        void
-        Connection::Print()
+        else if(flatten_) // Copy flattened delayed values
         {
-            std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range);
-            if(!alias_.empty())
-                std::cout << " \"" << alias_ << "\"";
-            std::cout << '\n'; 
+            //std::cout << source << " =F=> " << target << std::endl; 
+            matrix ctarget = k.buffers[target];
+            int target_offset = target_range.a_[0];
+            for(int i=delay_range_.a_[0]; i<delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
+            {   
+                matrix s = k.circular_buffers[source].get(i);
+
+                for(auto ix=source_range; ix.more(); ix++)
+                {
+                    int source_index = s.compute_index(ix.index());
+                    ctarget[target_offset++] = (*(s.data_))[source_index];
+                }
+            }
         }
 
-
-    // Class
-
-        Class::Class(std::string n, std::string p) : module_creator(nullptr), name(n), path(p),info_(p)
+        else if(delay_range_.a_[0]+1 == delay_range_.b_[0]) // Copy indexed delayed value with single delay
         {
-         //   info_ = dictionary(path);
+            //std::cout << source << " =D=> " << target << std::endl;
+            matrix s = k.circular_buffers[source].get(delay_range_.a_[0]);
+            k.buffers[target].copy(s, target_range, source_range);
         }
 
-        Class::Class(std::string n, ModuleCreator mc) : module_creator(mc), name(n)
+        else // Copy indexed delayed values with more than one element
         {
-         //   info_ = dictionary(path);
+            //std::cout << source << " =DD=> " << target << std::endl;
+            for(int i=delay_range_.a_[0]; i<delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
+            {   
+                matrix s = k.circular_buffers[source].get(i);
+                int target_ix = i - delay_range_.a_[0]; // trim!
+                range tr = target_range.tail();
+                matrix t = k.buffers[target][target_ix];
+                t.copy(s, tr, source_range);
+
+            }
         }
+    };
+
+    void
+    Connection::Print()
+    {
+        std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range);
+        if(!alias_.empty())
+            std::cout << " \"" << alias_ << "\"";
+        std::cout << '\n'; 
+    }
 
 
-        void 
-        Class::print()
-        {
-            std::cout << name << ": " << path  << '\n';
-        }
+std::string
+Connection::Info()
+{
+    std::string s = source + delay_range_.curly() +  std::string(source_range) + " => " + target  + std::string(target_range);
+        if(!alias_.empty())
+            s+=  " \"" + alias_ + "\"";
+    return s;
+}
+
+// Class
+
+    Class::Class(std::string n, std::string p) : module_creator(nullptr), name(n), path(p),info_(p)
+    {
+        //   info_ = dictionary(path);
+    }
+
+    Class::Class(std::string n, ModuleCreator mc) : module_creator(mc), name(n)
+    {
+        //   info_ = dictionary(path);
+    }
+
+
+    void 
+    Class::Print()
+    {
+        std::cout << name << ": " << path  << '\n';
+    }
 
     // Request
 
-        Request::Request(std::string  uri, long sid, std::string b):
-            body(b)
-        {
-            url = uri;
-            session_id = sid;
-            uri.erase(0, 1);
-            std::string params = tail(uri, "?");
-            //std::cout << params << std::endl;
-            command = head(uri, "/"); 
-            component_path = uri;
-            parameters.parse_url(params);
-        }
-
-    bool operator==(Request & r, const std::string s)
+    Request::Request(std::string  uri, long sid, std::string b):
+        body(b)
     {
-        return r.command == s;
+        url = uri;
+        session_id = sid;
+        uri.erase(0, 1);
+        std::string params = tail(uri, "?");
+        //std::cout << params << std::endl;
+        command = head(uri, "/"); 
+        component_path = uri;
+        parameters.parse_url(params);
     }
 
-    // Kernel
+bool operator==(Request & r, const std::string s)
+{
+    return r.command == s;
+}
 
-        void
-        Kernel::Clear()
-        {
-            //std::cout << "Kernel::Clear" << std::endl;
-            // FIXME: retain persistent components
-            components.clear();
-            connections.clear();
-            buffers.clear();   
-            max_delays.clear();
-            circular_buffers.clear();
-            parameters.clear();
+// Kernel
 
-            tick = -1;
-            //run_mode = run_mode_pause;
-            tick_is_running = false;
-            tick_time_usage = 0;
-            tick_duration = 1; // default value
-            actual_tick_duration = tick_duration;
-            idle_time = 0;
-            stop_after = -1;
-            shutdown = false;
-            info_ = dictionary();
-            info_["filename"] = ""; //EMPTY FILENAME
+    void
+    Kernel::Clear()
+    {
+        //std::cout << "Kernel::Clear" << std::endl;
+        // FIXME: retain persistent components
+        components.clear();
+        connections.clear();
+        buffers.clear();   
+        max_delays.clear();
+        circular_buffers.clear();
+        parameters.clear();
 
-            session_id = new_session_id();
-        }
+        tick = -1;
+        //run_mode = run_mode_pause;
+        tick_is_running = false;
+        tick_time_usage = 0;
+        tick_duration = 1; // default value
+        actual_tick_duration = tick_duration;
+        idle_time = 0;
+        stop_after = -1;
+        shutdown = false;
+        info_ = dictionary();
+        info_["filename"] = ""; //EMPTY FILENAME
 
-
-        void
-        Kernel::New()
-        {
-            //std::cout << "Kernel::New" << std::endl;
-            Notify(msg_print, "New file");
-       
-            Clear();
-            Pause();
-            dictionary d;
-
-            d["_tag"] = "group";
-            d["name"] = "Untitled";
-            d["groups"] = list();
-            d["modules"] = list();
-            d["widgets"] = list();
-            d["connections"] = list();       
-            d["inputs"] = list();            
-            d["outputs"] = list();            
-            d["parameters"] = list();           
-            d["stop"] = "-1";
-            // d["webui_port"] = "8000";
-
-            SetCommandLineParameters(d);
-            d["filename"] = "";
-            BuildGroup(d);
-            info_ = d;
-            session_id = new_session_id(); 
-            SetUp(); // FIXME: Catch exceptions if new failes
-        }
+        session_id = new_session_id();
+    }
 
 
-        void
-        Kernel::Tick()
-        {
+    void
+    Kernel::New()
+    {
+        //std::cout << "Kernel::New" << std::endl;
+        Notify(msg_print, "New file");
+    
+        Clear();
+        Pause();
+        dictionary d;
+
+        d["_tag"] = "group";
+        d["name"] = "Untitled";
+        d["groups"] = list();
+        d["modules"] = list();
+        d["widgets"] = list();
+        d["connections"] = list();       
+        d["inputs"] = list();            
+        d["outputs"] = list();            
+        d["parameters"] = list();           
+        d["stop"] = "-1";
+        // d["webui_port"] = "8000";
+
+        SetCommandLineParameters(d);
+        d["filename"] = "";
+        BuildGroup(d);
+        info_ = d;
+        session_id = new_session_id(); 
+        SetUp(); // FIXME: Catch exceptions if new failes
+    }
+
+
+    void
+    Kernel::Tick()
+    {
         tick_is_running = true; // Flag that state changes are not allowed
         tick++;
         //std::cout <<" Tick: " << GetTick() << std::endl;
-         for(auto & m : components)
-            try
-            {
-                //std::cout <<" Tick: " << m.second->info_["name"] << std::endl;
-                if(m.second != nullptr)  // Allow classes without code
-                    m.second->Tick();   
-            }
-            catch(const empty_matrix_error& e)
-            {
-                throw std::out_of_range(m.first+"."+e.message+" (Possibly an empty matrix or an input that is not connected).");  
-            }
-            catch(const std::exception& e)
-            {
-                throw exception(m.first+". "+std::string(e.what()));
-            }
 
+
+            for(auto & task_group : tasks)
+                for(auto & task: task_group)
+                    task->Tick();
+
+/*
+        }
+        else
+        {
+
+            for(auto & m : components)
+                try
+                {
+                    //std::cout <<" Tick: " << m.second->info_["name"] << std::endl;
+                    if(m.second != nullptr)  // Allow classes without code
+                        m.second->Tick();   
+                }
+                catch(const empty_matrix_error& e)
+                {
+                    throw std::out_of_range(m.first+"."+e.message+" (Possibly an empty matrix or an input that is not connected).");  
+                }
+                catch(const std::exception& e)
+                {
+                    throw exception(m.first+". "+std::string(e.what()));
+                }
+        }
+*/
         RotateBuffers();
         Propagate();
 
@@ -1249,7 +1326,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    bool Kernel::Terminate()
+    bool 
+    Kernel::Terminate()
     {
         if(stop_after!= -1 &&  tick >= stop_after)
         {
@@ -1263,7 +1341,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ScanClasses(std::string path) // FIXME: Add error handling
+    void 
+    Kernel::ScanClasses(std::string path) // FIXME: Add error handling
     {
         if(!std::filesystem::exists(path))
         {
@@ -1280,7 +1359,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ScanFiles(std::string path, bool system)
+    void 
+    Kernel::ScanFiles(std::string path, bool system)
     {
         if(!std::filesystem::exists(path))
         {
@@ -1300,15 +1380,17 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListClasses()
+    void 
+    Kernel::ListClasses()
     {
         std::cout << "\nClasses:" << std::endl;
         for(auto & c : classes)
-            c.second.print();
+            c.second.Print();
     }
 
 
-    void Kernel::ResolveParameter(parameter & p,  std::string & name)
+    void 
+    Kernel::ResolveParameter(parameter & p,  std::string & name)
     {
         std::size_t i = name.rfind(".");
         if(i == std::string::npos)
@@ -1320,7 +1402,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ResolveParameters() // Find and evaluate value or default // FIXME: return success
+    void 
+    Kernel::ResolveParameters() // Find and evaluate value or default // FIXME: return success
     {
         bool ok = true;
         for (auto p=parameters.rbegin(); p!=parameters.rend(); p++) // Reverse order equals outside in in groups
@@ -1340,7 +1423,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::CalculateSizes()
+    void 
+    Kernel::CalculateSizes()
     {
         // Copy the table of all components
         std::map<std::string, Component *> init_components = components;
@@ -1376,7 +1460,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::CalculateDelays()
+    void 
+    Kernel::CalculateDelays()
     {
         for(auto & c : connections)
         {
@@ -1390,7 +1475,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::InitCircularBuffers()
+    void 
+    Kernel::InitCircularBuffers()
     {
         //std::cout << "\nInitCircularBuffers:" << std::endl;
         for(auto it : max_delays)
@@ -1403,14 +1489,16 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::RotateBuffers()
+    void 
+    Kernel::RotateBuffers()
     {
         for(auto & it : circular_buffers)
             it.second.rotate(buffers[it.first]);
     }
 
 
-    void Kernel::ListComponents()
+    void 
+    Kernel::ListComponents()
     {
         std::cout << "\nComponents:" << std::endl;
         for(auto & m : components)
@@ -1418,7 +1506,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListConnections()
+    void 
+    Kernel::ListConnections()
     {
         std::cout << "\nConnections:" << std::endl;
         for(auto & c : connections)
@@ -1426,7 +1515,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListInputs()
+    void 
+    Kernel::ListInputs()
     {
         std::cout << "\nInputs:" << std::endl;
         for(auto & i : buffers)
@@ -1442,7 +1532,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListBuffers()
+    void 
+    Kernel::ListBuffers()
     {
         std::cout << "\nBuffers:" << std::endl;
         for(auto & i : buffers)
@@ -1450,7 +1541,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListCircularBuffers()
+    void 
+    Kernel::ListCircularBuffers()
     {
         std::cout << "\nCircularBuffers:" << std::endl;
         for(auto & i : circular_buffers)
@@ -1458,7 +1550,8 @@ INSTALL_CLASS(Module)
     }
 
 
-   void Kernel::ListParameters()
+   void 
+   Kernel::ListParameters()
     {
         std::cout << "\nParameters:" << std::endl;
         for(auto & p : parameters)
@@ -1466,7 +1559,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::PrintLog()
+    void 
+    Kernel::PrintLog()
     {
         for(auto & s : log)
             std::cout << "IKAROS: " << s.level_ << ": " << s.message_ << std::endl;
@@ -1491,23 +1585,27 @@ INSTALL_CLASS(Module)
 
     // Functions for creating the network
 
-    void Kernel::AddInput(std::string name, dictionary parameters) // FIXME: use name as argument insteas of parameters
+    void 
+    Kernel::AddInput(std::string name, dictionary parameters) // FIXME: use name as argument insteas of parameters
     {
         buffers[name] = matrix().set_name(parameters["name"]);
     }
 
-    void Kernel::AddOutput(std::string name, dictionary parameters)
+    void 
+    Kernel::AddOutput(std::string name, dictionary parameters)
     {
         buffers[name] = matrix().set_name(parameters["name"]);
     }
 
-    void Kernel::AddParameter(std::string name, dictionary params)
+    void 
+    Kernel::AddParameter(std::string name, dictionary params)
     {
          parameters.emplace(name, parameter(params));
     }
 
 
-    void Kernel::SetParameter(std::string name, std::string value)
+    void 
+    Kernel::SetParameter(std::string name, std::string value)
     {
         if(!parameters.count(name))
             throw exception("Parameter \""+name+"\" could not be set because it doees not exist.");
@@ -1524,7 +1622,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::AddGroup(dictionary info, std::string path)
+    void 
+    Kernel::AddGroup(dictionary info, std::string path)
     {
         current_component_info = info;
         current_component_path = path;
@@ -1536,7 +1635,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::AddModule(dictionary info, std::string path)
+    void 
+    Kernel::AddModule(dictionary info, std::string path)
     {
         current_component_info = info;
         current_component_path = path+"."+std::string(info["name"]);
@@ -1548,7 +1648,7 @@ INSTALL_CLASS(Module)
         if(!classes.count(classname))
             throw exception("Class \""+classname+"\" does not exist.");
 
-         info.merge(dictionary(classes[classname].path), true);  // merge with class data structure; overwrite from class
+         info.merge(dictionary(classes[classname].path));  // merge with class data structure
 
         if(classes[classname].module_creator == nullptr)
         {
@@ -1562,7 +1662,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::AddConnection(dictionary info, std::string path)
+    void 
+    Kernel::AddConnection(dictionary info, std::string path)
     {
          std::string souce = path+"."+std::string(info["source"]);   // FIXME: Look for global paths later - string conversion should not be necessary
          std::string target = path+"."+std::string(info["target"]);
@@ -1591,7 +1692,8 @@ INSTALL_CLASS(Module)
 
 
 
-    void Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
+    void 
+    Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
     {
         std::string name = validate_identifier(d["name"]);
         if(!path.empty())
@@ -1617,7 +1719,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::InitComponents()
+    void 
+    Kernel::InitComponents()
     {
         //std::cout << "Running Kernel::InitComponents()" << std::endl;
         // Call Init for all modules (after CalcalateSizes and Allocate)
@@ -1637,7 +1740,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::SetCommandLineParameters(dictionary & d) // Add command line arguments - will override XML - probably not correct ******************
+    void 
+    Kernel::SetCommandLineParameters(dictionary & d) // Add command line arguments - will override XML - probably not correct ******************
     {
     
         for(auto & x : options_.d)
@@ -1653,7 +1757,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::LoadFile()
+    void 
+    Kernel::LoadFile()
     {
             //std::cout << "Kernel::LoadFile" << std::endl;
             try
@@ -1679,7 +1784,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::CalculateCheckSum()
+    void 
+    Kernel::CalculateCheckSum()
     {
         if(!info_.contains("check_sum"))
             return;
@@ -1709,7 +1815,8 @@ INSTALL_CLASS(Module)
      }
 
 
-    void Kernel::Save() // Simple save function in present file
+    void 
+    Kernel::Save() // Simple save function in present file
     {
         //std::cout << "Kernel::Save" << std::endl;
         std::string data = xml();
@@ -1724,20 +1831,23 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::SortNetwork()
+   
+    void 
+    Kernel::Propagate()
     {
-        // Resolve paths
-        // Sort Components and Connections => Thread Groups and Partially Ordered Events (Tick & Propagate)
-    }
 
+         for(auto & c : connections)
+            if(c.delay_range_.is_delay_0())
+                continue;
+            else
+                c.Tick();
 
-    void Kernel::Propagate()
-    {
+   /*
          for(auto & c : connections)
         {
             if(c.delay_range_.empty() || c.delay_range_.is_delay_0())
             {
-                // Do not handle here yet // FIXME: !!!!
+                // Do not handle here. Handled in Connection.Tick()
             }
 
             else if(c.delay_range_.empty() || c.delay_range_.is_delay_1())
@@ -1778,7 +1888,9 @@ INSTALL_CLASS(Module)
                 }
             }
         }
+    */
     }
+
 
 
     void
@@ -1977,37 +2089,79 @@ INSTALL_CLASS(Module)
     {
         std::vector<std::string> nodes;
         std::vector<std::pair<std::string, std::string>> arcs;
+        std::map<std::string, Task *> task_map;
 
-        for(auto & [s,_] : components)
+        for(auto & [s,c] : components)
         {
             nodes.push_back(s);
+            task_map[s] = c; // Save in task map
         }
 
-        for(auto & c : connections)
-        {
-            std::string s = rhead(c.source,".");
-            std::string t = rhead(c.target,".");
-            std::string cc = "CON("+s+","+t+")"; // Connection node name
+        for(auto & c : connections) // ONLY ZERO CONNECTIONS
+        if(c.delay_range_.is_delay_0())
+            {
+                std::string s = peek_rhead(c.source,".");
+                std::string t = peek_rhead(c.target,".");
+                std::string cc = "CON("+s+","+t+")"; // Connection node name
 
-            nodes.push_back(cc);
-            arcs.push_back({s, cc});
-            arcs.push_back({cc, t});
-        }
-
+                nodes.push_back(cc);
+                arcs.push_back({s, cc});
+                arcs.push_back({cc, t});
+                task_map[cc] = &c; // Save in task map
+            }
+/*
        for(auto & s : nodes)
             std::cout <<  "NODE: " << s << std::endl;
        for(const auto [s,t] : arcs)
             std::cout <<  "ARC: " << s << "->" << t << std::endl;
+*/
+        auto r = sort(nodes, arcs);
 
-    auto r = sort(nodes, arcs);
+/*
+        for(auto s : r)
+        {
+            for(auto ss: s)
+                std::cout << ss << " ";
+                std::cout  << std::endl;
+        }
+        std::cout  << std::endl;
+*/
+        // Fill task list
 
-    for(auto s : r)
-    {
-        for(auto ss: s)
-            std::cout << ss << " ";
-            std::cout  << std::endl;
+        tasks.clear();
+        for(auto s : r)
+        {
+            std::vector<Task *> task_list;
+            for(auto ss: s)
+                task_list.push_back(task_map[ss]);   // Get task ponter here
+            tasks.push_back(task_list);
+        }
+
+/*
+        // Push delayed connections
+
+        for(auto & c : connections)
+            if(!c.delay_range_.is_delay_0())
+            {
+                std::vector<Task *> connection_task_list;
+                connection_task_list.push_back(&c);
+                tasks.push_back(connection_task_list);
+            }
+*/
+//        std::cout << "SORTING COMPLETE" << std::endl;
+
+
+
     }
-    std::cout  << std::endl;
+
+
+
+    void
+    Kernel::RunTasks()
+    {
+        for(auto & task_group : tasks)
+            for(auto & task: task_group)
+                task->Tick();
     }
 
 
@@ -2017,10 +2171,7 @@ INSTALL_CLASS(Module)
     {
         try
         {
-            if(info_.is_set("experimental"))
-                SortTasks();
-
-
+            SortTasks();
             ResolveParameters();
             CalculateDelays();
             CalculateSizes();
@@ -2029,17 +2180,18 @@ INSTALL_CLASS(Module)
             InitCircularBuffers();
             InitComponents();
 
-  /*
-            ListParameters();
-            ListComponents();
-            ListConnections();
-            ListInputs();
-            ListOutputs();
-            ListBuffers();
-            ListCircularBuffers();
-            ListParameters();
+            if(info_.is_set("info"))
+            {
+                ListParameters();
+                ListComponents();
+                ListConnections();
+                ListInputs();
+                ListOutputs();
+                ListBuffers();
+                ListCircularBuffers();
+            }
+
             PrintLog();
-*/
         }
         catch(exception & e)
         {

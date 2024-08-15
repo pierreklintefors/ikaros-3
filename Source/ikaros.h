@@ -15,9 +15,9 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <stack>
 
-#include <unordered_set>
 
 
 using namespace std::literals;
@@ -67,6 +67,13 @@ const int    msg_trace          =    8;
 using tick_count = long long int;
 
 std::string  validate_identifier(std::string s);
+
+class Task         // Component or Connection
+{
+public:
+    virtual void Tick() = 0;
+    virtual std::string Info() = 0;
+};
 
 class Component;
 class Module;
@@ -181,7 +188,7 @@ class Message
 // COMPONENT
 //
 
-class Component
+class Component : public Task
 {
 public:
     Component *     parent_;
@@ -192,9 +199,12 @@ public:
 
     virtual ~Component() {};
 
+    std::string Info() { return info_["name"]; }
+
     bool Notify(int msg, std::string message, std::string path=""); // Path to componenet with problem
 
     // Shortcut function for messages and logging
+
 
     bool Print(std::string message) { return Notify(msg_print, message); }
     bool Warning(std::string message, std::string path="") { return Notify(msg_warning, message, path); }
@@ -280,7 +290,7 @@ public:
 // CONNECTION
 //
 
-class Connection
+class Connection: public Task
 {
 public:
     std::string source;             // FIXME: Add undescore to names ****
@@ -292,7 +302,11 @@ public:
     bool        flatten_;
 
     Connection(std::string s, std::string t, range & delay_range, std::string alias="");
+
+    void Tick();
     void Print();
+
+    std::string Info();
 };
 
 //
@@ -312,7 +326,7 @@ public:
     Class(std::string n, std::string p);
     Class(std::string n, ModuleCreator mc);
 
-    void print();
+    void Print();
 };
 
 
@@ -355,8 +369,10 @@ public:
     std::map<std::string, CircularBuffer>   circular_buffers;       // Circular circular_buffers for delayed buffers
     std::map<std::string, parameter>        parameters;
 
+    std::vector<std::vector<Task *>>        tasks;                  // Sorted tasks in groups
+
     long                                    session_id;
-    //bool                                    is_running;
+    //bool                                  is_running;
     std::atomic<bool>                       tick_is_running;
     std::atomic<bool>                       sending_ui_data;
     std::atomic<bool>                       handling_request;
@@ -442,13 +458,11 @@ public:
     void InitComponents();
     void PruneConnections();
     void SortTasks();
+    void RunTasks();
     void SetUp();
     void SetCommandLineParameters(dictionary & d);
     void LoadFile();
     void Save();
-
-    void SortNetwork();
-    void Propagate();
 
     std::string json();
     std::string xml();
@@ -500,6 +514,7 @@ public:
     void HandleHTTPRequest();
     void HandleHTTPThread();
     void Tick();
+    void Propagate();
     void Run();
 
     // TASK SORTING

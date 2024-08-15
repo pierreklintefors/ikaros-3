@@ -25,6 +25,7 @@ main(int argc, char *argv[])
 
         o.add_option("b", "batch_mode", "start automatically and quit when execution terminates");
         o.add_option("d", "tick_duration", "duration of each tick");
+        o.add_option("i", "info", "print model info");
         o.add_option("r", "real_time", "run in real-time mode");
         o.add_option("S", "start", " start-up automatically without waiting for commands from WebUI");
         o.add_option("s", "stop", "stop Ikaros after this tick", "-1");
