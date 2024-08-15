@@ -462,7 +462,7 @@ namespace ikaros
 // GetValue
 //
 // Get value of a key/variable in the context of this component (ignores current parameter values)
-// Throws and eception if value cannot be found
+// Throws and exception if value cannot be found
 // Does not handle default values - this is done by parameters
 
     std::string 
@@ -704,39 +704,55 @@ namespace ikaros
     }
 
 
+
+    std::string
+    Component::EvaluateVariable(const std::string & s)
+    {
+        parameter p;
+        if(LookupParameter(p, s.substr(1)))
+            return p;
+        else
+            return Evaluate(s);
+
+    }
+
+
     int 
     Component::EvaluateIntExpression(std::string & s)
     {
         expression e = expression(s);
         std::map<std::string, std::string> vars;
         for(auto v : e.variables())
-            vars[v] = Evaluate(v);
+            vars[v] = EvaluateVariable(v);
         return expression(s).evaluate(vars);
     }
+
 
     std::vector<int> 
     Component::EvaluateSizeList(std::string & s) // return list of size from size list in string
     {
-        //s = Evaluate(s, true); // FIXME: evaluate as string fir s should probably be used in more places
+        //s = Evaluate(s, true); // FIXME: evaluate as string for s should probably be used in more places
         std::vector<int> shape;
         for(std::string e : split(s, ","))
-        shape.push_back(EvaluateIntExpression(e));
+        {
+            if(ends_with(e, ".size")) // special case: use shape function on input and push each dimension on list
+            {
+                auto & x = rsplit(e, ".", 1);
+                matrix m;
+                Bind(m, x.at(0));
+                for(auto d : m.shape())
+                    shape.push_back(d);
+            }
+            else
+            {
+                int d = EvaluateIntExpression(e);
+                if(d>0)
+                    shape.push_back(d);
+            }
+        }
         return shape;
     }
 
-    std::vector<int> 
-    Component::EvaluateSize(std::string & s) // Evaluate size/shape string
-    {
-        if(ends_with(s, ".size")) // special case: use shape function on input // FIXME: Move to EvaluateSizeList
-        {
-            auto & x = rsplit(s, ".", 1); // FIXME: rhead ???
-            matrix m;
-            Bind(m, x.at(0));
-            return m.shape(); 
-        }
-
-        return EvaluateSizeList(s); // default case: parse size list
-    }
 
 
 // NEW EVALUATION FUNCTIONS
@@ -744,7 +760,7 @@ namespace ikaros
     double 
     Component::EvaluateNumber(std::string v)
     {
-        return stod(v); // FIXME: Add full parding of expressions and variables *************
+        return stod(v); // FIXME: Add full parsing of expressions and variables *************
     }
 
 
@@ -753,7 +769,6 @@ namespace ikaros
     {
         return false;
     }
-
 
 
     std::string 
@@ -1016,7 +1031,7 @@ namespace ikaros
             if(dictionary(d).contains("size")) // FIXME: use automatic conversions
             {
                 std::string s = d["size"];
-                std::vector<int> shape = EvaluateSize(s);
+                std::vector<int> shape = EvaluateSizeList(s);
                 matrix o;
                 Bind(o, n); // FIXME: Get directly?
                 if(o.rank() != 0)
@@ -1695,6 +1710,9 @@ bool operator==(Request & r, const std::string s)
     void 
     Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
     {
+        if(!d.contains("name"))
+            throw fatal_error("Groups must have a name.");
+
         std::string name = validate_identifier(d["name"]);
         if(!path.empty())
             name = path+"."+name;
@@ -1777,6 +1795,7 @@ bool operator==(Request & r, const std::string s)
             }
             catch(const exception& e)
             {
+                Notify(msg_fatal_error, e.message);
                 Notify(msg_fatal_error, u8"Load file failed for "s+options_.filename);
                 CalculateCheckSum();
                 New();
@@ -1824,7 +1843,7 @@ bool operator==(Request & r, const std::string s)
         //std::cout << data << std::endl;
 
         std::ofstream file;
-        std::string filename = info_["filename"];
+        std::string filename = add_extension(info_["filename"], ".ikg");
         file.open (filename);
         file << data;
         file.close();
@@ -2294,7 +2313,7 @@ bool operator==(Request & r, const std::string s)
     std::string 
     Component::json()
     {
-        return info_.json(); // FIXME: Will be used when shared dictionaries are implemented
+        return info_.json();
     }
 
 

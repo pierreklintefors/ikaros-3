@@ -294,6 +294,16 @@ bool ends_with(const std::string & s, const std::string & end) // waiting for C+
 }
 
 
+std::string add_extension(const std::string &  filename, const std::string & extension) 
+{
+    if(ends_with(filename, extension))
+        return std::string(filename);
+    else
+        return std::string(filename) + extension;
+}
+
+
+
 /*
 const std::string head(std::string s, char token) // without token
 {

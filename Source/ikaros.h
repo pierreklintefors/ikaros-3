@@ -244,12 +244,13 @@ public:
     Component * GetComponent(const std::string & s); // Get component; sensitive to variables and indirection
 
     std::string Evaluate(const std::string & s, bool is_string=false);     // Evaluate an expression in the current context
+    std::string EvaluateVariable(const std::string & s);
     bool LookupParameter(parameter & p, const std::string & name);
     
     int EvaluateIntExpression(std::string & s);
 
     std::vector<int> EvaluateSizeList(std::string & s);
-    std::vector<int> EvaluateSize(std::string & s);
+    //std::vector<int> EvaluateSize(std::string & s);
 
     double EvaluateNumber(std::string v);
     bool EvaluateBool(std::string v);

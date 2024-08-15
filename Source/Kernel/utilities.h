@@ -35,6 +35,8 @@ namespace ikaros
     std::string cut_head(std::string & s, const std::string & delimiter); // return string before delimiter and remove it from s
 
 
+    std::string add_extension(const std::string &  filename, const std::string & extension);
+
     bool is_integer(const std::string & s); // is s an interger?
     bool is_number(const std::string &s); // is s an int, float or double?
     // is_bool(s):; // Can s be converted to a boolean value?
