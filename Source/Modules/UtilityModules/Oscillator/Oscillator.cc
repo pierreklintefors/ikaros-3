@@ -7,13 +7,15 @@ using namespace ikaros;
 class Oscillator: public Module
 {
     parameter   osc_type;
-    parameter   frequency;
+    matrix      frequency;
+    parameter   sample_rate;
     matrix      output;
 
     void Init()
     {
         Bind(osc_type, "type");
         Bind(frequency, "frequency");
+        Bind(sample_rate, "sample_rate");
         Bind(output, "OUTPUT");
     }
 
@@ -33,7 +35,34 @@ class Oscillator: public Module
     {
         float time = kernel().GetTime();
 
-        output.apply(frequency, [=](float x, float f) {return func(time, f);});
+        // If no buffer is used, apply function to every element of the output
+
+        if(sample_rate==0)
+        {
+            output.apply(frequency, [=](float x, float f) {return func(time, f);});
+            return;
+        }
+
+        // // Iterate over all parameters and fill the buffer for each
+
+        double time_increment = sample_rate/double(output.size_x()); // Dimension of the last dimension that holds the buffer
+
+        if(output.rank() == 2)
+        {
+            for(int row=0; row<output.size_y(); row++) // Iterate over fist dimension
+                for(int i=0; i<output.size_x(); i++) // Fill buffer
+                    output(row, i) = func(time+double(i)*time_increment, frequency(row));
+            return;
+        }
+        
+        if(output.rank() == 3)
+        {
+            for(int row=0; row<output.size(0); row++) // Iterate over fist dimension
+                for(int col=0; col<output.size(1); col++) // Iterate over second dimension
+                for(int i=0; i<output.size(2); i++) // Fill buffer
+                    output(row, col, i) = func(time+double(i)*time_increment, frequency(row, col));
+            return;
+        }
     }
 };
 
