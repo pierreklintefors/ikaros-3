@@ -9,20 +9,29 @@ class Oscillator: public Module
     parameter   osc_type;
     matrix      frequency;
     parameter   sample_rate;
+    matrix      input;
     matrix      output;
+    double       modulator = 0;
 
     void Init()
     {
         Bind(osc_type, "type");
         Bind(frequency, "frequency");
         Bind(sample_rate, "sample_rate");
+        Bind(input, "INPUT");
         Bind(output, "OUTPUT");
+
+        //if(input.connected() && frequency.shape() != output.shape())
+        //    throw exception("INPUT must have the same size as frequency");
+
     }
 
 
     float func(float time, float freq)
     {
-        //std::cout << "   " << time << "  " << << std::endl;
+        if(input.connected())
+            freq += 50*input(0);
+    
         switch(osc_type.as_int())
         {
             case 0: return sin(2*M_PI*time*freq);
@@ -33,7 +42,7 @@ class Oscillator: public Module
 
     void Tick()
     {
-        float time = kernel().GetTime();
+        float time = kernel().GetNominalTime();
 
         // If no buffer is used, apply function to every element of the output
 
@@ -45,7 +54,9 @@ class Oscillator: public Module
 
         // // Iterate over all parameters and fill the buffer for each
 
-        double time_increment = sample_rate/double(output.size_x()); // Dimension of the last dimension that holds the buffer
+        double sr = sample_rate;
+        double sx = output.size_x();
+        double time_increment = kernel().GetTickDuration()/double(output.size_x()); // Dimension of the last dimension that holds the buffer
 
         if(output.rank() == 2)
         {
