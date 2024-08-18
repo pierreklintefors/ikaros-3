@@ -3,33 +3,25 @@
 #include <atomic>
 #include <thread>
 
-
 using namespace ikaros;
 
 class OutputAudio : public Module
 {
 public:
     matrix input;
-    matrix buffer;
-
     parameter sampleRate;
     parameter bufferSize;
 
     AudioQueueRef queue;
     AudioStreamBasicDescription asbd;
     std::atomic<bool> isPlaying;
-    
     std::thread playbackThread;
-    std::mutex inputMutex; // Mutex to protect the input matrix
 
     void Init()
     {
         Bind(input, "INPUT");
         Bind(sampleRate, "sample_rate");
         Bind(bufferSize, "buffer_size");
-
-        buffer.copy(input);
-
 
         // Initialize audio queue
         memset(&asbd, 0, sizeof(asbd));
@@ -44,24 +36,21 @@ public:
 
         AudioQueueNewOutput(&asbd, audioQueueOutputCallback, this, NULL, NULL, 0, &queue);
 
-        isPlaying = true;
-
-        // Start playback thread during initialization
-        playbackThread = std::thread(&OutputAudio::playAudio, this);
+        isPlaying = false;
     }
-
-
-    int c = 0;
 
     void Tick()
     {
-        std::lock_guard<std::mutex> lock(inputMutex);
-        //if(c++< 10)
-        buffer.copy(input);
-        // input.print();
+        if (!isPlaying)
+        {
+            // Start a new playback thread
+            if (playbackThread.joinable())
+            {
+                playbackThread.join();
+            }
+            playbackThread = std::thread(&OutputAudio::playAudio, this);
+        }
     }
-
-
 
     void playAudio()
     {
@@ -79,7 +68,9 @@ public:
 
         // Wait for playback to complete
         while (isPlaying)
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
 
         AudioQueueStop(queue, true);
     }
@@ -91,16 +82,13 @@ public:
 
         if (framesToCopy > 0)
         {
-            // Lock the mutex before accessing the input matrix
-            std::lock_guard<std::mutex> lock(audioModule->inputMutex);
-            memcpy(inBuffer->mAudioData, audioModule->buffer.data(), framesToCopy * sizeof(float));
+            memcpy(inBuffer->mAudioData, audioModule->input.data(), framesToCopy * sizeof(float));
             inBuffer->mAudioDataByteSize = framesToCopy * sizeof(float);
         }
         else
         {
             inBuffer->mAudioDataByteSize = 0;
             audioModule->isPlaying = false;
-            std::cout << "PLAY STOPPED" << std::endl;
         }
 
         AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);

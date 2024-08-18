@@ -73,6 +73,7 @@ class Task         // Component or Connection
 public:
     virtual void Tick() = 0;
     virtual std::string Info() = 0;
+    virtual bool Priority() { return false; }
 };
 
 class Component;
@@ -417,7 +418,8 @@ public:
     tick_count GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
     double GetTime() { return (run_mode == run_mode_realtime) ? GetRealTime() : static_cast<double>(tick)*tick_duration; }   // Time since start (in real time or simulated (tick) time dending on mode)
-    double GetRealTime() { return (run_mode == run_mode_realtime) ? timer.GetTime() : static_cast<double>(tick)*tick_duration; } 
+    double GetRealTime() { return (run_mode == run_mode_realtime) ? timer.GetTime() : static_cast<double>(tick)*tick_duration; }
+    double GetNominalTime() { return static_cast<double>(tick)*tick_duration; } 
     double GetLag() { return (run_mode == run_mode_realtime) ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
     void CalculateCPUUsage();
 

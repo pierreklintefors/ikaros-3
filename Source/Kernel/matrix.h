@@ -686,7 +686,7 @@ namespace ikaros
 
             for (int i = 0; i < v.size(); ++i)
                 if (v[i] < 0 || v[i] >= info_->shape_[i]) 
-                    throw std::out_of_range(get_name()+"Index out of range.");
+                     throw std::out_of_range(get_name()+"Index out of range.");
             #endif
         }
 

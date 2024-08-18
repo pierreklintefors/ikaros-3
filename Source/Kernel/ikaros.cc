@@ -165,7 +165,7 @@ namespace ikaros
         {
             auto options = split(info_["options"],",");
             auto it = std::find(options.begin(), options.end(), v);
-            if (it != options.end())
+            if(it != options.end())
                 val = std::distance(options.begin(), it);
             else
                 throw exception("Invalid parameter value");
@@ -248,7 +248,7 @@ namespace ikaros
             {
                 auto options = split(info_["options"],","); // FIXME: Check trim in split
             auto it = std::find(options.begin(), options.end(), *string_value);
-            if (it != options.end())
+            if(it != options.end())
                 return std::distance(options.begin(), it);
             else
                 return 0;
@@ -439,7 +439,7 @@ namespace ikaros
     exchange_before_dot(const std::string& original, const std::string& replacement)
     {
         size_t pos = original.find('.');
-        if (pos == std::string::npos) // No dot found, replace the whole string
+        if(pos == std::string::npos) // No dot found, replace the whole string
             return replacement;
      else  // Replace up to the first dot
             return replacement + original.substr(pos);
@@ -451,7 +451,7 @@ namespace ikaros
     before_dot(const std::string& original)
     {
         size_t pos = original.find('.');
-        if (pos == std::string::npos)
+        if(pos == std::string::npos)
             return original;
      else 
             return original.substr(0,pos);
@@ -712,7 +712,7 @@ namespace ikaros
         if(LookupParameter(p, s.substr(1)))
             return p;
         else
-            return Evaluate(s);
+            return Evaluate(s); // FIXME: Should probably not use full evaluation
 
     }
 
@@ -1932,7 +1932,7 @@ bool operator==(Request & r, const std::string s)
     {
         for (auto it = connections.begin(); it != connections.end(); ) 
         {
-            if (buffers.count(it->source) && buffers.count(it->target))
+            if(buffers.count(it->source) && buffers.count(it->target))
                 it++;
             else
             {
@@ -1954,18 +1954,18 @@ bool operator==(Request & r, const std::string s)
     bool 
     Kernel::dfsCycleCheck(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recStack) 
     {
-        if (recStack.find(node) != recStack.end())
+        if(recStack.find(node) != recStack.end())
             return true;
 
-        if (visited.find(node) != visited.end())
+        if(visited.find(node) != visited.end())
             return false;
 
         visited.insert(node);
         recStack.insert(node);
 
-        if (graph.find(node) != graph.end()) 
+        if(graph.find(node) != graph.end()) 
             for (const std::string& neighbor : graph.at(node)) 
-                if (dfsCycleCheck(neighbor, graph, visited, recStack)) 
+                if(dfsCycleCheck(neighbor, graph, visited, recStack)) 
                     return true;
         recStack.erase(node);
         return false;
@@ -1984,7 +1984,7 @@ bool operator==(Request & r, const std::string s)
         std::unordered_set<std::string> recStack;
 
         for (const std::string& node : nodes)
-            if (visited.find(node) == visited.end() &&  (dfsCycleCheck(node, graph, visited, recStack)))
+            if(visited.find(node) == visited.end() &&  (dfsCycleCheck(node, graph, visited, recStack)))
                     return true;
 
         return false;
@@ -1996,11 +1996,11 @@ bool operator==(Request & r, const std::string s)
         visited.insert(node);
         component.push_back(node);
 
-        if (graph.find(node) != graph.end()) 
+        if(graph.find(node) != graph.end()) 
         {
             for (const std::string& neighbor : graph.at(node)) 
             {
-                if (visited.find(neighbor) == visited.end()) 
+                if(visited.find(neighbor) == visited.end()) 
                     dfsSubgroup(neighbor, graph, visited, component);
             }
         }
@@ -2011,7 +2011,8 @@ bool operator==(Request & r, const std::string s)
     Kernel::findSubgraphs(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges) 
     {
         std::unordered_map<std::string, std::vector<std::string>> graph;
-        for (const auto& edge : edges) {
+        for (const auto& edge : edges) 
+        {
             graph[edge.first].push_back(edge.second);
             graph[edge.second].push_back(edge.first);
         }
@@ -2019,8 +2020,10 @@ bool operator==(Request & r, const std::string s)
         std::unordered_set<std::string> visited;
         std::vector<std::vector<std::string>> components;
 
-        for (const std::string& node : nodes) {
-            if (visited.find(node) == visited.end()) {
+        for (const std::string& node : nodes) 
+        {
+            if(visited.find(node) == visited.end()) 
+            {
                 std::vector<std::string> component;
                 dfsSubgroup(node, graph, visited, component);
                 components.push_back(component);
@@ -2036,11 +2039,12 @@ bool operator==(Request & r, const std::string s)
     {
         visited.insert(node);
 
-        if (graph.find(node) != graph.end()) {
-            for (const std::string& neighbor : graph.at(node)) {
-                if (visited.find(neighbor) == visited.end()) {
+        if(graph.find(node) != graph.end()) 
+        {
+            for (const std::string& neighbor : graph.at(node)) 
+            {
+                if(visited.find(neighbor) == visited.end())
                     topologicalSortUtil(neighbor, graph, visited, Stack);
-                }
             }
         }
         Stack.push(node);
@@ -2055,7 +2059,7 @@ bool operator==(Request & r, const std::string s)
         std::stack<std::string> Stack;
 
         for (const std::string& node : component) 
-            if (visited.find(node) == visited.end())
+            if(visited.find(node) == visited.end())
                 topologicalSortUtil(node, graph, visited, Stack);
 
         std::vector<std::string> sortedSubgraph;
@@ -2072,11 +2076,9 @@ bool operator==(Request & r, const std::string s)
     std::vector<std::vector<std::string>>
     Kernel::sort(std::vector<std::string> nodes, std::vector<std::pair<std::string, std::string>> edges)
     {
-            if (hasCycle(nodes, edges)) 
-            {
-            std::cout << "Graph has a cycle" << std::endl;
-            throw;
-        } else 
+        if(hasCycle(nodes, edges)) 
+            throw fatal_error("Network has zero-delay loops");
+        else 
         {
 
             std::vector<std::vector<std::string>> components = findSubgraphs(nodes, edges);
@@ -2135,7 +2137,6 @@ bool operator==(Request & r, const std::string s)
             std::cout <<  "ARC: " << s << "->" << t << std::endl;
 */
         auto r = sort(nodes, arcs);
-
 /*
         for(auto s : r)
         {
@@ -2151,26 +2152,18 @@ bool operator==(Request & r, const std::string s)
         for(auto s : r)
         {
             std::vector<Task *> task_list;
+            bool priority_task = false;
             for(auto ss: s)
-                task_list.push_back(task_map[ss]);   // Get task ponter here
-            tasks.push_back(task_list);
-        }
-
-/*
-        // Push delayed connections
-
-        for(auto & c : connections)
-            if(!c.delay_range_.is_delay_0())
             {
-                std::vector<Task *> connection_task_list;
-                connection_task_list.push_back(&c);
-                tasks.push_back(connection_task_list);
+                if(task_map[ss]->Priority())
+                    priority_task = true;
+                task_list.push_back(task_map[ss]); // Get task pointer here
             }
-*/
-//        std::cout << "SORTING COMPLETE" << std::endl;
-
-
-
+            if(priority_task)
+                tasks.insert(tasks.begin(), task_list);
+            else
+                tasks.push_back(task_list);
+        }
     }
 
 
@@ -2204,8 +2197,8 @@ bool operator==(Request & r, const std::string s)
                 ListParameters();
                 ListComponents();
                 ListConnections();
-                ListInputs();
-                ListOutputs();
+                //ListInputs();
+                //ListOutputs();
                 ListBuffers();
                 ListCircularBuffers();
             }
@@ -2216,7 +2209,6 @@ bool operator==(Request & r, const std::string s)
         {
             Notify(msg_fatal_error, e.message);
             Notify(msg_fatal_error, "SetUp Failed");
-            //std::cout << "SetUp Failed" << std::endl;
             throw fatal_error("SetUp Failed");
         }
     }
@@ -3216,9 +3208,9 @@ Kernel::CalculateCPUUsage() // In percent
     {
         while(!shutdown)
         {
-            if (socket != nullptr && socket->GetRequest(true))
+            if(socket != nullptr && socket->GetRequest(true))
             {
-                if (equal_strings(socket->header.Get("Method"), "GET"))
+                if(equal_strings(socket->header.Get("Method"), "GET"))
                 {
                     while(tick_is_running)
                         {}
@@ -3226,7 +3218,7 @@ Kernel::CalculateCPUUsage() // In percent
                     HandleHTTPRequest();
                     handling_request = false;
                 }
-                else if (equal_strings(socket->header.Get("Method"), "PUT")) // JSON Data
+                else if(equal_strings(socket->header.Get("Method"), "PUT")) // JSON Data
                 {
                     while(tick_is_running)
                         {}
@@ -3262,3 +3254,4 @@ Kernel::~Kernel()
         delete socket; 
     }
 }
+
