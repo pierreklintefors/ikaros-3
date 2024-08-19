@@ -294,6 +294,16 @@ bool ends_with(const std::string & s, const std::string & end) // waiting for C+
 }
 
 
+std::string add_extension(const std::string &  filename, const std::string & extension) 
+{
+    if(ends_with(filename, extension))
+        return std::string(filename);
+    else
+        return std::string(filename) + extension;
+}
+
+
+
 /*
 const std::string head(std::string s, char token) // without token
 {
@@ -364,7 +374,7 @@ bool contains(std::string & s, std::string n)
 
 
 
-bool is_integer(std::string & s)
+bool is_integer(const std::string & s)
     {
         for( char c: s)
             if(c<'0' || c>'9')
@@ -375,9 +385,34 @@ bool is_integer(std::string & s)
 
 bool is_true(const std::string & s)
 {
-    static std::vector<std::string> true_list = {"true", "True", "yes", "YES", "1"};
+    static std::vector<std::string> true_list = {"true", "True", "yes", "YES", "on", "ON","1"};
     return std::find(true_list.begin(), true_list.end(), s) != true_list.end();
 }
+
+
+
+
+
+bool is_number(const std::string& s) 
+{
+    char* endPtr = nullptr;
+    errno = 0;
+    double val = std::strtod(s.c_str(), &endPtr);
+    if (endPtr == s.c_str() || *endPtr != '\0') 
+        return false;
+
+    if (errno == ERANGE)
+        return false;
+
+    if (val == std::numeric_limits<double>::infinity() || val == -std::numeric_limits<double>::infinity())
+        return false;
+
+    return true;
+}
+
+
+
+
 
 std::ostream& operator<<(std::ostream& os, const std::vector<int> & v)
 {

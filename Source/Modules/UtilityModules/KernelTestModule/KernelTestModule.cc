@@ -9,7 +9,11 @@ class KernelTestModule: public Module
     parameter c;
     parameter d;
     parameter e;
-    parameter f;
+
+    parameter f1; // number
+    parameter f2; // string
+    parameter f3; // bool
+
     parameter g;
 
     parameter data;
@@ -39,15 +43,19 @@ class KernelTestModule: public Module
         else
             std::cout << "b: false" << std::endl;
 
-          std::cout << GetValue("p") << std::endl;  // => 333
+        std::cout << GetValue("p") << std::endl;  // => 333
 
 
-          std::cout << GetValue("a") << std::endl;
+        std::cout << GetValue("a") << std::endl;
         std::cout << GetValue("b") << std::endl;
         std::cout << GetValue("c") << std::endl;
         std::cout << GetValue("d") << std::endl;
         std::cout << GetValue("e") << std::endl;
-        std::cout << GetValue("f") << std::endl;
+
+        std::cout << GetValue("f1") << std::endl;
+        std::cout << GetValue("f2") << std::endl;
+        std::cout << GetValue("f3") << std::endl;
+
         std::cout << GetValue("g") << std::endl;
         std::cout << GetValue("data") << std::endl;
 
@@ -67,7 +75,11 @@ class KernelTestModule: public Module
         Bind(c, "c");
         Bind(d, "d");
         Bind(e, "e");
-        Bind(f, "f");
+
+        Bind(f1, "f1");
+        Bind(f2, "f2");
+        Bind(f3, "f3");
+
         Bind(g, "g");
         Bind(data, "data");
         Bind(mdata, "mdata");
@@ -81,16 +93,20 @@ class KernelTestModule: public Module
         d.print("d");
         e.print("e");
 
-        f.print("f");
-        std::cout << "f: " << f << std::endl;
-        std::cout << "f: " << f.json() << std::endl;
-        f= 17;
-        std::cout << "f: " << f << std::endl;   
+        f1.print("f1");
+        f2.print("f2");
+        f3.print("f3");
 
+        std::cout << "f1: " << f1 << std::endl;
+        std::cout << "f1: " << f1.json() << std::endl;
+        f1= 17;
+        std::cout << "f1: " << f1 << std::endl;   
+        f1= 0;
+        std::cout << "f1: " << f1 << std::endl; 
 
         g.print("g");
         double gg = g;
-        std::cout << "g scaled: " << gg << std::endl; 
+        std::cout << "g rate scaled: " << gg << std::endl; 
 
 
         data.print("data");
@@ -121,6 +137,52 @@ class KernelTestModule: public Module
         output8.info();
         output9.info();
 */
+
+    // TESTING PARAMETERS
+
+        std::cout << "PARAMETER TEST" << std::endl; 
+
+    parameter xx("number");
+    parameter yy("string");
+    parameter xxo("number", "AA,BB,CC");
+    parameter yyo("string", "aa,bb,cc");
+
+    xx.info();
+    yy.info();
+    xxo.info();
+    yyo.info();
+
+    xx.print();
+    yy.print();
+    xxo.print();
+    yyo.print();
+
+
+        std::cout << "DOUBLE ASSIGNMENT TEST" << std::endl; 
+
+    xx = 1.2;
+    yy = 1.2;
+    xxo = 1.2;
+    yyo = 1.2;
+
+    xx.print();
+    yy.print();
+    xxo.print();
+    yyo.print();
+        std::cout << "STRING ASSIGNMENT TEST" << std::endl; 
+
+    xx = "123";
+    yy = "123";
+    xxo = "BB";
+    yyo = "bb";
+
+    xx.print();
+    yy.print();
+    xxo.print();
+    yyo.print();
+
+        std::cout <<yyo*1 << std::endl; 
+
     }
 
 

@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - 1 June, 2024
+## Ikaros 3 Status - 9 August, 2024
 
 | Component | State | Comments |
 | ----|----|----|
@@ -26,10 +26,10 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Expressions       |<div style="color:green">🟢 OK |  |
 | XML               |<div style="color:green">🟢 OK | |
 | Kernel            |<div style="color:green">🟢 OK |
-| Exception handling    |<div style="color:#c60">🟡 Partial | not yet consistent |
+| Exception handling    |<div style="color:#c60">🟡 Partial | sometimes quits instead of stops |
 | Shared dict       |<div style="color:green">🟢  OK |  |
 | Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
-| Task sorting      |<div style="color:#e00">🔴 Pending |  |
+| Task sorting      |<div style="color:green">🟢 OK |  |
 | Real time         |<div style="color:green">🟢 OK |  |
 | SetSizes    |     <div style="color:green">🟢 OK |
 | Input resizing    |<div style="color:green">🟢 OK |     |  |
@@ -49,15 +49,15 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 
     usage: ikaros [options] [variable=value] [filename]
 
-        Command line options:
+            Command line options:
 
-        -S (start):  start-up automatically without waiting for commands from WebUI [false]
-        -d (tick_duration): duration of each tick [1 s]
-        -h (help): list command line options  [false]
-        -r (real_time): run in real-time mode. Implies -S. [false]
-        -s (stop): stop Ikaros after this tick [-1 = never]
-        -w (webui_port): port for ikaros WebUI [8000]
-
+            -S (start):  start-up automatically without waiting for commands from WebUI
+            -b (batch_mode): start automatically and quit when execution terminates
+            -d (tick_duration): duration of each tick
+            -h (help): list command line options [true]
+            -r (real_time): run in real-time mode
+            -s (stop): stop Ikaros after this tick [-1]
+            -w (webui_port): port for ikaros WebUI [8000]
 
         filename :   ikg-file to load
 
@@ -81,4 +81,4 @@ The following functions should be used for all timing calculations and work both
 | GetRealTime() | double  | timer.GetTime() | tick * tickduration
 | GetLag()  | double  | tick * tickduration - timer.GetTime() | 0
 
-GetLag() resturns the lag at the time of calling and can be used to adjust for jitter within a module. It is not necessarily the same as the *lag* value in the kernel.
+GetLag() returns the lag at the time of calling and can be used to adjust for jitter within a module. It is not necessarily the same as the *lag* value in the kernel.

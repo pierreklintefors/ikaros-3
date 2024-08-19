@@ -11,6 +11,14 @@
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
+#include <iostream> 
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <stack>
+
+
 
 using namespace std::literals;
 
@@ -60,6 +68,14 @@ using tick_count = long long int;
 
 std::string  validate_identifier(std::string s);
 
+class Task         // Component or Connection
+{
+public:
+    virtual void Tick() = 0;
+    virtual std::string Info() = 0;
+    virtual bool Priority() { return false; }
+};
+
 class Component;
 class Module;
 class Connection;
@@ -68,7 +84,7 @@ class Kernel;
 Kernel& kernel();
 
 //
-// CIRCULAR BUFFER
+// CIRCULAR BUFFER__
 //
 
 class CircularBuffer
@@ -87,25 +103,45 @@ public:
 // PARAMETERS // TODO: add bracket notation to set any type p(x,y) etc
 //
 
-enum parameter_type { no_type=0, double_type, bool_type, string_type, matrix_type, options_type, rate_type };
-static std::vector<std::string> parameter_strings = {"none", "double", "bool", "string", "matrix", "options", "rate"}; 
+enum parameter_type 
+{
+     no_type=0, 
+     number_type,
+     rate_type,
+     bool_type, 
+     string_type, 
+     matrix_type, 
+
+};
+
+static std::vector<std::string> parameter_strings = 
+{
+    "none", 
+    "number",
+    "rate",
+    "bool", 
+    "string", 
+    "matrix", 
+}; 
+
+
 
 class parameter
 {
 private:
 public:
     dictionary                      info_;
+    bool                            has_options;
     parameter_type                  type;
-    std::shared_ptr<double>         double_value;
-    std::shared_ptr<bool>           bool_value;
+    std::shared_ptr<double>         number_value;
     std::shared_ptr<matrix>         matrix_value;
     std::shared_ptr<std::string>    string_value;
 
-    parameter(): type(no_type) {}
+    parameter(): type(no_type), has_options(false) {}
     parameter(dictionary info);
+    parameter(const std::string type, const std::string options="");
 
     void operator=(parameter & p); // this shares data with p
-    int operator=(int v);
     double operator=(double v);
     std::string operator=(std::string v);
 
@@ -113,21 +149,8 @@ public:
     operator std::string();
     operator double();
 
-    void print(std::string name="")
-    {
-        if(!name.empty())
-            std::cout << name << " = ";
-        std::cout << std::string(*this) << std::endl;
-    }
-
-    void info()
-    {
-        std::cout << "type: " << type << std::endl;
-        //std::cout << "timebase: " << timebase << std::endl;
-        std::cout << "default: " << info_["default"] << std::endl;
-        std::cout << "options: " << info_["options"] << std::endl;
-        std::cout << "value: " << std::string(*this) << std::endl;
-    }
+    void print(std::string name="");
+    void info();
 
     int as_int();
     const char* c_str() const noexcept;
@@ -136,7 +159,6 @@ public:
     
     friend std::ostream& operator<<(std::ostream& os, parameter p);
 };
-
 
 
 //
@@ -149,15 +171,17 @@ class Message
 
         int         level_;
         std::string message_;
+        std::string path_;
 
-        Message(std::string message, int level=msg_print):
+        Message(int level, std::string message, std::string path=""):
+            level_(level),
             message_(message),
-            level_(level)
+            path_(path)
         {}
 
         std::string json()
         {
-            return "[\""+std::to_string(level_)+"\",\""+message_+"\"]";
+            return "[\""+std::to_string(level_)+"\",\""+message_+"\",\""+path_+"\"]";
         }
 };
 
@@ -165,7 +189,7 @@ class Message
 // COMPONENT
 //
 
-class Component
+class Component : public Task
 {
 public:
     Component *     parent_;
@@ -176,17 +200,22 @@ public:
 
     virtual ~Component() {};
 
-    bool Notify(int msg, std::string message);
+    std::string Info() { return info_["name"]; }
 
-    // Shortcut function for mwssages and logging
+    bool Notify(int msg, std::string message, std::string path=""); // Path to componenet with problem
+
+    // Shortcut function for messages and logging
+
 
     bool Print(std::string message) { return Notify(msg_print, message); }
-    bool Warning(std::string message) { return Notify(msg_warning, message); }
+    bool Warning(std::string message, std::string path="") { return Notify(msg_warning, message, path); }
     bool Debug(std::string message) { return Notify(msg_debug, message); }
     bool Trace(std::string message) { return Notify(msg_trace, message); }
 
     void AddInput(dictionary parameters);
     void AddOutput(dictionary parameters);
+    void AddOutput(std::string name, int size, std::string description=""); // Must be called from creator function and not from Init
+    void ClearOutputs();    // Must be called from creator function and not from Init
     void AddParameter(dictionary parameters);
     void SetParameter(std::string name, std::string value);
     bool BindParameter(parameter & p,  std::string & name);
@@ -197,12 +226,18 @@ public:
     virtual void Tick() {}
     virtual void Init() {}
 
+    virtual void Command(std::string command_name, dictionary & parameters) {
+        std::cout << "Received command: \n";
+        parameters.print();
+
+    } // Used to send commands and arbitrary data structures to modules
+
     void print();
     void info();
     std::string json();
     std::string xml();
 
-    bool KeyExists(const std::string & key);  // Check if a key exist her eor in any parent; this means that LookupKey will succeed
+    bool KeyExists(const std::string & key);  // Check if a key exist here or in any parent; this means that LookupKey will succeed
     std::string LookupKey(const std::string & key); // Look up value in dictionary with inheritance
     std::string GetValue(const std::string & name);    // Get value of a attribute/variable in the context of this component
     std::string GetBind(const std::string & name);
@@ -210,12 +245,13 @@ public:
     Component * GetComponent(const std::string & s); // Get component; sensitive to variables and indirection
 
     std::string Evaluate(const std::string & s, bool is_string=false);     // Evaluate an expression in the current context
+    std::string EvaluateVariable(const std::string & s);
     bool LookupParameter(parameter & p, const std::string & name);
     
     int EvaluateIntExpression(std::string & s);
 
     std::vector<int> EvaluateSizeList(std::string & s);
-    std::vector<int> EvaluateSize(std::string & s);
+    //std::vector<int> EvaluateSize(std::string & s);
 
     double EvaluateNumber(std::string v);
     bool EvaluateBool(std::string v);
@@ -232,6 +268,7 @@ public:
     virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
 
     void CalculateCheckSum(long & check_sum, prime & prime_number); // Calculates a value that depends on all parameters and buffer sizes
+
 };
 
 typedef std::function<Module *()> ModuleCreator;
@@ -255,7 +292,7 @@ public:
 // CONNECTION
 //
 
-class Connection
+class Connection: public Task
 {
 public:
     std::string source;             // FIXME: Add undescore to names ****
@@ -267,7 +304,11 @@ public:
     bool        flatten_;
 
     Connection(std::string s, std::string t, range & delay_range, std::string alias="");
+
+    void Tick();
     void Print();
+
+    std::string Info();
 };
 
 //
@@ -287,7 +328,7 @@ public:
     Class(std::string n, std::string p);
     Class(std::string n, ModuleCreator mc);
 
-    void print();
+    void Print();
 };
 
 
@@ -330,8 +371,10 @@ public:
     std::map<std::string, CircularBuffer>   circular_buffers;       // Circular circular_buffers for delayed buffers
     std::map<std::string, parameter>        parameters;
 
+    std::vector<std::vector<Task *>>        tasks;                  // Sorted tasks in groups
+
     long                                    session_id;
-    //bool                                    is_running;
+    //bool                                  is_running;
     std::atomic<bool>                       tick_is_running;
     std::atomic<bool>                       sending_ui_data;
     std::atomic<bool>                       handling_request;
@@ -375,11 +418,12 @@ public:
     tick_count GetTick() { return tick; }
     double GetTickDuration() { return tick_duration; } // Time for each tick in seconds (s)
     double GetTime() { return (run_mode == run_mode_realtime) ? GetRealTime() : static_cast<double>(tick)*tick_duration; }   // Time since start (in real time or simulated (tick) time dending on mode)
-    double GetRealTime() { return (run_mode == run_mode_realtime) ? timer.GetTime() : static_cast<double>(tick)*tick_duration; } 
+    double GetRealTime() { return (run_mode == run_mode_realtime) ? timer.GetTime() : static_cast<double>(tick)*tick_duration; }
+    double GetNominalTime() { return static_cast<double>(tick)*tick_duration; } 
     double GetLag() { return (run_mode == run_mode_realtime) ? static_cast<double>(tick)*tick_duration - timer.GetTime() : 0; }
     void CalculateCPUUsage();
 
-    bool Notify(int msg, std::string message);
+    bool Notify(int msg, std::string message, std::string path="");
     bool Terminate();
     void ScanClasses(std::string path);
     void ScanFiles(std::string path, bool system=true);
@@ -416,13 +460,12 @@ public:
     void AllocateInputs();
     void InitComponents();
     void PruneConnections();
+    void SortTasks();
+    void RunTasks();
     void SetUp();
     void SetCommandLineParameters(dictionary & d);
     void LoadFile();
     void Save();
-
-    void SortNetwork();
-    void Propagate();
 
     std::string json();
     std::string xml();
@@ -437,6 +480,7 @@ public:
     void Restart(); // Save and reload
 
     void CalculateCheckSum();
+    dictionary GetModuleInstantiationInfo(); // Used for profiling
 
     void DoNew(Request & request);
     void DoOpen(Request & request);
@@ -453,25 +497,6 @@ public:
     void DoCommand(Request & request);
     void DoControl(Request & request);
     
-    //dictionary GetView(std::string component, std::string view_name);
-    //dictionary GetView(Request & request);
-
-/*
-    //void AddView(Request & request);
-    void AddWidget(Request & request);
-    void DeleteWidget(Request & request);
-    void SetWidgetParameters(Request & request);
-    void WidgetToFront(Request & request);
-    void WidgetToBack(Request & request);
-    //void RenameView(Request & request);
-*/
-
-    void DoAddGroup(Request & request);
-    void DoAddModule(Request & request);
-    void DoSetAttribute(Request & request);
-    void DoAddConnection(Request & request);
-    void DoSetRange(Request & request);
-
     void DoSendNetwork(Request & request);
 
     void DoSendDataHeader();
@@ -492,7 +517,18 @@ public:
     void HandleHTTPRequest();
     void HandleHTTPThread();
     void Tick();
+    void Propagate();
     void Run();
+
+    // TASK SORTING
+
+    bool dfsCycleCheck(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recStack);
+    bool hasCycle(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges);
+    void dfsSubgroup(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::vector<std::string>& component) ;
+    std::vector<std::vector<std::string>> findSubgraphs(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges);
+    void topologicalSortUtil(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::stack<std::string>& Stack);
+    std::vector<std::string>  topologicalSort(const std::vector<std::string>& component, const std::unordered_map<std::string, std::vector<std::string>>& graph);
+    std::vector<std::vector<std::string>> sort(std::vector<std::string> nodes, std::vector<std::pair<std::string, std::string>> edges);
 };
 
 //
@@ -504,7 +540,6 @@ class InitClass
 public:
     InitClass(const char * name, ModuleCreator mc)
     {
-        //kernel().classes.at(name).module_creator = mc;
         kernel().classes[name].name = name;
         kernel().classes[name].module_creator = mc;
     }

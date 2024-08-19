@@ -1,4 +1,5 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+#add_subdirectory(EnergyMeter)
 add_subdirectory(Logger)
 add_subdirectory(Idle)
 add_subdirectory(KernelTestModule)
@@ -11,11 +12,12 @@ add_subdirectory(ReduceFunctions)
 
 add_subdirectory(Scale)
 add_subdirectory(Oscillator)
+add_subdirectory(FunctionGenerator)
 add_subdirectory(Protocol)
 add_subdirectory(Print)
 add_subdirectory(OutputFile)
 
-# add_subdirectory(ClearSkyIrradiance)
+add_subdirectory(AmbientLight)
 
 
 set(SOURCE ${SOURCE} PARENT_SCOPE)

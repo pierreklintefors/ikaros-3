@@ -15,6 +15,12 @@
 #include <variant>
 #include <iterator>
 #include <numeric>
+#include <limits>
+
+//#include <cblas.h>
+
+#define ACCELERATE_NEW_LAPACK
+#include <Accelerate/Accelerate.h>
 
 // #define NO_MATRIX_CHECKS   // Define to remove checks of matrix size and index ranges
 
@@ -430,7 +436,7 @@ namespace ikaros
             return false;
         }
 
-        std::string json() // Generate JSON-representation of matrix // FIXME: Add resolution for floats
+        std::string json() // Generate JSON-representation of matrix // FIXME: Add resolution for floats and trim zero decimals
         {
             if(rank() == 0)
             {
@@ -452,6 +458,43 @@ namespace ikaros
 
             return s;
         }
+
+
+        std::string csv(std::string separator=",") // Generate CSV representation of matrix // FIXME: Add resolution for floats
+        {
+            if(rank() != 2)
+                throw exception("Matrix must have two dimensions for conversion to csv.");
+
+            std::string sep;
+            std::string s;
+
+            // Add header row std::to_string(data_->at(info_->offset_));
+
+            if( info_->labels_.size()>1)
+            {
+                for(auto & header: info_->labels_[1])
+                {
+                    s+= sep+header;
+                    sep = separator; 
+                }
+                s+="\n";
+            }
+
+            // Add data rows         
+
+            for(auto row : *this) // Iterate over rows
+            {
+                std::string sep;
+                for(auto value : row)
+                {
+                    s += sep + std::to_string(value);
+                    sep = separator;
+                }
+                s += "\n";
+            }
+            return s;
+        }
+
 
         void 
         print(std::string n="") // print matrix; n overrides name if set (useful during debugging)
@@ -475,6 +518,21 @@ namespace ikaros
                 print_();
             std::cout << std::endl;
         }
+
+
+        matrix &
+        reduce(std::function< void(float) > f) // Apply a lambda over elements of a matrix
+        {
+            if(empty())
+                return *this;
+            if(is_scalar())
+                f((*data_)[info_->offset_]);
+            else
+                for(int i=0; i<info_->shape_.front(); i++)
+                    (*this)[i].reduce(f);
+            return *this;
+        }
+
 
         matrix &
         apply(std::function< float(float) > f) // Apply a lambda to elements of a matrix
@@ -536,7 +594,7 @@ namespace ikaros
         matrix & 
         set(float v) // Set all element of the matrix to a value
         {
-            return apply([=](float x) {return v;});
+            return apply([=](float x)->float {return v;});
         }
 
         matrix & 
@@ -628,7 +686,7 @@ namespace ikaros
 
             for (int i = 0; i < v.size(); ++i)
                 if (v[i] < 0 || v[i] >= info_->shape_[i]) 
-                    throw std::out_of_range(get_name()+"Index out of range.");
+                     throw std::out_of_range(get_name()+"Index out of range.");
             #endif
         }
 
@@ -760,6 +818,24 @@ namespace ikaros
             info_->labels_.resize(info_->shape_.size());
             return *this;
         }
+        
+        template <typename... Args>
+        matrix & 
+        reshape(std::vector<int> new_shape)
+        {
+            int n = 1;
+            for(int i : new_shape)
+                n *= i;
+            
+            if(n != data_->size())
+                throw std::out_of_range(get_name()+"Incompatible matrix sizes.");
+
+            info_->shape_ = new_shape;
+            info_->stride_ = info_->shape_;
+            info_->max_size_ = info_->shape_;
+            info_->labels_.resize(info_->shape_.size());
+            return *this;
+        }
         // Push & pop
 
         matrix & 
@@ -824,7 +900,7 @@ namespace ikaros
             return  v; 
         }
         
-        // Element-wise function
+        // Element-wise functions
 
         matrix & add(float c) { return apply([c](float x)->float {return x+c;}); }
         matrix & subtract(float c) { return add(-c); }
@@ -869,8 +945,11 @@ namespace ikaros
         }
 
         matrix &
-        matmul(matrix & A, matrix & B) // Compute matrix multiplication A*B and put result in current matrix
+        matmul(matrix & A, matrix & B) // Compute matrix multiplication A*B and put result in current matrix // FIXME: realloc() if this.rank() = 0
         {
+            if(empty())
+                realloc(A.rows(), B.cols());
+
                 #ifndef NO_MATRIX_CHECKS
                 if(rank() != 2 || A.rank() !=2 || B.rank() != 2)
                     throw std::invalid_argument("Multiplication requires two-dimensional matrices.");
@@ -883,11 +962,30 @@ namespace ikaros
 
             if(this == &A || this == &B)
                     throw std::invalid_argument("Result cannot be assigned to A or B.");
+            
+            // blas version
+
+            #define USE_BLAS
+            #ifdef USE_BLAS
+
+            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
+                        A.rows(), B.cols(), A.cols(), 1.0, 
+                        A.data(), A.info_->stride_[1],
+                        B.data(), B.info_->stride_[1],
+                        0.0, 
+                        this->data(), this->info_->stride_[1]);
+
+            #else
+
+            // discrete version
             reset();
             for(int j=0; j<A.rows(); j++)
                 for(int i=0; i< B.cols(); i++)
                     for(int k=0; k<B.rows(); k++)
                         (*this)(j, i) += A(j,k) *B(k,i);
+
+            #endif
+
             return *this;
         }
 
@@ -991,11 +1089,11 @@ namespace ikaros
         // Reduce functions
 
         float sum();
-        float product() { throw std::logic_error("product(). Not implemented."); return 0; }
-        float min() { throw std::logic_error("min(). Not implemented."); return 0; }
-        float max() { throw std::logic_error("max(). Not implemented."); return 0; }
+        float product();
+        float min();
+        float max();
         float average();
-        float median() { throw std::logic_error("median(). Not implemented."); return 0; }
+        float median();
 
 
         float matrank() { throw std::logic_error("matrank(). Not implemented."); return 0; }
@@ -1003,7 +1101,21 @@ namespace ikaros
         float det() { throw std::logic_error("trace(). Not implemented."); return 0; }
         matrix & inv(const matrix & m) { throw std::logic_error("det(). Not implemented."); return *this; }
         matrix & pinv(const matrix & m) { throw std::logic_error("pinv(). Not implemented."); return *this; }
-        matrix & transpose(const matrix & m) { throw std::logic_error("transpose() Not implemented."); return *this; }
+
+        matrix & transpose(matrix &ret) 
+        {
+            int rows = this->rows();
+            int cols = this->cols();
+            ret = matrix(cols, rows);
+
+            for (int i = 0; i < rows; ++i) {
+                for (int j = 0; j < cols; ++j) {
+                    ret(j, i) = (*this)(i, j);
+                }
+            }
+            return ret;
+        }
+        
         matrix & eig(const matrix & m) { throw std::logic_error("eig(). Not implemented."); return *this; }
         // lu
         // chol
@@ -1020,3 +1132,4 @@ namespace ikaros
     };
 }
 #endif
+

@@ -70,11 +70,10 @@ Connections can be assiged a name using the alias-attribute. This is useful wen 
 The alias is used to set the name of the matrix used as input or as labels for individual dimensions depending on context – the type of connection and input. One possible use is to name the individual dimensions of an image. Here the three two-dimensional outputs will be stacked in a single three-dimensional input matrix. and each of new dimensions will be labeled "RED", "GREEN" and "BLUE".
 
 ```xml
-<connection source=M.R target="N.INPUT" alias="RED" />
-<connection source=M.G target="N.INPUT" alias="GREEN" />
-<connection source=M.B target="N.INPUT" alias="BLUE" />
+<connection source="M.R" target="N.INPUT" alias="RED" />
+<connection source="M.G" target="N.INPUT" alias="GREEN" />
+<connection source="M.B" target="N.INPUT" alias="BLUE" />
 ```
-
 
 ## Inputs
 

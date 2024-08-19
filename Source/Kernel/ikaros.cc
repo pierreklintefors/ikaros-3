@@ -1,7 +1,5 @@
 // Ikaros 3.0
 
-#include <iostream> 
-
 #include "ikaros.h"
 
 using namespace ikaros;
@@ -55,17 +53,19 @@ namespace ikaros
         return buffer_[(buffer_.size()+index_-i) % buffer_.size()];
     }
 
+
+
 // Parameter
 
     parameter::parameter(dictionary info):
-        info_(info), type(no_type)
+        info_(info), 
+        type(no_type), 
+        has_options(info_.contains("options"))
     {
         std::string type_string = info_["type"];
 
-        if(type_string=="float")
-                type_string = "double";
-        if(type_string=="int")
-            type_string = "double";
+        if(type_string=="float" || type_string=="int" || type_string=="double")  // Temporary
+            type_string = "number";
 
         auto type_index = std::find(parameter_strings.begin(), parameter_strings.end(), type_string);
         if(type_index == parameter_strings.end())
@@ -73,77 +73,128 @@ namespace ikaros
 
         type = parameter_type(std::distance(parameter_strings.begin(), type_index));
 
-        // Init shared pointers: Use only for matrices in the future *********** check parameter type in info_ dictionary and use these instad of separate shared pointers
+        // Init shared pointers
         switch(type)
         {
-            case double_type: double_value = std::make_shared<double>(0); break;
-            case bool_type: bool_value = std::make_shared<bool>(false); break;
-            case string_type: string_value = std::make_shared<std::string>(""); break;
-            case matrix_type: matrix_value = std::make_shared<matrix>(); break;
-            case rate_type: double_value = std::make_shared<double>(0); break;
-            case options_type: double_value = std::make_shared<double>(0); break;
-            
-            default: break;
+            case number_type:
+            case rate_type:
+            case bool_type:
+                number_value = std::make_shared<double>(0); 
+                break;
+
+            case string_type: 
+                string_value = std::make_shared<std::string>(""); 
+                break;
+
+            case matrix_type: 
+                matrix_value = std::make_shared<matrix>(); 
+                break;
+
+            default: 
+                break;
         } 
     }
+
+
+
+    parameter::parameter(const std::string type, const std::string options):
+        parameter(options.empty() ? dictionary({{"type", type}}) : dictionary({{"type", type},{"options", options}}))
+    {}
+
 
     void 
     parameter::operator=(parameter & p) // this shares data with p 
     {
         info_ = p.info_;
         type = p.type;
-        double_value = p.double_value;
-        bool_value = p.bool_value;
+        has_options = p.has_options;
+
+        number_value = p.number_value;
         matrix_value = p.matrix_value;
         string_value = p.string_value;
     }
 
-    int 
-    parameter::operator=(int v)
-    {
-        if(double_value) 
-            *double_value = double(v);
-        else if(bool_value) 
-            *bool_value = bool(v);
-        else if(string_value) 
-            *string_value = std::to_string(v);
-        return v;
-    }
+
 
     double 
-    parameter::operator=(double v)
+    parameter::operator=(double v) // FIXME: handle matrix type as well
     {
-       if(double_value) 
-            *double_value = v;
-        else if(bool_value) 
-            *bool_value = bool(v);
-        else if(string_value) 
-            *string_value = std::to_string(v);
+        if(has_options)
+        {
+            auto options = split(info_["options"],",");
+            int c = options.size();
+            if(v > c-1)
+                v = c-1;
+            switch(type)
+            {
+                case number_type:
+                case rate_type:
+                case bool_type:
+                    *number_value = double(v);
+                    break;
+                case string_type:
+                    *string_value = options[round(v)];
+                    break;
+                default:
+                    break; // FIXME: error?
+            }
+            return v;
+        }
+
+        switch(type)
+        {
+            case number_type:
+            case rate_type:
+            case bool_type:
+                *number_value = double(v);
+                break;
+            case string_type:
+                    *string_value = std::to_string(v);
+                break;
+            default:
+                break; // FIXME: error?
+        }
         return v;
     }
-
 
     std::string 
     parameter::operator=(std::string v)
     {
-        if(type==options_type)
+        double val = 0;
+        if(has_options)
         {
             auto options = split(info_["options"],",");
             auto it = std::find(options.begin(), options.end(), v);
-            if (it != options.end())
-                *double_value = std::distance(options.begin(), it);
+            if(it != options.end())
+                val = std::distance(options.begin(), it);
             else
-                ; // FIXME: throw invalid options value – or ignore like now
+                throw exception("Invalid parameter value");
         }
-            
-        else if(double_value) 
-            *double_value = stod(v);
-        else if(bool_value) 
-            *bool_value = is_true(v);
-        else if(string_value) 
-            *string_value = v;
-        else if(matrix_value)
-            *matrix_value = v;
+        else if(is_number(v))
+            val = stod(v);
+
+        switch(type)
+        {
+            case number_type:
+            case rate_type:
+                *number_value = val;
+                break;
+
+            case bool_type:
+                *number_value = (val!=0 ? 1 : 0);
+                break;
+
+            case string_type:
+                *string_value = v;
+                break;
+
+            case matrix_type:
+                *matrix_value = v;
+                break;
+
+            default:
+                break; // FIXME: error? Handle matrix with single element
+        }
         return v;
     }
 
@@ -159,23 +210,27 @@ namespace ikaros
 
     parameter::operator std::string()
     {
+        if(string_value)
+            return  *string_value;
+
+        if(has_options)
+        {
+            int index = int(*number_value);
+            auto options = split(info_["options"],","); // FIXME: Check trim in split
+            if(index < 0 || index>= options.size())
+                return std::to_string(index)+" (OUT-OF-RANGE)";
+            else
+                return options[index];
+        } 
+
         switch(type)
         {
             case no_type: throw exception("Uninitialized or unbound parameter.");
-            case double_type: if(double_value) return std::to_string(*double_value);
-            case bool_type: if(bool_value) return (*bool_value? "true" : "false");
-            case rate_type: if(double_value) return std::to_string(*double_value);
+            case number_type: if(number_value) return std::to_string(*number_value);
+            case bool_type: if(number_value) return (*number_value>0 ? "true" : "false");
+            case rate_type: if(number_value) return std::to_string(*number_value);
             case string_type: if(string_value) return *string_value;
             case matrix_type: return matrix_value->json();
-            case options_type:
-            {
-                int index = int(*double_value);
-                auto options = split(info_["options"],","); // FIXME: Check trim in split
-                if(index < 0 || index>= options.size())
-                    return std::to_string(index)+" (OUT-OF-RANGE)";
-                else
-                    return options[index];
-            } 
             default:  throw exception("Type conversion error for parameter.");
         }
     }
@@ -184,13 +239,23 @@ namespace ikaros
     parameter::operator double()
     {
         if(type==rate_type)
-            return *double_value * kernel().tick_duration;
-        if(double_value) 
-            return *double_value;
-        else if(bool_value) 
-            return *bool_value;
+            return *number_value * kernel().tick_duration;
+        if(number_value) 
+            return *number_value;
         else if(string_value) 
-            return stod(*string_value); // FIXME: may fail ************
+        {
+            if(has_options)
+            {
+                auto options = split(info_["options"],","); // FIXME: Check trim in split
+            auto it = std::find(options.begin(), options.end(), *string_value);
+            if(it != options.end())
+                return std::distance(options.begin(), it);
+            else
+                return 0;
+            }
+            else
+                return stod(*string_value); // FIXME: may fail ************
+        }
         else if(matrix_value)
             return 0;// FIXME check 1x1 matrix ************
         else
@@ -198,50 +263,15 @@ namespace ikaros
     }
 
 
-
-/*
-    parameter::operator bool()
-    {
-        if(double_value) 
-            return (*double_value!= 0);
-        else if(bool_value) 
-            return *bool_value;
-        else if(string_value) 
-            return is_true(*string_value);
-        else if(matrix_value)
-            return !(*matrix_value).empty();
-        else
-            throw exception("Type conversion error for parameter.");
-    }
-*/
-/*
-    parameter::operator int()
-    {
-        switch(type)
-        {
-            case no_type: throw exception("Uninitialized_parameter.");
-            case int_type: if(int_value) return *int_value;
-            case options_type: if(int_value) return *int_value;
-            case double_type: if(double_value) return *double_value;
-            case rate_type: if(double_value) return *double_value;    // FIXME: Take care of time base
-            case string_type: if(string_value) return stof(*string_value); // FIXME: Check that it is a number
-            case matrix_type: throw exception("Could not convert matrix to float"); // FIXME check 1x1 matrix
-            default: ;
-        }
-        throw exception("Type conversion error for  parameter");
-    }
-*/
-
     int
     parameter::as_int()
     {
         switch(type)
         {
             case no_type: throw exception("Uninitialized_parameter.");
-            case double_type: if(double_value) return *double_value;
-            case rate_type: if(double_value) return *double_value;    // FIXME: Take care of time base
-            case bool_type: if(bool_value) return *bool_value;
-            case options_type: if(double_value) return *double_value;
+            case number_type: if(number_value) return *number_value;
+            case rate_type: if(number_value) return *number_value;    // FIXME: Take care of time base
+            case bool_type: if(number_value) return *number_value;
             case string_type: if(string_value) return stoi(*string_value); // FIXME: Check that it is a number
             case matrix_type: throw exception("Could not convert matrix to int"); // FIXME check 1x1 matrix
             default: ;
@@ -260,15 +290,32 @@ namespace ikaros
     }
 
 
+    void 
+        parameter::print(std::string name)
+    {
+        if(!name.empty())
+            std::cout << name << " = ";
+        std::cout << std::string(*this) << std::endl;
+    }
+
+    void 
+    parameter::info()
+    {
+        std::cout << "type: " << type << std::endl;
+        std::cout << "default: " << info_["default"] << std::endl;
+        std::cout << "has_options: " << has_options << std::endl;
+        std::cout << "options: " << info_["options"] << std::endl;
+        std::cout << "value: " << std::string(*this) << std::endl;
+    }
+
     std::string 
     parameter::json()
     {
         switch(type)     // FIXME: remove if statements and use exception handling
         {
-            case options_type:    if(double_value)   return "[["+std::to_string(int(*double_value))+"]]"; // FIXME: int or string???
-            case double_type:    if(double_value)   return "[["+std::to_string(*double_value)+"]]";
-            case bool_type: if(bool_value)          return (*bool_value? "[[true]]" : "[[false]]");
-            case rate_type:     if(double_value)    return "[["+std::to_string(*double_value)+"]]";
+            case number_type:    if(number_value)   return "[["+std::to_string(*number_value)+"]]";
+            case bool_type:     if(number_value)    return (*number_value!=0 ? "[[true]]" : "[[false]]");
+            case rate_type:     if(number_value)    return "[["+std::to_string(*number_value)+"]]";
             case string_type:   if(string_value)    return "\""+*string_value+"\"";
             case matrix_type:   if(matrix_value)    return matrix_value->json();
             default:            throw exception("Cannot convert parameter to string");
@@ -276,14 +323,13 @@ namespace ikaros
     }
 
 
-    std::ostream& operator<<(std::ostream& os, parameter p)
+    std::ostream& operator<<(std::ostream& os, parameter p) // FIXME: Handle options
     {
         switch(p.type)
         {
-            case options_type:  os << std::string(p); break; 
-            case double_type:    if(p.double_value) os <<  *p.double_value; break; // FIXME: Is string conversion sufficient?
-            case bool_type:     if(p.double_value) os <<  (*p.double_value == 0 ? "false" : "true"); break;
-            case rate_type:    if(p.double_value) os <<  *p.double_value; break; 
+            case number_type:    if(p.number_value) os <<  *p.number_value; break; // FIXME: Is string conversion sufficient?
+            case bool_type:     if(p.number_value) os <<  (*p.number_value == 0 ? "false" : "true"); break;
+            case rate_type:    if(p.number_value) os <<  *p.number_value; break; 
             case string_type:   if(p.string_value) os <<  *p.string_value; break;
             case matrix_type:   if(p.matrix_value) os <<  *p.matrix_value; break;
             default:            throw exception("Cannot convert parameter to string for printing");
@@ -337,7 +383,7 @@ namespace ikaros
             // Lookup normal value in current component-context
 
             std::string v = GetValue(name);
-            if(!v.empty())  // ****************** this does dot work for string that are allowed to be empty
+            if(!v.empty())  // ****************** this does not work for string that are allowed to be empty
             {
                 std::string val = v; // Evaluate(v, p.type == string_type); ***********
                 if(!val.empty())
@@ -357,7 +403,7 @@ namespace ikaros
         }
         catch(std::exception & e)
         {
-            Notify(msg_fatal_error, "ERROR: Could not resolve parameter \""s +name + "\" .");  
+            Notify(msg_fatal_error, "ERROR: Could not resolve parameter \""s +name + "\" .", name);  
         }
         return false;
     }
@@ -393,7 +439,7 @@ namespace ikaros
     exchange_before_dot(const std::string& original, const std::string& replacement)
     {
         size_t pos = original.find('.');
-        if (pos == std::string::npos) // No dot found, replace the whole string
+        if(pos == std::string::npos) // No dot found, replace the whole string
             return replacement;
      else  // Replace up to the first dot
             return replacement + original.substr(pos);
@@ -405,7 +451,7 @@ namespace ikaros
     before_dot(const std::string& original)
     {
         size_t pos = original.find('.');
-        if (pos == std::string::npos)
+        if(pos == std::string::npos)
             return original;
      else 
             return original.substr(0,pos);
@@ -416,7 +462,7 @@ namespace ikaros
 // GetValue
 //
 // Get value of a key/variable in the context of this component (ignores current parameter values)
-// Throws and eception if value cannot be found
+// Throws and exception if value cannot be found
 // Does not handle default values - this is done by parameters
 
     std::string 
@@ -537,15 +583,28 @@ namespace ikaros
         kernel().AddOutput(output_name, parameters);
       };
 
+    void Component::AddOutput(std::string name, int size, std::string description)
+    {
+        dictionary o = {
+            {"name", name},
+            {"size", std::to_string(size)},
+            {"description", description},
+            {"_tag", "output"}
+        };
+        list(info_["outputs"]).push_back(o);
+        AddOutput(o);
+    }
+
+    void Component::ClearOutputs()
+    {
+       info_["outputs"] = list(); 
+    }
+
+
     void Component::AddParameter(dictionary parameters)
     {
         try
-        {
-           // std::string pn = parameters["name"];    // FIXME: Can probably be removed
-            //if(pn=="name")                          // FIXME: Add comparison to dictionary value
-            //    return;
-            //if(pn=="class")
-             //   return;            
+        {         
             std::string parameter_name = path_+"."+validate_identifier(parameters["name"]);
             kernel().AddParameter(parameter_name, parameters);
         }
@@ -645,39 +704,55 @@ namespace ikaros
     }
 
 
+
+    std::string
+    Component::EvaluateVariable(const std::string & s)
+    {
+        parameter p;
+        if(LookupParameter(p, s.substr(1)))
+            return p;
+        else
+            return Evaluate(s); // FIXME: Should probably not use full evaluation
+
+    }
+
+
     int 
     Component::EvaluateIntExpression(std::string & s)
     {
         expression e = expression(s);
         std::map<std::string, std::string> vars;
         for(auto v : e.variables())
-            vars[v] = Evaluate(v);
+            vars[v] = EvaluateVariable(v);
         return expression(s).evaluate(vars);
     }
+
 
     std::vector<int> 
     Component::EvaluateSizeList(std::string & s) // return list of size from size list in string
     {
-        //s = Evaluate(s, true); // FIXME: evaluate as string fir s should probably be used in more places
+        //s = Evaluate(s, true); // FIXME: evaluate as string for s should probably be used in more places
         std::vector<int> shape;
         for(std::string e : split(s, ","))
-        shape.push_back(EvaluateIntExpression(e));
+        {
+            if(ends_with(e, ".size")) // special case: use shape function on input and push each dimension on list
+            {
+                auto & x = rsplit(e, ".", 1);
+                matrix m;
+                Bind(m, x.at(0));
+                for(auto d : m.shape())
+                    shape.push_back(d);
+            }
+            else
+            {
+                int d = EvaluateIntExpression(e);
+                if(d>0)
+                    shape.push_back(d);
+            }
+        }
         return shape;
     }
 
-    std::vector<int> 
-    Component::EvaluateSize(std::string & s) // Evaluate size/shape string
-    {
-        if(ends_with(s, ".size")) // special case: use shape function on input // FIXME: Move to EvaluateSizeList
-        {
-            auto & x = rsplit(s, ".", 1); // FIXME: rhead ???
-            matrix m;
-            Bind(m, x.at(0));
-            return m.shape(); 
-        }
-
-        return EvaluateSizeList(s); // default case: parse size list
-    }
 
 
 // NEW EVALUATION FUNCTIONS
@@ -685,7 +760,7 @@ namespace ikaros
     double 
     Component::EvaluateNumber(std::string v)
     {
-        return stod(v); // FIXME: Add full parding of expressions and variables *************
+        return stod(v); // FIXME: Add full parsing of expressions and variables *************
     }
 
 
@@ -694,7 +769,6 @@ namespace ikaros
     {
         return false;
     }
-
 
 
     std::string 
@@ -720,50 +794,50 @@ namespace ikaros
     }
 
 
-  Component::Component():
-    parent_(nullptr),
-    info_(kernel().current_component_info),
-    path_(kernel().current_component_path)
-{
-          // FIXME: Make sure there are empty lists. None of this should be necessary when dictionary is fixed
+    Component::Component():
+        parent_(nullptr),
+        info_(kernel().current_component_info),
+        path_(kernel().current_component_path)
+    {
+              // FIXME: Make sure there are empty lists. None of this should be necessary when dictionary is fixed
 
-    if(info_["inputs"].is_null())
-        info_["inputs"] = list();
+        if(info_["inputs"].is_null())
+            info_["inputs"] = list();
 
-    if(info_["outputs"].is_null())
-        info_["outputs"] = list();
+        if(info_["outputs"].is_null())
+            info_["outputs"] = list();
 
-    if(info_["parameters"].is_null())
-        info_["parameters"] = list();
+        if(info_["parameters"].is_null())
+            info_["parameters"] = list();
 
-    if(info_["groups"].is_null())
-        info_["groups"] = list();
+        if(info_["groups"].is_null())
+            info_["groups"] = list();
 
-    if(info_["modules"].is_null())
-        info_["modules"] = list();
+        if(info_["modules"].is_null())
+            info_["modules"] = list();
 
-    for(auto p: info_["parameters"])
-        AddParameter(p);
+        for(auto p: info_["parameters"])
+            AddParameter(p);
 
-    for(auto input: info_["inputs"])
-        AddInput(input);
+        for(auto input: info_["inputs"])
+            AddInput(input);
 
-    for(auto output: info_["outputs"])
-        AddOutput(output);
+        for(auto output: info_["outputs"])
+            AddOutput(output);
 
-    if(!info_.contains("log_level"))
-        info_["log_level"] = "5";
+        if(!info_.contains("log_level"))
+            info_["log_level"] = "5";
 
-   // Set parent
+    // Set parent
 
-    auto p = path_.rfind('.');
-    if(p != std::string::npos)
-        parent_ = kernel().components.at(path_.substr(0, p));
-}
+        auto p = path_.rfind('.');
+        if(p != std::string::npos)
+            parent_ = kernel().components.at(path_.substr(0, p));
+    }
 
 
     bool
-    Component::Notify(int msg, std::string message)
+    Component::Notify(int msg, std::string message, std::string path)
     {
         int ll = msg_warning;
         if(info_.contains("log_level"))
@@ -776,15 +850,12 @@ namespace ikaros
 
 
 
-  Module::Module()
+    Module::Module()
     {
   
     }
 
-
-
-
-INSTALL_CLASS(Module)
+    INSTALL_CLASS(Module)
 
 // The following lines will create the kernel the first time it is accessed by one of the components
 
@@ -808,7 +879,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
+    void 
+    Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
     {
         for(auto & c : ingoing_connections) // Copy source size to source_range if not set
         {
@@ -821,7 +893,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
+    void 
+    Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
     {
         SetSourceRanges(name, ingoing_connections);
         int begin_index = 0;
@@ -854,7 +927,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
+    void 
+    Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
     {
             SetSourceRanges(name, ingoing_connections);
             int max_delay = 0;
@@ -913,7 +987,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
+    void 
+    Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
     {
             Kernel& k = kernel();
             std::string input_name = path_ + "." + std::string(d["name"]);
@@ -956,7 +1031,7 @@ INSTALL_CLASS(Module)
             if(dictionary(d).contains("size")) // FIXME: use automatic conversions
             {
                 std::string s = d["size"];
-                std::vector<int> shape = EvaluateSize(s);
+                std::vector<int> shape = EvaluateSizeList(s);
                 matrix o;
                 Bind(o, n); // FIXME: Get directly?
                 if(o.rank() != 0)
@@ -965,7 +1040,7 @@ INSTALL_CLASS(Module)
                 for(int i=0; i < shape.size(); i++)
                     if(shape[i]<0)
                     {
-                        kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i)); // FIXME: throw
+                        kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i), n); // FIXME: throw
                         return 0;
                     }
 
@@ -1038,150 +1113,226 @@ INSTALL_CLASS(Module)
 
     // Connection
 
-        Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
+    Connection::Connection(std::string s, std::string t, range & delay_range, std::string alias)
+    {
+        source = peek_head(s, "[");
+        source_range = range(peek_tail(s, "[", true));
+        target = peek_head(t, "[");
+        target_range = range(peek_tail(t, "[", true));
+        delay_range_ = delay_range;
+        flatten_ = false;
+        alias_ = alias;
+    }
+
+
+    void 
+    Connection::Tick()
+    {
+        auto & k = kernel();
+
+        if(delay_range_.is_delay_0())
         {
-            source = peek_head(s, "[");
-            source_range = range(peek_tail(s, "[", true));
-            target = peek_head(t, "[");
-            target_range = range(peek_tail(t, "[", true));
-            delay_range_ = delay_range;
-            flatten_ = false;
-            alias_ = alias;
+            k.buffers[target].copy(k.buffers[source], target_range, source_range);
+            //std::cout << source << " =0=> " << target << std::endl; 
+        }
+        else if(delay_range_.empty() || delay_range_.is_delay_1())
+        {
+            //std::cout << source << " =1=> " << target << std::endl; 
+            k.buffers[target].copy(k.buffers[source], target_range, source_range);
         }
 
-
-        void
-        Connection::Print()
+        else if(flatten_) // Copy flattened delayed values
         {
-            std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range);
-            if(!alias_.empty())
-                std::cout << " \"" << alias_ << "\"";
-            std::cout << '\n'; 
+            //std::cout << source << " =F=> " << target << std::endl; 
+            matrix ctarget = k.buffers[target];
+            int target_offset = target_range.a_[0];
+            for(int i=delay_range_.a_[0]; i<delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
+            {   
+                matrix s = k.circular_buffers[source].get(i);
+
+                for(auto ix=source_range; ix.more(); ix++)
+                {
+                    int source_index = s.compute_index(ix.index());
+                    ctarget[target_offset++] = (*(s.data_))[source_index];
+                }
+            }
         }
 
-
-    // Class
-
-        Class::Class(std::string n, std::string p) : module_creator(nullptr), name(n), path(p),info_(p)
+        else if(delay_range_.a_[0]+1 == delay_range_.b_[0]) // Copy indexed delayed value with single delay
         {
-         //   info_ = dictionary(path);
+            //std::cout << source << " =D=> " << target << std::endl;
+            matrix s = k.circular_buffers[source].get(delay_range_.a_[0]);
+            k.buffers[target].copy(s, target_range, source_range);
         }
 
-        Class::Class(std::string n, ModuleCreator mc) : module_creator(mc), name(n)
+        else // Copy indexed delayed values with more than one element
         {
-         //   info_ = dictionary(path);
+            //std::cout << source << " =DD=> " << target << std::endl;
+            for(int i=delay_range_.a_[0]; i<delay_range_.b_[0]; i++)  // FIXME: assuming continous range (inc==1)
+            {   
+                matrix s = k.circular_buffers[source].get(i);
+                int target_ix = i - delay_range_.a_[0]; // trim!
+                range tr = target_range.tail();
+                matrix t = k.buffers[target][target_ix];
+                t.copy(s, tr, source_range);
+
+            }
         }
+    };
+
+    void
+    Connection::Print()
+    {
+        std::cout << "\t" << source <<  delay_range_.curly() <<  std::string(source_range) << " => " << target  << std::string(target_range);
+        if(!alias_.empty())
+            std::cout << " \"" << alias_ << "\"";
+        std::cout << '\n'; 
+    }
 
 
-        void 
-        Class::print()
-        {
-            std::cout << name << ": " << path  << '\n';
-        }
+std::string
+Connection::Info()
+{
+    std::string s = source + delay_range_.curly() +  std::string(source_range) + " => " + target  + std::string(target_range);
+        if(!alias_.empty())
+            s+=  " \"" + alias_ + "\"";
+    return s;
+}
+
+// Class
+
+    Class::Class(std::string n, std::string p) : module_creator(nullptr), name(n), path(p),info_(p)
+    {
+        //   info_ = dictionary(path);
+    }
+
+    Class::Class(std::string n, ModuleCreator mc) : module_creator(mc), name(n)
+    {
+        //   info_ = dictionary(path);
+    }
+
+
+    void 
+    Class::Print()
+    {
+        std::cout << name << ": " << path  << '\n';
+    }
 
     // Request
 
-        Request::Request(std::string  uri, long sid, std::string b):
-            body(b)
-        {
-            url = uri;
-            session_id = sid;
-            uri.erase(0, 1);
-            std::string params = tail(uri, "?");
-            //std::cout << params << std::endl;
-            command = head(uri, "/"); 
-            component_path = uri;
-            parameters.parse_url(params);
-        }
-
-    bool operator==(Request & r, const std::string s)
+    Request::Request(std::string  uri, long sid, std::string b):
+        body(b)
     {
-        return r.command == s;
+        url = uri;
+        session_id = sid;
+        uri.erase(0, 1);
+        std::string params = tail(uri, "?");
+        //std::cout << params << std::endl;
+        command = head(uri, "/"); 
+        component_path = uri;
+        parameters.parse_url(params);
     }
 
-    // Kernel
+bool operator==(Request & r, const std::string s)
+{
+    return r.command == s;
+}
 
-        void
-        Kernel::Clear()
-        {
-            //std::cout << "Kernel::Clear" << std::endl;
-            // FIXME: retain persistent components
-            components.clear();
-            connections.clear();
-            buffers.clear();   
-            max_delays.clear();
-            circular_buffers.clear();
-            parameters.clear();
+// Kernel
 
-            tick = -1;
-            //run_mode = run_mode_pause;
-            tick_is_running = false;
-            tick_time_usage = 0;
-            tick_duration = 1; // default value
-            actual_tick_duration = tick_duration;
-            idle_time = 0;
-            stop_after = -1;
-            shutdown = false;
-            info_ = dictionary();
-            info_["filename"] = ""; //EMPTY FILENAME
+    void
+    Kernel::Clear()
+    {
+        //std::cout << "Kernel::Clear" << std::endl;
+        // FIXME: retain persistent components
+        components.clear();
+        connections.clear();
+        buffers.clear();   
+        max_delays.clear();
+        circular_buffers.clear();
+        parameters.clear();
 
-            session_id = new_session_id();
-        }
+        tick = -1;
+        //run_mode = run_mode_pause;
+        tick_is_running = false;
+        tick_time_usage = 0;
+        tick_duration = 1; // default value
+        actual_tick_duration = tick_duration;
+        idle_time = 0;
+        stop_after = -1;
+        shutdown = false;
+        info_ = dictionary();
+        info_["filename"] = ""; //EMPTY FILENAME
 
-
-        void
-        Kernel::New()
-        {
-            //std::cout << "Kernel::New" << std::endl;
-            //log.push_back(Message("New file"));
-            Notify(msg_print, "New file");
-       
-            Clear();
-            Pause();
-            dictionary d;
-
-            d["_tag"] = "group";
-            d["name"] = "Untitled";
-            d["groups"] = list();
-            d["modules"] = list();
-            d["widgets"] = list();
-            d["connections"] = list();       
-            d["inputs"] = list();            
-            d["outputs"] = list();            
-            d["parameters"] = list();           
-            d["stop"] = "-1";
-            // d["webui_port"] = "8000";
-
-            SetCommandLineParameters(d);
-            d["filename"] = "";
-            BuildGroup(d);
-            info_ = d;
-            session_id = new_session_id(); 
-            SetUp(); // FIXME: Catch exceptions if new failes
-        }
+        session_id = new_session_id();
+    }
 
 
-        void
-        Kernel::Tick()
-        {
+    void
+    Kernel::New()
+    {
+        //std::cout << "Kernel::New" << std::endl;
+        Notify(msg_print, "New file");
+    
+        Clear();
+        Pause();
+        dictionary d;
+
+        d["_tag"] = "group";
+        d["name"] = "Untitled";
+        d["groups"] = list();
+        d["modules"] = list();
+        d["widgets"] = list();
+        d["connections"] = list();       
+        d["inputs"] = list();            
+        d["outputs"] = list();            
+        d["parameters"] = list();           
+        d["stop"] = "-1";
+        // d["webui_port"] = "8000";
+
+        SetCommandLineParameters(d);
+        d["filename"] = "";
+        BuildGroup(d);
+        info_ = d;
+        session_id = new_session_id(); 
+        SetUp(); // FIXME: Catch exceptions if new failes
+    }
+
+
+    void
+    Kernel::Tick()
+    {
         tick_is_running = true; // Flag that state changes are not allowed
         tick++;
-         for(auto & m : components)
-            try
-            {
-                //std::cout <<" Tick: " << m.second->info_["name"] << std::endl;
-                if(m.second != nullptr)  // Allow classes without code
-                    m.second->Tick();   
-            }
-            catch(const empty_matrix_error& e)
-            {
-                throw std::out_of_range(m.first+"."+e.message+" (Possibly an empty matrix or an input that is not connected).");  
-            }
-            catch(const std::exception& e)
-            {
-                throw exception(m.first+". "+std::string(e.what()));
-            }
+        //std::cout <<" Tick: " << GetTick() << std::endl;
 
+
+            for(auto & task_group : tasks)
+                for(auto & task: task_group)
+                    task->Tick();
+
+/*
+        }
+        else
+        {
+
+            for(auto & m : components)
+                try
+                {
+                    //std::cout <<" Tick: " << m.second->info_["name"] << std::endl;
+                    if(m.second != nullptr)  // Allow classes without code
+                        m.second->Tick();   
+                }
+                catch(const empty_matrix_error& e)
+                {
+                    throw std::out_of_range(m.first+"."+e.message+" (Possibly an empty matrix or an input that is not connected).");  
+                }
+                catch(const std::exception& e)
+                {
+                    throw exception(m.first+". "+std::string(e.what()));
+                }
+        }
+*/
         RotateBuffers();
         Propagate();
 
@@ -1190,13 +1341,23 @@ INSTALL_CLASS(Module)
     }
 
 
-    bool Kernel::Terminate()
+    bool 
+    Kernel::Terminate()
     {
+        if(stop_after!= -1 &&  tick >= stop_after)
+        {
+            if(options_.is_set("batch_mode"))
+                run_mode = run_mode_quit;
+            else
+                run_mode = run_mode_pause;
+            
+        }
         return (stop_after!= -1 &&  tick >= stop_after);
     }
 
 
-    void Kernel::ScanClasses(std::string path) // FIXME: Add error handling
+    void 
+    Kernel::ScanClasses(std::string path) // FIXME: Add error handling
     {
         if(!std::filesystem::exists(path))
         {
@@ -1213,7 +1374,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ScanFiles(std::string path, bool system)
+    void 
+    Kernel::ScanFiles(std::string path, bool system)
     {
         if(!std::filesystem::exists(path))
         {
@@ -1233,16 +1395,17 @@ INSTALL_CLASS(Module)
     }
 
 
-
-    void Kernel::ListClasses()
+    void 
+    Kernel::ListClasses()
     {
         std::cout << "\nClasses:" << std::endl;
         for(auto & c : classes)
-            c.second.print();
+            c.second.Print();
     }
 
 
-    void Kernel::ResolveParameter(parameter & p,  std::string & name)
+    void 
+    Kernel::ResolveParameter(parameter & p,  std::string & name)
     {
         std::size_t i = name.rfind(".");
         if(i == std::string::npos)
@@ -1254,7 +1417,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ResolveParameters() // Find and evaluate value or default // FIXME: return success
+    void 
+    Kernel::ResolveParameters() // Find and evaluate value or default // FIXME: return success
     {
         bool ok = true;
         for (auto p=parameters.rbegin(); p!=parameters.rend(); p++) // Reverse order equals outside in in groups
@@ -1274,7 +1438,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::CalculateSizes()
+    void 
+    Kernel::CalculateSizes()
     {
         // Copy the table of all components
         std::map<std::string, Component *> init_components = components;
@@ -1310,7 +1475,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::CalculateDelays()
+    void 
+    Kernel::CalculateDelays()
     {
         for(auto & c : connections)
         {
@@ -1321,14 +1487,11 @@ INSTALL_CLASS(Module)
                 max_delays[c.source] = c.delay_range_.extent()[0];
             }
         }
-
-        //std::cout << "\nDelays:" << std::endl;
-        //for(auto & o : buffers)
-        //    std::cout  << "\t" << o.first <<": " << max_delays[o.first] << std::endl;
     }
 
 
-    void Kernel::InitCircularBuffers()
+    void 
+    Kernel::InitCircularBuffers()
     {
         //std::cout << "\nInitCircularBuffers:" << std::endl;
         for(auto it : max_delays)
@@ -1341,14 +1504,16 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::RotateBuffers()
+    void 
+    Kernel::RotateBuffers()
     {
         for(auto & it : circular_buffers)
             it.second.rotate(buffers[it.first]);
     }
 
 
-    void Kernel::ListComponents()
+    void 
+    Kernel::ListComponents()
     {
         std::cout << "\nComponents:" << std::endl;
         for(auto & m : components)
@@ -1356,7 +1521,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListConnections()
+    void 
+    Kernel::ListConnections()
     {
         std::cout << "\nConnections:" << std::endl;
         for(auto & c : connections)
@@ -1364,7 +1530,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListInputs()
+    void 
+    Kernel::ListInputs()
     {
         std::cout << "\nInputs:" << std::endl;
         for(auto & i : buffers)
@@ -1380,7 +1547,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListBuffers()
+    void 
+    Kernel::ListBuffers()
     {
         std::cout << "\nBuffers:" << std::endl;
         for(auto & i : buffers)
@@ -1388,7 +1556,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::ListCircularBuffers()
+    void 
+    Kernel::ListCircularBuffers()
     {
         std::cout << "\nCircularBuffers:" << std::endl;
         for(auto & i : circular_buffers)
@@ -1396,7 +1565,8 @@ INSTALL_CLASS(Module)
     }
 
 
-   void Kernel::ListParameters()
+   void 
+   Kernel::ListParameters()
     {
         std::cout << "\nParameters:" << std::endl;
         for(auto & p : parameters)
@@ -1404,7 +1574,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::PrintLog()
+    void 
+    Kernel::PrintLog()
     {
         for(auto & s : log)
             std::cout << "IKAROS: " << s.level_ << ": " << s.message_ << std::endl;
@@ -1423,30 +1594,33 @@ INSTALL_CLASS(Module)
         tick_duration(1),
         shutdown(false),
         session_id(new_session_id())
-        //webui_dir("../Source/WebUI/") // FIXME: get from somewhere else
     {
         cpu_cores = std::thread::hardware_concurrency();
     }
 
     // Functions for creating the network
 
-    void Kernel::AddInput(std::string name, dictionary parameters) // FIXME: use name as argument insteas of parameters
+    void 
+    Kernel::AddInput(std::string name, dictionary parameters) // FIXME: use name as argument insteas of parameters
     {
         buffers[name] = matrix().set_name(parameters["name"]);
     }
 
-    void Kernel::AddOutput(std::string name, dictionary parameters)
+    void 
+    Kernel::AddOutput(std::string name, dictionary parameters)
     {
         buffers[name] = matrix().set_name(parameters["name"]);
     }
 
-    void Kernel::AddParameter(std::string name, dictionary params)
+    void 
+    Kernel::AddParameter(std::string name, dictionary params)
     {
          parameters.emplace(name, parameter(params));
     }
 
 
-    void Kernel::SetParameter(std::string name, std::string value)
+    void 
+    Kernel::SetParameter(std::string name, std::string value)
     {
         if(!parameters.count(name))
             throw exception("Parameter \""+name+"\" could not be set because it doees not exist.");
@@ -1463,7 +1637,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::AddGroup(dictionary info, std::string path)
+    void 
+    Kernel::AddGroup(dictionary info, std::string path)
     {
         current_component_info = info;
         current_component_path = path;
@@ -1475,7 +1650,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::AddModule(dictionary info, std::string path)
+    void 
+    Kernel::AddModule(dictionary info, std::string path)
     {
         current_component_info = info;
         current_component_path = path+"."+std::string(info["name"]);
@@ -1501,7 +1677,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::AddConnection(dictionary info, std::string path)
+    void 
+    Kernel::AddConnection(dictionary info, std::string path)
     {
          std::string souce = path+"."+std::string(info["source"]);   // FIXME: Look for global paths later - string conversion should not be necessary
          std::string target = path+"."+std::string(info["target"]);
@@ -1530,8 +1707,12 @@ INSTALL_CLASS(Module)
 
 
 
-    void Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
+    void 
+    Kernel::BuildGroup(dictionary d, std::string path) // Traverse dictionary and build all items at each level, FIXME: rename AddGroup later
     {
+        if(!d.contains("name"))
+            throw fatal_error("Groups must have a name.");
+
         std::string name = validate_identifier(d["name"]);
         if(!path.empty())
             name = path+"."+name;
@@ -1556,7 +1737,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::InitComponents()
+    void 
+    Kernel::InitComponents()
     {
         //std::cout << "Running Kernel::InitComponents()" << std::endl;
         // Call Init for all modules (after CalcalateSizes and Allocate)
@@ -1576,7 +1758,8 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::SetCommandLineParameters(dictionary & d) // Add command line arguments - will override XML - probably not correct ******************
+    void 
+    Kernel::SetCommandLineParameters(dictionary & d) // Add command line arguments - will override XML - probably not correct ******************
     {
     
         for(auto & x : options_.d)
@@ -1589,24 +1772,11 @@ INSTALL_CLASS(Module)
 
         if(d.contains("tick_duration"))
             tick_duration = d["tick_duration"];
-
-//                if(run_mode >= run_mode_stop) // only look at below command line arguments started from command line
-//                    {
-/*
-        if(d.contains("start"))
-            start = is_true(d["start"]);
-
-                    if(d.contains("real_time"))
-                        if(is_true(d["real_time"]))
-                        {
-                            run_mode = run_mode_restart_realtime;
-                            start = true;
-                        }
-*/
     }
 
 
-    void Kernel::LoadFile()
+    void 
+    Kernel::LoadFile()
     {
             //std::cout << "Kernel::LoadFile" << std::endl;
             try
@@ -1620,14 +1790,12 @@ INSTALL_CLASS(Module)
                 Notify(msg_print, u8"Loaded "s+options_.filename);
 
                 CalculateCheckSum();
-                ListBuffers();
-                ListConnections();
+                //ListBuffers();
+                //ListConnections();
             }
             catch(const exception& e)
             {
-                //log.push_back(Message("E", e.what()));
-                // log.push_back(Message("E", "Load file failed for "s+options_.filename));
-                //Notify(msg_fatal_error, e.what());
+                Notify(msg_fatal_error, e.message);
                 Notify(msg_fatal_error, u8"Load file failed for "s+options_.filename);
                 CalculateCheckSum();
                 New();
@@ -1635,9 +1803,9 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::CalculateCheckSum()
+    void 
+    Kernel::CalculateCheckSum()
     {
-        return; // ****************************TEMPORARY *****************
         if(!info_.contains("check_sum"))
             return;
 
@@ -1656,7 +1824,18 @@ INSTALL_CLASS(Module)
     }
 
 
-    void Kernel::Save() // Simple save function in present file
+     dictionary 
+     Kernel::GetModuleInstantiationInfo()
+     {
+        dictionary d;
+        d["Constant"] = "1";
+        d["Print"] = "2";
+        return d;
+     }
+
+
+    void 
+    Kernel::Save() // Simple save function in present file
     {
         //std::cout << "Kernel::Save" << std::endl;
         std::string data = xml();
@@ -1664,27 +1843,30 @@ INSTALL_CLASS(Module)
         //std::cout << data << std::endl;
 
         std::ofstream file;
-        std::string filename = info_["filename"];
+        std::string filename = add_extension(info_["filename"], ".ikg");
         file.open (filename);
         file << data;
         file.close();
     }
 
 
-    void Kernel::SortNetwork()
+   
+    void 
+    Kernel::Propagate()
     {
-        // Resolve paths
-        // Sort Components and Connections => Thread Groups and Partially Ordered Events (Tick & Propagate)
-    }
 
+         for(auto & c : connections)
+            if(c.delay_range_.is_delay_0())
+                continue;
+            else
+                c.Tick();
 
-    void Kernel::Propagate()
-    {
+   /*
          for(auto & c : connections)
         {
             if(c.delay_range_.empty() || c.delay_range_.is_delay_0())
             {
-                // Do not handle here yet // FIXME: !!!!
+                // Do not handle here. Handled in Connection.Tick()
             }
 
             else if(c.delay_range_.empty() || c.delay_range_.is_delay_1())
@@ -1725,7 +1907,9 @@ INSTALL_CLASS(Module)
                 }
             }
         }
+    */
     }
+
 
 
     void
@@ -1748,7 +1932,7 @@ INSTALL_CLASS(Module)
     {
         for (auto it = connections.begin(); it != connections.end(); ) 
         {
-            if (buffers.count(it->source) && buffers.count(it->target))
+            if(buffers.count(it->source) && buffers.count(it->target))
                 it++;
             else
             {
@@ -1759,11 +1943,247 @@ INSTALL_CLASS(Module)
     }
 
 
+/*************************
+ * 
+ *  Task sorting
+ * 
+ *************************/
+
+
+
+    bool 
+    Kernel::dfsCycleCheck(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::unordered_set<std::string>& recStack) 
+    {
+        if(recStack.find(node) != recStack.end())
+            return true;
+
+        if(visited.find(node) != visited.end())
+            return false;
+
+        visited.insert(node);
+        recStack.insert(node);
+
+        if(graph.find(node) != graph.end()) 
+            for (const std::string& neighbor : graph.at(node)) 
+                if(dfsCycleCheck(neighbor, graph, visited, recStack)) 
+                    return true;
+        recStack.erase(node);
+        return false;
+    }
+
+
+
+    bool 
+    Kernel::hasCycle(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges) 
+    {
+        std::unordered_map<std::string, std::vector<std::string>> graph;
+        for (const auto& edge : edges)
+            graph[edge.first].push_back(edge.second);
+
+        std::unordered_set<std::string> visited;
+        std::unordered_set<std::string> recStack;
+
+        for (const std::string& node : nodes)
+            if(visited.find(node) == visited.end() &&  (dfsCycleCheck(node, graph, visited, recStack)))
+                    return true;
+
+        return false;
+    }
+
+    void 
+    Kernel::dfsSubgroup(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::vector<std::string>& component) 
+    {
+        visited.insert(node);
+        component.push_back(node);
+
+        if(graph.find(node) != graph.end()) 
+        {
+            for (const std::string& neighbor : graph.at(node)) 
+            {
+                if(visited.find(neighbor) == visited.end()) 
+                    dfsSubgroup(neighbor, graph, visited, component);
+            }
+        }
+    }
+
+
+    std::vector<std::vector<std::string>> 
+    Kernel::findSubgraphs(const std::vector<std::string>& nodes, const std::vector<std::pair<std::string, std::string>>& edges) 
+    {
+        std::unordered_map<std::string, std::vector<std::string>> graph;
+        for (const auto& edge : edges) 
+        {
+            graph[edge.first].push_back(edge.second);
+            graph[edge.second].push_back(edge.first);
+        }
+
+        std::unordered_set<std::string> visited;
+        std::vector<std::vector<std::string>> components;
+
+        for (const std::string& node : nodes) 
+        {
+            if(visited.find(node) == visited.end()) 
+            {
+                std::vector<std::string> component;
+                dfsSubgroup(node, graph, visited, component);
+                components.push_back(component);
+            }
+        }
+
+        return components;
+    }
+
+
+    void 
+    Kernel::topologicalSortUtil(const std::string& node, const std::unordered_map<std::string, std::vector<std::string>>& graph, std::unordered_set<std::string>& visited, std::stack<std::string>& Stack) 
+    {
+        visited.insert(node);
+
+        if(graph.find(node) != graph.end()) 
+        {
+            for (const std::string& neighbor : graph.at(node)) 
+            {
+                if(visited.find(neighbor) == visited.end())
+                    topologicalSortUtil(neighbor, graph, visited, Stack);
+            }
+        }
+        Stack.push(node);
+    }
+
+
+
+    std::vector<std::string> 
+    Kernel::topologicalSort(const std::vector<std::string>& component, const std::unordered_map<std::string, std::vector<std::string>>& graph) 
+    {
+        std::unordered_set<std::string> visited;
+        std::stack<std::string> Stack;
+
+        for (const std::string& node : component) 
+            if(visited.find(node) == visited.end())
+                topologicalSortUtil(node, graph, visited, Stack);
+
+        std::vector<std::string> sortedSubgraph;
+        while (!Stack.empty()) 
+        {
+            sortedSubgraph.push_back(Stack.top());
+            Stack.pop();
+        }
+
+        return sortedSubgraph;
+    }
+
+
+    std::vector<std::vector<std::string>>
+    Kernel::sort(std::vector<std::string> nodes, std::vector<std::pair<std::string, std::string>> edges)
+    {
+        if(hasCycle(nodes, edges)) 
+            throw fatal_error("Network has zero-delay loops");
+        else 
+        {
+
+            std::vector<std::vector<std::string>> components = findSubgraphs(nodes, edges);
+
+            // Rebuild the original graph for directed edges
+            std::unordered_map<std::string, std::vector<std::string>> graph;
+            for (const auto& edge : edges) {
+                graph[edge.first].push_back(edge.second);
+            }
+
+            std::vector<std::vector<std::string>>  result;
+
+            for (const auto& component : components) {
+                std::vector<std::string> sortedSubgraph = topologicalSort(component, graph);
+                result.push_back(sortedSubgraph);
+                for (const auto& node : sortedSubgraph) {
+                }
+                std::cout << std::endl;
+            }
+
+            return result;
+        }
+    }
+
+
+
+    void
+    Kernel::SortTasks()
+    {
+        std::vector<std::string> nodes;
+        std::vector<std::pair<std::string, std::string>> arcs;
+        std::map<std::string, Task *> task_map;
+
+        for(auto & [s,c] : components)
+        {
+            nodes.push_back(s);
+            task_map[s] = c; // Save in task map
+        }
+
+        for(auto & c : connections) // ONLY ZERO CONNECTIONS
+        if(c.delay_range_.is_delay_0())
+            {
+                std::string s = peek_rhead(c.source,".");
+                std::string t = peek_rhead(c.target,".");
+                std::string cc = "CON("+s+","+t+")"; // Connection node name
+
+                nodes.push_back(cc);
+                arcs.push_back({s, cc});
+                arcs.push_back({cc, t});
+                task_map[cc] = &c; // Save in task map
+            }
+/*
+       for(auto & s : nodes)
+            std::cout <<  "NODE: " << s << std::endl;
+       for(const auto [s,t] : arcs)
+            std::cout <<  "ARC: " << s << "->" << t << std::endl;
+*/
+        auto r = sort(nodes, arcs);
+/*
+        for(auto s : r)
+        {
+            for(auto ss: s)
+                std::cout << ss << " ";
+                std::cout  << std::endl;
+        }
+        std::cout  << std::endl;
+*/
+        // Fill task list
+
+        tasks.clear();
+        for(auto s : r)
+        {
+            std::vector<Task *> task_list;
+            bool priority_task = false;
+            for(auto ss: s)
+            {
+                if(task_map[ss]->Priority())
+                    priority_task = true;
+                task_list.push_back(task_map[ss]); // Get task pointer here
+            }
+            if(priority_task)
+                tasks.insert(tasks.begin(), task_list);
+            else
+                tasks.push_back(task_list);
+        }
+    }
+
+
+
+    void
+    Kernel::RunTasks()
+    {
+        for(auto & task_group : tasks)
+            for(auto & task: task_group)
+                task->Tick();
+    }
+
+
+
     void
     Kernel::SetUp()
     {
         try
         {
+            SortTasks();
             ResolveParameters();
             CalculateDelays();
             CalculateSizes();
@@ -1772,22 +2192,23 @@ INSTALL_CLASS(Module)
             InitCircularBuffers();
             InitComponents();
 
-     /*
-            ListComponents();
-            ListConnections();
-            //ListInputs();
-            //ListOutputs();
-            ListBuffers();
-            ListCircularBuffers();
-            ListParameters();
+            if(info_.is_set("info"))
+            {
+                ListParameters();
+                ListComponents();
+                ListConnections();
+                //ListInputs();
+                //ListOutputs();
+                ListBuffers();
+                ListCircularBuffers();
+            }
+
             PrintLog();
-*/
         }
         catch(exception & e)
         {
             Notify(msg_fatal_error, e.message);
             Notify(msg_fatal_error, "SetUp Failed");
-            //std::cout << "SetUp Failed" << std::endl;
             throw fatal_error("SetUp Failed");
         }
     }
@@ -1811,15 +2232,15 @@ INSTALL_CLASS(Module)
                 run_mode = run_mode_restart_play;
         }
         
-            timer.Restart();
-            tick = -1; // To make first tick 0 after increment
+        timer.Restart();
+        tick = -1; // To make first tick 0 after increment
 
-            if(run_mode == run_mode_restart_realtime)
-                Realtime();
-            else if(run_mode == run_mode_restart_play)
-                Play();
-            else
-                Pause();
+        if(run_mode == run_mode_restart_realtime)
+            Realtime();
+        else if(run_mode == run_mode_restart_play)
+            Play();
+        else
+            Pause();
 
             // Main loop
             while(run_mode > run_mode_quit)  // Not quit or restart
@@ -1835,12 +2256,11 @@ INSTALL_CLASS(Module)
                         lag = timer.WaitUntil(double(tick+1)*tick_duration);
                     else if(run_mode == run_mode_play)
                     {
-                        timer.SetTime(double(tick+1)*tick_duration); // Fake time increase
+                        timer.SetTime(double(tick+1)*tick_duration); // Fake time increase // FIXME: remove sleep in batch mode
                         Sleep(0.01);
                     }
                     else
                         Sleep(0.01); // Wait 10 ms to avoid wasting cycles if there are no requests
-
 
                     // Run_mode may have changed during the delay - needs to be checked again
 
@@ -1862,15 +2282,14 @@ INSTALL_CLASS(Module)
                         idle_time = tick_duration - tick_time_usage;
                     }                    
                 }
-
                 Sleep(0.1);
             }
         }
 
         bool
-        Kernel::Notify(int msg, std::string message)
+        Kernel::Notify(int msg, std::string message, std::string path)
         {
-            log.push_back(Message(message));
+            log.push_back(Message(msg, message, path));
             if(msg <= msg_fatal_error)
             {
                     std::cout << "ikaros: " << message << std::endl;
@@ -1886,7 +2305,7 @@ INSTALL_CLASS(Module)
     std::string 
     Component::json()
     {
-        return info_.json(); // FIXME: Will be used when shared dictionaries are implemented
+        return info_.json();
     }
 
 
@@ -1985,27 +2404,6 @@ INSTALL_CLASS(Module)
     }
 
 
-
-/*
-    void
-    Kernel::Play()
-    {
-        while(tick_is_running)
-            {}
-
-        if(run_mode == run_mode_stop)
-        {
-            run_mode = run_mode_pause;
-            request_restart = true;
-            requested_restart_mode = run_mode_play;
-            return;
-        }
-
-        run_mode = run_mode_play;
-        timer.Pause();
-        timer.SetPauseTime(GetTime()+tick_duration);
-    }
-*/
 
     void
     Kernel::Realtime()
@@ -2258,7 +2656,7 @@ INSTALL_CLASS(Module)
         std::string s = "{\"status\":\"ok\"}"; 
         Dictionary rtheader;
         rtheader.Set("Session-Id", std::to_string(session_id).c_str());
-        rtheader.Set("Package-Type", "network");
+        rtheader.Set("Package-Type", "network"); // FIXME: wrong packade type
         rtheader.Set("Content-Type", "application/json");
         rtheader.Set("Content-Length", int(s.size()));
         socket->SendHTTPHeader(&rtheader);
@@ -2275,7 +2673,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoQuit(Request & request)
     {
-        log.push_back(Message("quit"));
+        Notify(msg_print, "quit");
         Stop();
         run_mode = run_mode_quit;
         DoUpdate(request);
@@ -2285,7 +2683,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoStop(Request & request)
     {
-        log.push_back(Message("stop"));
+        Notify(msg_print, "stop");
         Stop();
         DoUpdate(request);
     }
@@ -2334,7 +2732,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoPause(Request & request)
     {
-        log.push_back(Message("pause"));
+        Notify(msg_print, "pause");
         Pause();
         DoSendData(request);
     }
@@ -2343,7 +2741,7 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoStep(Request & request)
     {
-        log.push_back(Message("step"));
+        Notify(msg_print, "step");
         Pause();
         run_mode = run_mode_pause;
         Tick();
@@ -2352,23 +2750,12 @@ INSTALL_CLASS(Module)
     }
 
 
-/*
-    void
-    Kernel::DoPlay(Request & request)
-    {
-        log.push_back("play");
-        Play();
-        run_mode = run_mode_play;
-        timer.SetPauseTime(GetTime()+tick_duration);
-        DoSendData(request);
-    }
-*/
 
 
     void
     Kernel::DoRealtime(Request & request)
     {
-        log.push_back(Message("realtime"));
+        Notify(msg_print, "realtime");
         Realtime();
         DoSendData(request);
     }
@@ -2377,24 +2764,35 @@ INSTALL_CLASS(Module)
     void
     Kernel::DoPlay(Request & request)
     {
-        log.push_back(Message("play"));
+        Notify(msg_print, "play");
         Play();
         DoSendData(request);
     }
 
 
     void
-    Kernel::DoCommand(Request & request)// FIXME: Not implemented **************
+    Kernel::DoCommand(Request & request)
     {
-        /*
-        float x, y;
-        char command[255];
-        char value[1024]; // FIXME: no range chacks
-        int c = sscanf(uri.c_str(), "/command/%[^/]/%f/%f/%[^/]", command, &x, &y, value);
-        if(c == 4)
-            SendCommand(command, x, y, value);
+        if(!components.count(request.component_path))
+            {
+                Notify(msg_warning, "Component '"+request.component_path+"' could not be found.");
+                DoSendData(request);
+                return;
+            }
 
-            */
+        if(!request.body.empty()) // FIXME: Move to request and check content-type first
+        {
+            request.parameters = parse_json(request.body);
+        }
+
+        if(!request.parameters.contains("command"))
+        {
+                Notify(msg_warning, "No command specified for  '"+request.component_path+"'.");
+                DoSendData(request);
+                return;
+        }
+
+        components.at(request.component_path)->Command(request.parameters["command"], request.parameters);
         DoSendData(request);
     }
 
@@ -2553,7 +2951,7 @@ INSTALL_CLASS(Module)
     }
 */
 
-
+/*
     void
     Kernel::DoAddGroup(Request & request)
     {
@@ -2599,7 +2997,7 @@ INSTALL_CLASS(Module)
 
         DoSendData(request);
     }
-
+*/
 
     void
     Kernel::DoUpdate(Request & request)
@@ -2787,36 +3185,6 @@ INSTALL_CLASS(Module)
             DoCommand(request);
         else if(request == "control")
             DoControl(request);
-
-        // View editing
-/*
-        else if(request == "addview")
-            AddView(request);
-        else if(request == "renameview")
-            RenameView(request);
-        else if(request == "addwidget")
-            AddWidget(request);
-        else if(request == "delwidget")
-            DeleteWidget(request);
-        else if(request == "setwidgetparams")
-            SetWidgetParameters(request);
-        else if(request == "widgettofront")
-            WidgetToFront(request);
-        else if(request == "widgettoback")
-            WidgetToBack(request);
-*/
-        // Network editing
-
-        else if(request == "addgroup")
-            DoAddGroup(request);
-        else if(request == "addmodule")
-            DoAddModule(request);
-        else if(request == "setattribute")
-            DoSetAttribute(request);
-        else if(request == "addconnection")
-            DoAddConnection(request);
-        else if(request == "setrange")
-            DoSetRange(request);
         else 
             DoSendFile(request.url);
     }
@@ -2840,9 +3208,9 @@ Kernel::CalculateCPUUsage() // In percent
     {
         while(!shutdown)
         {
-            if (socket != nullptr && socket->GetRequest(true))
+            if(socket != nullptr && socket->GetRequest(true))
             {
-                if (equal_strings(socket->header.Get("Method"), "GET"))
+                if(equal_strings(socket->header.Get("Method"), "GET"))
                 {
                     while(tick_is_running)
                         {}
@@ -2850,7 +3218,7 @@ Kernel::CalculateCPUUsage() // In percent
                     HandleHTTPRequest();
                     handling_request = false;
                 }
-                else if (equal_strings(socket->header.Get("Method"), "PUT")) // JSON Data
+                else if(equal_strings(socket->header.Get("Method"), "PUT")) // JSON Data
                 {
                     while(tick_is_running)
                         {}
@@ -2886,3 +3254,4 @@ Kernel::~Kernel()
         delete socket; 
     }
 }
+

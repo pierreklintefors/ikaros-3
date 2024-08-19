@@ -59,6 +59,8 @@ namespace ikaros
         dictionary();
         dictionary(XMLElement * xml);
         dictionary(std::string filename);
+        dictionary(const std::initializer_list<std::pair<std::string, std::string>>& init_list);
+
         //dictionary(const dictionary & d);
     
         value & operator[](std::string s);

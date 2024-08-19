@@ -509,7 +509,7 @@ ServerSocket::GetRequest(bool block)
             {   
                 char buffer[4*65535];
                 long rr = Read(buffer, content_length+4);
-                std::cout << buffer << std::endl;
+                //std::cout << buffer << std::endl;
                 body = std::string(buffer);
             }
         }

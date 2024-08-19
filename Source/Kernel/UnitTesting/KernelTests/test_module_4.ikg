@@ -1,4 +1,4 @@
-<group name="Test_4"  check_sum = "0" description="Test selection of correct parameter type" tick_duration="0.3">
+<group name="Test_4"  check_sum = "140640" description="Test selection of correct parameter type" tick_duration="0.3">
 
     <module name="Const" class="Constant" data="9, 8, 7" />
 

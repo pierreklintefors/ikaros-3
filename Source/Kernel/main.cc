@@ -23,12 +23,15 @@ main(int argc, char *argv[])
         //o.add_option("q", "quiet", "do not print log to terminal; equal to loglevel=0");
         //o.add_option("c", "lagcutoff", "reset lag and restart timing if it exceed this value", "10s");
 
+        o.add_option("b", "batch_mode", "start automatically and quit when execution terminates");
         o.add_option("d", "tick_duration", "duration of each tick");
+        o.add_option("i", "info", "print model info");
         o.add_option("r", "real_time", "run in real-time mode");
         o.add_option("S", "start", " start-up automatically without waiting for commands from WebUI");
         o.add_option("s", "stop", "stop Ikaros after this tick", "-1");
         o.add_option("w", "webui_port", "port for ikaros WebUI", "8000");
         o.add_option("h", "help", "list command line options");
+        o.add_option("x", "experimental", "run with experimental features");
 
         o.parse_args(argc, argv);
         if(o.is_set("help"))
@@ -43,6 +46,9 @@ main(int argc, char *argv[])
         k.ScanClasses(o.ikaros_root+"/Source/UserModules"); // FIXME: Can probably be removed here
 
         std::filesystem::current_path(k.user_dir);
+
+        if(o.is_set("batch_mode"))
+            o.set("start");
 
 #if DEBUG
         std::cout << "Ikaros 3.0 Starting (Debug)\n" << std::endl;
