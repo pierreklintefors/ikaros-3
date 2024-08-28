@@ -115,9 +115,9 @@ class ServoControlTuning : public Module
     int AngleMinLimitPupil[2];
     int AngleMaxLimitPupil[2]; 
     parameter servoToTuneName;
-    int servoToTune;
     int servoIndex;
     parameter numberTransitions;
+    value servoToTune;
 
     
 
@@ -162,6 +162,10 @@ class ServoControlTuning : public Module
     dynamixel::PacketHandler *packetHandlerBody;
     dynamixel::GroupSyncRead *groupSyncReadBody;
     dynamixel::GroupSyncWrite *groupSyncWriteBody;
+
+    // Vectors for iteration
+    std::vector<dynamixel::PortHandler*> portHandlers;
+    std::vector<dynamixel::PacketHandler*> packetHandlers;
 
     std::string robotName;
     std::map<std::string, Robot_parameters> robot;
@@ -270,6 +274,7 @@ class ServoControlTuning : public Module
         dxl_goal_position = groupSyncRead->getData(ID, INDIRECTDATA_FOR_READ +1+4+2+2+2+2+2+4+4, 4); // Goal position
         dxl_present_position = groupSyncRead->getData(ID, INDIRECTDATA_FOR_READ +1+4+2+2+2+2+2+4+4+4, 4); // Present position
         
+        std::cout << "dxl_present_position: " << dxl_present_position /4095.0 * 360.0 << std::endl;
 
         presentPosition[index] = dxl_present_position / 4095.0 * 360.0; // degrees
         presentCurrent[index] = dxl_present_current * 3.36;   // mA
@@ -451,7 +456,7 @@ class ServoControlTuning : public Module
         EpiMode = (robot[robotName].type.compare("Epi") == 0);
         //Notify(msg_debug, "Connecting to %s (%s)\n", robotName.c_str(), robot[robotName].type.c_str());
         
-        Notify(msg_debug, "before passing dynamixel parameters\n");
+        Notify(msg_debug, "Connecting to " + robotName + " " + robot[robotName].type + "\n");
 
    
 
@@ -463,26 +468,18 @@ class ServoControlTuning : public Module
         dynamixel4bytesParameters = {ADDR_PROFILE_ACCELERATION, ADDR_PROFILE_VELOCITY, ADDR_GOAL_POSITION, ADDR_PRESENT_POSITION};
         dynamixel4bytesParameters.set_name("Dynamixel4bytes");
         dynamixel4bytesParameters.set_labels(0, "Profile Acceleration", "Profile Velocity", "Goal Position", "Present Position");
-        
 
-        Notify(msg_debug, "Passed dynamixel parameters\n");
-
-        
-
-        
         // Ikaros input
         Bind(servoParameters, "ServoParameters");
+        servoParameters.set_labels(0, "Goal Position, Goal Current, P, I, D, Profile Acceleration, Profile Velocity");
         Bind(minLimitPosiiton, "MinLimitPosition");
         Bind(maxLimitPosition, "MaxLimitPosition");
         Bind(servoToTuneName, "Servo");
         Bind(numberTransitions, "NumberTransitions");
 
-        Notify(msg_debug, "Passed Bindings ");
+        
 
        
-        servoParameters.set_labels(0, "Goal Position, Goal Current, P, I, D, Profile Acceleration, Profile Velocity");
-        
-        Notify(msg_debug, "Passed servo parameters labels \n");
         std::string s = R"({"Necktilt": 2, "Neckpan": 3, "LeftEye": 4, "RightEye": 5, "PupilLeft": 2, "PupilRight": 3, "ArmJoint1": 2, "ArmJoint2": 3, "ArmJoint3": 4, "ArmJoint4": 5, "ArmJoint5": 6, "Hand": 7, "Body": 2})";
         servoIDs = parse_json(s);
         
@@ -518,6 +515,8 @@ class ServoControlTuning : public Module
                 return;
             }
 
+            
+
             // Ping all the servos to make sure they are all there.
             dxl_comm_result = packetHandlerHead->broadcastPing(portHandlerHead, vec);
             // if (dxl_comm_result != COMM_SUCCESS)
@@ -532,6 +531,9 @@ class ServoControlTuning : public Module
             // Init Dynaxmixel SDK
             portHandlerPupil = dynamixel::PortHandler::getPortHandler(robot[robotName].serialPortPupil.c_str());
             packetHandlerPupil = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION);
+
+            portHandlers = {portHandlerHead};
+            packetHandlers = {packetHandlerHead};
 
             // Open port
             if (portHandlerPupil->openPort())
@@ -660,6 +662,9 @@ class ServoControlTuning : public Module
             // for (int i = 0; i < (int)vec.size(); i++)
             //     Notify(msg_debug, "[ID:%03d]\n", vec.at(i));
             
+            //Vectors to iterate throuh all the ports
+            portHandlers = {portHandlerHead, portHandlerLeftArm, portHandlerRightArm, portHandlerBody};
+            packetHandlers = {packetHandlerHead, packetHandlerLeftArm, packetHandlerRightArm, packetHandlerBody};
             
         }
         
@@ -668,6 +673,7 @@ class ServoControlTuning : public Module
         {
             groupSyncWriteHead = new dynamixel::GroupSyncWrite(portHandlerHead, packetHandlerHead, INDIRECTDATA_FOR_WRITE, LEN_INDIRECTDATA_FOR_WRITE); // Torque enable, goal position, goal current, P, I, D, Profile acceleration, Profile velocity
             groupSyncReadHead = new dynamixel::GroupSyncRead(portHandlerHead, packetHandlerHead, INDIRECTDATA_FOR_READ,LEN_INDIRECTDATA_FOR_READ );   // Present poistion, present current, temperature, goal current
+            
         }
         if (EpiMode)
         {
@@ -679,6 +685,8 @@ class ServoControlTuning : public Module
             groupSyncReadBody = new dynamixel::GroupSyncRead(portHandlerBody, packetHandlerBody, INDIRECTDATA_FOR_READ, LEN_INDIRECTDATA_FOR_READ);
             groupSyncWritePupil = new dynamixel::GroupSyncWrite(portHandlerPupil, packetHandlerPupil, 30, 2); // no read..
         }
+        
+
 
         AutoCalibratePupil();
 
@@ -686,11 +694,15 @@ class ServoControlTuning : public Module
         if (!PowerOffRobot())
             Notify(msg_fatal_error, "Unable torque down servos\n");
 
-        if (!SetParameterAddresses(servoIDs))
+        if (!SetParameterAddresses())
             Notify(msg_fatal_error, "Unable to set indirect addresses on servos\n");
-
+        Notify(msg_debug, "Setting up servos done\n");
+        std::cout << "SetParameterAddresses done" << std::endl;
+       
         if (!PowerOnRobot())
             Notify(msg_fatal_error, "Unable torque up servos\n");
+        
+        Notify(msg_debug,"Init() done\n");
     }
 
     float PupilMMToDynamixel(float mm, int min, int max)
@@ -731,28 +743,61 @@ class ServoControlTuning : public Module
 
     }
 
-    bool compare_parameter_to_string(parameter& p, const std::string& str) {
-    return p.operator std::string() == str;
+    bool compare_parameter_to_string(const parameter& p, const char* str) {
+    switch(p.type) {
+        case string_type:
+            if (p.string_value) {
+                return *p.string_value == str;
+            }
+            break;
+        case number_type:
+        case rate_type:
+        case bool_type:
+            if (p.number_value) {
+                return std::to_string(*p.number_value) == str;
+            }
+            break;
+        case matrix_type:
+            if (p.matrix_value) {
+                return p.matrix_value->json() == str;
+            }
+            break;
+        default:
+            // Handle no_type or other cases
+            return false;
+        }
+    
+    
+    // If we couldn't compare directly, return false
+    return false;
     }
 
-    bool compare_parameter_to_string( parameter& p, const char* str) {
-        return p.operator std::string() == std::string(str);
-    }
     
     void Tick()
     {   
-        servoToTune = servoIDs[servoToTuneName].copy();
+        
+        Notify(msg_debug, "Tick\n");
+        
+        int servoToTune = 2;
         servoIndex = servoIDs.get_index(servoToTuneName.c_str());
+
+        std::cout << servoToTuneName.compare_string("NeckTilt") << std::endl;
+
+
+
+        
+        
 
         if (transitionIndex > numberTransitions)
         {
             transitionIndex = 0;
-            Notify(msg_debug, "Restarting the servo transitions\n");
+            Notify(msg_debug, "Restarting the transition sequence\n");
             
         }
         
-        if (compare_parameter_to_string(servoToTuneName, "RightPupil") || compare_parameter_to_string(servoToTuneName, "LeftPupil")) 
-        {
+        if (servoToTuneName.compare_string("RightPupil") || servoToTuneName.compare_string("LeftPupil")) 
+        {   
+            std::cout << "inside compare servoToTuneName: " << servoToTuneName << std::endl;
             Notify(msg_debug, "Compare parameter with strings method works");
             
             servoTransitions[transitionIndex] = clip(servoTransitions[transitionIndex], 5, 16); // Pupil size must be between 5 mm to 16 mm.
@@ -773,16 +818,29 @@ class ServoControlTuning : public Module
         }
         }
         
-        auto headThread = std::async(std::launch::async, &ServoControlTuning::Communication, this, servoToTune, HEAD_INDEX_IO,servoParameters, std::ref(portHandlerHead), std::ref(packetHandlerHead), std::ref(groupSyncReadHead), std::ref(groupSyncWriteHead));
+        if(servoToTuneName.compare_string("NeckTilt") || servoToTuneName.compare_string("NeckPan") || servoToTuneName.compare_string("LeftEye") || servoToTuneName.compare_string("RightEye"))
+        {
+            std::cout << "inside compare servoToTuneName: " << servoToTuneName << std::endl;
+            Notify(msg_debug, "Compare parameter with strings method works");
+            auto headThread = std::async(std::launch::async, &ServoControlTuning::Communication, this, servoToTune, HEAD_INDEX_IO,servoParameters, std::ref(portHandlerHead), std::ref(packetHandlerHead), std::ref(groupSyncReadHead), std::ref(groupSyncWriteHead));
         
-        
-        
-    
-        if (!headThread.get())
+            if (!headThread.get())
         {
             Notify(msg_warning,"Can not communicate with head");
             portHandlerHead->clearPort();
         }
+            
+        }
+        else
+        {
+            std::cout << "compare function does not work" << std::endl;
+        }
+       
+
+        
+        
+    
+        
         
         if(EpiMode)
         {
@@ -811,18 +869,14 @@ class ServoControlTuning : public Module
 
     // A function that set importat parameters in the control table.
     // Baud rate and ID needs to be set manually.
-    bool SetParameterAddresses(dictionary servoIDs) {
+    bool SetParameterAddresses() {
         uint32_t param_default_4Byte;
         uint16_t param_default_2Byte;
         uint8_t param_default_1Byte;
         uint8_t dxl_error = 0;
-        // Vector of smart pointers to PortHandler
-        std::vector<std::shared_ptr<dynamixel::PortHandler>> portHandlers;
-        // Vector of smart pointers to PacketHandler
-        std::vector<std::shared_ptr<dynamixel::PacketHandler>> packetHandlers;
-       
+    
         std::vector<int> maxMinPositionLimitIndex;
-        std::vector<value> servoIDsInUse;
+      
 
         uint16_t pupil_moving_speed = 150;
         uint8_t pupil_p_gain = 100;
@@ -836,32 +890,6 @@ class ServoControlTuning : public Module
         int addressWrite = INDIRECTADDRESS_FOR_WRITE;
 
         Notify(msg_debug, "Setting control table on servos\n");
-
-        if (EpiMode)
-        {
-            
-            // Store the port handlers and packet handlers in the lists
-            portHandlers.push_back(std::shared_ptr<dynamixel::PortHandler>(portHandlerHead));
-            portHandlers.push_back(std::shared_ptr<dynamixel::PortHandler>(portHandlerLeftArm));
-            portHandlers.push_back(std::shared_ptr<dynamixel::PortHandler>(portHandlerRightArm));
-            portHandlers.push_back(std::shared_ptr<dynamixel::PortHandler>(portHandlerBody));
-            packetHandlers.push_back(std::shared_ptr<dynamixel::PacketHandler>(packetHandlerHead));
-            packetHandlers.push_back(std::shared_ptr<dynamixel::PacketHandler>(packetHandlerLeftArm));
-            packetHandlers.push_back(std::shared_ptr<dynamixel::PacketHandler>(packetHandlerRightArm));
-            packetHandlers.push_back(std::shared_ptr<dynamixel::PacketHandler>(packetHandlerBody));
-    
-            idMax = BODY_ID_MAX;
-        }
-        else
-        {
-            portHandlers.push_back(std::shared_ptr<dynamixel::PortHandler>(portHandlerHead));
-            packetHandlers.push_back(std::shared_ptr<dynamixel::PacketHandler>(packetHandlerHead));
-            idMax = HEAD_ID_MAX;
-        }
-        
-
-       
-        
 
 
         //loop through all portHandlers
@@ -884,36 +912,31 @@ class ServoControlTuning : public Module
             //switch statement for different p values. 
             switch (p) {
                 case 0:
-                servoIDsInUse = {servoIDs["Necktilt"].copy(), servoIDs["Neckpan"].copy(), servoIDs["LeftEye"].copy(), servoIDs["RightEye"].copy()};
                 maxMinPositionLimitIndex = {0, 1, 2, 3};
                 idMax = HEAD_ID_MAX;
                 break;
                 //same for p==1 and p==2 (right and left arm)
                 case 1:
-                servoIDsInUse = {servoIDs["Armjoint1"].copy(), servoIDs["Armjoint2"].copy(), servoIDs["Armjoint3"].copy(), servoIDs["Armjoint4"].copy(), servoIDs["Armjoint5"].copy(), servoIDs["Hand"].copy()};
                 maxMinPositionLimitIndex = {4, 5, 6, 7, 8, 9};
                 idMin = ARM_ID_MIN;
                 idMax = ARM_ID_MAX;
                 break;
                 case 2:
-                servoIDsInUse = {servoIDs["Armjoint1"].copy(), servoIDs["Armjoint2"].copy(), servoIDs["Armjoint3"].copy(), servoIDs["Armjoint4"].copy(), servoIDs["Armjoint5"].copy(), servoIDs["Hand"].copy()};
                 maxMinPositionLimitIndex = {10, 11, 12, 13, 14, 15};
                 idMin = ARM_ID_MIN;
                 idMax = ARM_ID_MAX;
                 break;
                 case 3:
-                servoIDsInUse = {servoIDs["Body"].copy()};
                 maxMinPositionLimitIndex = {16};
                 idMin = BODY_ID_MIN;
                 idMax = BODY_ID_MAX;
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
+         
             for (int id = idMin; id <= idMax; id++) 
             {
                 // Torque Enable
-                dxl_comm_result = packetHandlers[p]->write2ByteTxRx(portHandlers[p].get(),id , addressWrite, ADDR_TORQUE_ENABLE, &dxl_error);
+                dxl_comm_result = packetHandlers[p]->write2ByteTxRx(portHandlers[p],id , addressWrite, ADDR_TORQUE_ENABLE, &dxl_error);
                 if (dxl_comm_result != COMM_SUCCESS) {
                     std::cout << "Failed to set torque enable for servo ID: " << id 
                             << " of port:" << portHandlers[p]->getPortName() 
@@ -923,7 +946,7 @@ class ServoControlTuning : public Module
                 }            
                 Notify(msg_debug,"Indirect addresses Torque enable set for all servos" );
                 // present temperature
-                dxl_comm_result = packetHandlers[p]->write2ByteTxRx(portHandlers[p].get(), id, addressRead, ADDR_PRESENT_TEMPERATURE, &dxl_error);
+                dxl_comm_result = packetHandlers[p]->write2ByteTxRx(portHandlers[p], id, addressRead, ADDR_PRESENT_TEMPERATURE, &dxl_error);
                 if (dxl_comm_result != COMM_SUCCESS) {
                     std::cout << "Failed to set present temperature for servo ID: " << id 
                             << " of port:" << portHandlers[p]->getPortName() 
@@ -943,14 +966,14 @@ class ServoControlTuning : public Module
                     for (int byte = 0; byte < 2; byte++) {
                         addressWrite += (2*byte);
                         //writing
-                        if (COMM_SUCCESS != packetHandlers[p]->write2ByteTxRx(portHandlers[p].get(), id, addressWrite , dynamixel2bytesParameters[param] + byte, &dxl_error)) {
+                        if (COMM_SUCCESS != packetHandlers[p]->write2ByteTxRx(portHandlers[p], id, addressWrite , dynamixel2bytesParameters[param] + byte, &dxl_error)) {
                             std::cout << "Failed to set indirect address for " << dynamixel2bytesParameters.labels()[param] << " for servo ID: " << id << " of port:" << portHandlers[p]->getPortName() << std::endl;
                             return false;
                             
                         }
                         //reading
                         addressRead += (2*byte);
-                        if(COMM_SUCCESS != packetHandlers[p]->write2ByteTxRx(portHandlers[p].get(), id, addressRead, dynamixel2bytesParameters[param] + byte, &dxl_error)) {
+                        if(COMM_SUCCESS != packetHandlers[p]->write2ByteTxRx(portHandlers[p], id, addressRead, dynamixel2bytesParameters[param] + byte, &dxl_error)) {
                             std::cout << "Failed to set indirect address for "<< dynamixel2bytesParameters.labels()[param] << " for servo ID: " << id << " of port:" << portHandlers[p]->getPortName() << std::endl;
                             return false;
                         }
@@ -966,14 +989,14 @@ class ServoControlTuning : public Module
                     for (int byte = 0; byte < 4; byte++) {
                         //writing
                         addressWrite += (2*byte);
-                        if (COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p].get(), id, addressWrite , dynamixel4bytesParameters[param] + byte, &dxl_error)) {
+                        if (COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p], id, addressWrite , dynamixel4bytesParameters[param] + byte, &dxl_error)) {
                             std::cout << "Failed to set indirect address for "<< dynamixel4bytesParameters.labels()[param] <<" head servo ID: " << id << std::endl;
                             return false;
                             
                         }
                         //reading
                         addressRead += (2*byte);
-                        if(COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p].get(), id, addressRead, dynamixel4bytesParameters[param] + byte, &dxl_error)) {
+                        if(COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p], id, addressRead, dynamixel4bytesParameters[param] + byte, &dxl_error)) {
                             std::cout << "Failed to set indirect address for parameter: " << dynamixel4bytesParameters[param].labels()[param] <<", ID: " << id << std::endl;
                             return false;
                         }
@@ -988,35 +1011,24 @@ class ServoControlTuning : public Module
             //min and max limits
             for (int id = idMin; id <= idMax; id++) 
             {
-                std::cout << " max and min limits for servo ID: " << id << std::endl;
-    
-                std::cout << "maxMinPositionLimitIndex[i]: " << maxMinPositionLimitIndex[i] << std::endl;
-                minLimitPosiiton[maxMinPositionLimitIndex[i]].print();
-                maxLimitPosition[maxMinPositionLimitIndex[i]].print();
                 //min and max limits
                 param_default_4Byte = minLimitPosiiton[maxMinPositionLimitIndex[i]];
-                std::cout << "min param_default_4Byte: " << param_default_4Byte << std::endl;
-                if (COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p].get(), id, ADDR_MIN_POSITION_LIMIT, param_default_4Byte, &dxl_error)){
+                if (COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p], id, ADDR_MIN_POSITION_LIMIT, param_default_4Byte, &dxl_error)){
                     std::cout << "Failed to set indirect address for min position limit for servo ID: " << id << " of port:" << portHandlers[p]->getPortName() << std::endl;
                     return false;
                 }
                 param_default_4Byte = maxLimitPosition[maxMinPositionLimitIndex[i]];
-                std::cout << "max param_default_4Byte: " << param_default_4Byte << std::endl;
-                if (COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p].get(), id, ADDR_MIN_POSITION_LIMIT, param_default_4Byte, &dxl_error)){
+                if (COMM_SUCCESS != packetHandlers[p]->write4ByteTxRx(portHandlers[p], id, ADDR_MIN_POSITION_LIMIT, param_default_4Byte, &dxl_error)){
                     std::cout << "Failed to set indirect address for max position limit for servo ID: " << id << " of port:" << portHandlers[p]->getPortName() << std::endl;
                     return false;
                 }
-                std::cout << "min and max limits set for servo ID: " << id << std::endl;
                 i++;
-                
-                
-            }
-                
+                   
+            }             
             
         }
       
-        std::cout << "through p loop" << std::endl;
-
+        
 
         Notify(msg_debug, "Settting parameters for pupils (servo XL320)\n");
 
@@ -1028,7 +1040,6 @@ class ServoControlTuning : public Module
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 6, AngleMinLimitPupil[0], &dxl_error))
             return false;
         Sleep(xlTimer);
-        std::cout << "min limit set for pupil" << std::endl;
         // Limit position max
         if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 8, AngleMaxLimitPupil[0], &dxl_error))
             return false;
@@ -1091,6 +1102,7 @@ class ServoControlTuning : public Module
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 27, pupil_d_gain, &dxl_error))
             return false;
         Sleep(xlTimer);
+        std::cout << "Pupil parameters set" << std::endl;
 
         Notify(msg_debug, "Indirect addresses set for all servos!!!!\n");
         return true; // Yay we manage to set everything we needed.
@@ -1100,11 +1112,16 @@ class ServoControlTuning : public Module
 
 
     bool PowerOn(int IDMin, int IDMax, dynamixel::PortHandler *portHandler, dynamixel::PacketHandler *packetHandler)
-    {
-        if (portHandler == NULL) // If no port handler return true. Only return false if communication went wrong.
+    {   
+
+        
+        if (portHandler == NULL){// If no port handler return true. Only return false if communication went wrong.
+            std::cout << "Port handler in PowerOn() is null" << std::endl;
             return true;
 
-        Notify(msg_debug, "Power on servos");
+        } 
+
+        
 
         Timer t;
         const int nrOfServos = IDMax - IDMin + 1;
@@ -1112,12 +1129,13 @@ class ServoControlTuning : public Module
         uint8_t dxl_error = 0;              // Dynamixel error
         uint16_t start_p_value[7] = {0, 0, 0, 0, 0, 0, 0};
         uint32_t present_postition_value[7] = {0, 0, 0, 0, 0, 0, 0};
+       
+
 
         // Get P values
         for (int i = 0; i < nrOfServos; i++)
             if (COMM_SUCCESS != packetHandler->read2ByteTxRx(portHandler, IDMin + i, 84, &start_p_value[i], &dxl_error))
                 return false;
-
         // Set P value to 0
         for (int i = 0; i < nrOfServos; i++)
             if (COMM_SUCCESS != packetHandler->write2ByteTxRx(portHandler, IDMin + i, 84, 0, &dxl_error))
@@ -1148,13 +1166,14 @@ class ServoControlTuning : public Module
                 return false;
 
         return true;
+        
     }
 
     bool PowerOnPupil()
     {
         uint8_t dxl_error = 0; // Dynamixel error
 
-        // Enable torque. No fancy rampiong
+        // Enable torque. No fancy ramping
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 24, 1, &dxl_error))
             return false;
         if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 24, 1, &dxl_error))
@@ -1174,22 +1193,33 @@ class ServoControlTuning : public Module
         // 3. Increase current or P (PID)
         // 4. Repeat 2,3 for X seconds.
 
-        auto headThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, HEAD_ID_MIN, HEAD_ID_MAX, std::ref(portHandlerHead), std::ref(packetHandlerHead));
-        auto pupilThread = std::async(std::launch::async, &ServoControlTuning::PowerOnPupil, this); // Different control table.
-        auto leftArmThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, ARM_ID_MIN, ARM_ID_MAX, std::ref(portHandlerLeftArm), std::ref(packetHandlerLeftArm));
-        auto rightArmThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, ARM_ID_MIN, ARM_ID_MAX, std::ref(portHandlerRightArm), std::ref(packetHandlerRightArm));
-        auto bodyThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, BODY_ID_MIN, BODY_ID_MAX, std::ref(portHandlerBody), std::ref(packetHandlerBody));
 
-        if (!headThread.get())
+
+        auto headThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, HEAD_ID_MIN, HEAD_ID_MAX, std::ref(portHandlerHead), std::ref(packetHandlerHead));
+        Notify(msg_trace, "Power on head");
+        auto pupilThread = std::async(std::launch::async, &ServoControlTuning::PowerOnPupil, this); // Different control table.
+        Notify(msg_trace, "Power on pupil");
+         if (!headThread.get())
             Notify(msg_fatal_error, "Can not power on head");
         if (!pupilThread.get())
             Notify(msg_fatal_error, "Can not power on pupil");
+        if(EpiMode)
+        {
+        auto leftArmThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, ARM_ID_MIN, ARM_ID_MAX, std::ref(portHandlerLeftArm), std::ref(packetHandlerLeftArm));
+        std::cout << "LeftArmThread done" << std::endl;
+        auto rightArmThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, ARM_ID_MIN, ARM_ID_MAX, std::ref(portHandlerRightArm), std::ref(packetHandlerRightArm));
+        std::cout << "RightArmThread done" << std::endl;
+        auto bodyThread = std::async(std::launch::async, &ServoControlTuning::PowerOn, this, BODY_ID_MIN, BODY_ID_MAX, std::ref(portHandlerBody), std::ref(packetHandlerBody));
+        std::cout << "BodyThread done" << std::endl;
         if (!leftArmThread.get())
             Notify(msg_fatal_error, "Can not power on left arm");
         if (!rightArmThread.get())
             Notify(msg_fatal_error, "Can not power on right arm");
         if (!bodyThread.get())
             Notify(msg_fatal_error, "Can not power on body");
+        }
+       
+        
 
         return true;
     }
