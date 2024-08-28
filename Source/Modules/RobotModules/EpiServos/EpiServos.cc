@@ -686,7 +686,7 @@ class EpiServos : public Module
     }
 
     void Tick()
-    {
+    {   
        
         goalPosition[PUPIL_INDEX_IO] = clip(goalPosition[PUPIL_INDEX_IO], 5, 16); // Pupil size must be between 5 mm to 16 mm.
         goalPosition[PUPIL_INDEX_IO + 1] = clip(goalPosition[PUPIL_INDEX_IO + 1], 5, 16); // Pupil size must be between 5 mm to 16 mm.
@@ -751,7 +751,7 @@ class EpiServos : public Module
             return;
         }
 
-        
+        dictionary d;
 
         // Special case for pupil uses mm instead of degrees
         goalPosition[PUPIL_INDEX_IO] = PupilMMToDynamixel(goalPosition[PUPIL_INDEX_IO], AngleMinLimitPupil[0], AngleMaxLimitPupil[0]);
@@ -797,8 +797,28 @@ class EpiServos : public Module
     // Baud rate and ID needs to be set manually.
     bool SetDefaultSettingServo() {
         uint32_t param_default_4Byte;
-        uint16_t param_default_2Byte;
+        uint32_t profile_acceleration = 0;
+        uint32_t profile_velocity = 0;
+        
+        uint16_t p_gain_head = 100;
+        uint16_t i_gain_head = 10;
+        uint16_t d_gain_head = 1200;
+        
+        uint16_t p_gain_arm = 100;
+        uint16_t i_gain_arm = 0;
+        uint16_t d_gain_arm = 1000;
+        
+        uint16_t p_gain_body = 100;
+        uint16_t i_gain_body = 0;
+        uint16_t d_gain_body = 1000;
+
+       
+        uint16_t pupil_moving_speed = 150;
         uint8_t param_default_1Byte;
+        uint8_t pupil_p_gain = 100;
+        uint8_t pupil_i_gain = 20;
+        uint8_t pupil_d_gain = 5;
+
 
         uint8_t dxl_error = 0; 
         int dxl_comm_result = COMM_TX_FAIL;
@@ -814,13 +834,13 @@ class EpiServos : public Module
         }
         if (EpiMode) {
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++) {
-                if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerLeftArm, i, IND_ADDR_TORQUE_ENABLE, ADDR_TORQUE_ENABLE, &dxl_error)) {
+                if (COMM_SUCCESS != packetHandlerLeftArm->write2ByteTxRx(portHandlerLeftArm, i, IND_ADDR_TORQUE_ENABLE, ADDR_TORQUE_ENABLE, &dxl_error)) {
                     std::cout << "Failed to set torque enable for left arm servo ID: " << i << std::endl;
                     return false;
                 }
             }
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++) {
-                if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerRightArm, i, IND_ADDR_TORQUE_ENABLE, ADDR_TORQUE_ENABLE, &dxl_error)) {
+                if (COMM_SUCCESS != packetHandlerRightArm->write2ByteTxRx(portHandlerRightArm, i, IND_ADDR_TORQUE_ENABLE, ADDR_TORQUE_ENABLE, &dxl_error)) {
                     std::cout << "Failed to set torque enable for right arm servo ID: " << i << std::endl;
                     return false;
                 }
@@ -937,10 +957,9 @@ class EpiServos : public Module
         }
 
         // Profile acceleration
-        param_default_4Byte = 0;
 
     for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
-            if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, i, ADDR_PROFILE_ACCELERATION, param_default_4Byte, &dxl_error)){
+            if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, i, ADDR_PROFILE_ACCELERATION, profile_acceleration, &dxl_error)){
                 std::cout << "Profile acceleration for head servo ID: " << i << std::endl;
                 return false;
             }
@@ -948,22 +967,21 @@ class EpiServos : public Module
         if (EpiMode)
         {
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerLeftArm->write4ByteTxRx(portHandlerLeftArm, i, ADDR_PROFILE_ACCELERATION, param_default_4Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerLeftArm->write4ByteTxRx(portHandlerLeftArm, i, ADDR_PROFILE_ACCELERATION, profile_acceleration, &dxl_error))
                     return false;
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerRightArm->write4ByteTxRx(portHandlerRightArm, i, ADDR_PROFILE_ACCELERATION, param_default_4Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerRightArm->write4ByteTxRx(portHandlerRightArm, i, ADDR_PROFILE_ACCELERATION, profile_acceleration, &dxl_error))
                     return false;
             for (int i = BODY_ID_MIN; i <= BODY_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerBody->write4ByteTxRx(portHandlerBody, i, ADDR_PROFILE_ACCELERATION, param_default_4Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerBody->write4ByteTxRx(portHandlerBody, i, ADDR_PROFILE_ACCELERATION, profile_acceleration, &dxl_error))
                     return false;
         }
 
         // Common settings for the servos
         // Profile velocity (210)
-        param_default_4Byte = 0;
 
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
-            if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, i, ADDR_PROFILE_VELOCITY, param_default_4Byte, &dxl_error)){
+            if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, i, ADDR_PROFILE_VELOCITY, profile_velocity, &dxl_error)){
                 std::cout << "Profile velocity not set for head servo ID: " << i << std::endl;
                 return false;
                 }
@@ -971,20 +989,19 @@ class EpiServos : public Module
         if (EpiMode)
         {
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerLeftArm->write4ByteTxRx(portHandlerLeftArm, i, ADDR_PROFILE_VELOCITY, param_default_4Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerLeftArm->write4ByteTxRx(portHandlerLeftArm, i, ADDR_PROFILE_VELOCITY, profile_velocity, &dxl_error))
                     return false;
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerRightArm->write4ByteTxRx(portHandlerRightArm, i, ADDR_PROFILE_VELOCITY, param_default_4Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerRightArm->write4ByteTxRx(portHandlerRightArm, i, ADDR_PROFILE_VELOCITY, profile_velocity, &dxl_error))
                     return false;
             for (int i = BODY_ID_MIN; i <= BODY_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerBody->write4ByteTxRx(portHandlerBody, i, ADDR_PROFILE_VELOCITY, param_default_4Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerBody->write4ByteTxRx(portHandlerBody, i, ADDR_PROFILE_VELOCITY, profile_velocity, &dxl_error))
                     return false;
         }
 
         // P (100)
-        param_default_2Byte = 100;
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
-            if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_P, param_default_2Byte, &dxl_error)){
+            if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_P, p_gain_head, &dxl_error)){
                 std::cout << "P (PID) not set for head servo ID: " << i <<std::endl;
                 return false;
             }
@@ -992,20 +1009,20 @@ class EpiServos : public Module
         if (EpiMode)
         {
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerLeftArm->write2ByteTxRx(portHandlerLeftArm, i, ADDR_P, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerLeftArm->write2ByteTxRx(portHandlerLeftArm, i, ADDR_P, p_gain_arm, &dxl_error))
                     return false;
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerRightArm->write2ByteTxRx(portHandlerRightArm, i, ADDR_P, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerRightArm->write2ByteTxRx(portHandlerRightArm, i, ADDR_P, p_gain_arm, &dxl_error))
                     return false;
             for (int i = BODY_ID_MIN; i <= BODY_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerBody->write2ByteTxRx(portHandlerBody, i, ADDR_P, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerBody->write2ByteTxRx(portHandlerBody, i, ADDR_P, p_gain_body, &dxl_error))
                     return false;
         }
 
         // I
-        param_default_2Byte = 10; // The I value almost killed Epi.
+        // The I value almost killed Epi.
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
-            if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_I, param_default_2Byte, &dxl_error)){
+            if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_I, i_gain_head, &dxl_error)){
                 std::cout << "I (PID) not set for head servo ID: " << i<< std::endl;
                 return false;
             }
@@ -1013,20 +1030,19 @@ class EpiServos : public Module
         if (EpiMode)
         {
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerLeftArm->write2ByteTxRx(portHandlerLeftArm, i, ADDR_I, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerLeftArm->write2ByteTxRx(portHandlerLeftArm, i, ADDR_I, i_gain_arm, &dxl_error))
                     return false;
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerRightArm->write2ByteTxRx(portHandlerRightArm, i, ADDR_I, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerRightArm->write2ByteTxRx(portHandlerRightArm, i, ADDR_I, i_gain_arm, &dxl_error))
                     return false;
             for (int i = BODY_ID_MIN; i <= BODY_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerBody->write2ByteTxRx(portHandlerBody, i, ADDR_I, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerBody->write2ByteTxRx(portHandlerBody, i, ADDR_I, i_gain_body, &dxl_error))
                     return false;
         }
 
         // D
-        param_default_2Byte = 1000;
         for (int i = HEAD_ID_MIN; i <= HEAD_ID_MAX; i++){
-            if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_D, param_default_2Byte, &dxl_error)){
+            if (COMM_SUCCESS != packetHandlerHead->write2ByteTxRx(portHandlerHead, i, ADDR_D, d_gain_head, &dxl_error)){
                 std::cout << "D (PID) not set for head servo ID: " << i << std::endl;
                 return false;
             }
@@ -1034,60 +1050,60 @@ class EpiServos : public Module
         if (EpiMode)
         {
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerLeftArm->write2ByteTxRx(portHandlerLeftArm, i, ADDR_D, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerLeftArm->write2ByteTxRx(portHandlerLeftArm, i, ADDR_D, d_gain_arm, &dxl_error))
                     return false;
             for (int i = ARM_ID_MIN; i <= ARM_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerRightArm->write2ByteTxRx(portHandlerRightArm, i, ADDR_D, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerRightArm->write2ByteTxRx(portHandlerRightArm, i, ADDR_D, d_gain_arm, &dxl_error))
                     return false;
             for (int i = BODY_ID_MIN; i <= BODY_ID_MAX; i++)
-                if (COMM_SUCCESS != packetHandlerBody->write2ByteTxRx(portHandlerBody, i, ADDR_D, param_default_2Byte, &dxl_error))
+                if (COMM_SUCCESS != packetHandlerBody->write2ByteTxRx(portHandlerBody, i, ADDR_D, d_gain_body, &dxl_error))
                     return false;
         }
 
         // Specific setting for each servos
         // HEAD ID 2
         // Limit position max
-        param_default_4Byte = 2700;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 2, 48, param_default_4Byte, &dxl_error)){
+        uint32_t limit_pos_max_tilt = 2700;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 2, 48, limit_pos_max_tilt, &dxl_error)){
             std::cout << "Max limit not set for head servo ID: 2 " << std::endl;
             return false;
             }
         // Limit position min
-        param_default_4Byte = 1300;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 2, 52, param_default_4Byte, &dxl_error)){
+        uint32_t limit_pos_min_tilt = 1300;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 2, 52, limit_pos_min_tilt, &dxl_error)){
             std::cout << "Min limit not set for head servo ID: 2 " << std::endl;
             return false;
             }
 
         // HEAD ID 3
         // Limit position max
-        param_default_4Byte = 2500;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 3, 48, param_default_4Byte, &dxl_error))
+        uint32_t limit_pos_max_pan = 2500;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 3, 48, limit_pos_max_pan, &dxl_error))
             return false;
         // Limit position min
-        param_default_4Byte = 1750;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 3, 52, param_default_4Byte, &dxl_error))
+        uint32_t limit_pos_min_pan = 1750;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 3, 52, limit_pos_min_pan, &dxl_error))
             return false;
 
         // HEAD ID 4 (Left eye)
         // Limit position max
-        param_default_4Byte = 2300;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 4, 48, param_default_4Byte, &dxl_error))
+        uint32_t limit_pos_max_left_eye = 2300;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 4, 48, limit_pos_max_left_eye, &dxl_error))
             return false;
         // Limit position min
-        param_default_4Byte = 1830;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 4, 52, param_default_4Byte, &dxl_error))
+        uint32_t limit_pos_min_left_eye = 1830;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 4, 52, limit_pos_min_left_eye, &dxl_error))
             return false;
 
-        // HEAD ID 5 (Left eye)
+        // HEAD ID 5 (Right eye)
         // Limit position max
-        param_default_4Byte = 2200;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 5, 48, param_default_4Byte, &dxl_error))
+        uint32_t limit_pos_max_right_eye = 2200;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 5, 48, limit_pos_max_right_eye, &dxl_error))
             return false;
 
         // Limit position min
-        param_default_4Byte = 1780;
-        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 5, 52, param_default_4Byte, &dxl_error))
+        uint32_t limit_pos_min_right_eye = 1780;
+        if (COMM_SUCCESS != packetHandlerHead->write4ByteTxRx(portHandlerHead, 5, 52, limit_pos_min_right_eye, &dxl_error))
             return false;
 
         Timer t;
@@ -1105,28 +1121,24 @@ class EpiServos : public Module
         Sleep(xlTimer);
 
         // Moving speed
-        param_default_2Byte = 150;
-        if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 32, param_default_2Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 2, 32, pupil_moving_speed, &dxl_error))
             return false;
         Sleep(xlTimer);
 
         // P
-        param_default_1Byte = 100;
-        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 29, param_default_1Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 29, pupil_p_gain, &dxl_error))
             return false;
         Sleep(xlTimer);
 
 
         // I
-        param_default_1Byte = 20;
-        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 28, param_default_1Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 28, pupil_i_gain, &dxl_error))
             return false;
         Sleep(xlTimer);
 
 
         // D
-        param_default_1Byte = 5;
-        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 27, param_default_1Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 2, 27, pupil_d_gain, &dxl_error))
             return false;
         Sleep(xlTimer);
 
@@ -1145,28 +1157,24 @@ class EpiServos : public Module
 
 
         // Moving speed
-        param_default_2Byte = 150;
-        if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 32, param_default_2Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write2ByteTxRx(portHandlerPupil, 3, 32, pupil_moving_speed, &dxl_error))
             return false;
         Sleep(xlTimer);
 
         // P
-        param_default_1Byte = 100;
-        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 29, param_default_1Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 29, pupil_p_gain, &dxl_error))
             return false;
         Sleep(xlTimer);
 
 
         // I
-        param_default_1Byte = 20;
-        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 28, param_default_1Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 28, pupil_i_gain, &dxl_error))
             return false;
         Sleep(xlTimer);
 
 
         // D
-        param_default_1Byte = 5;
-        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 27, param_default_1Byte, &dxl_error))
+        if (COMM_SUCCESS != packetHandlerPupil->write1ByteTxRx(portHandlerPupil, 3, 27, pupil_d_gain, &dxl_error))
             return false;
         Sleep(xlTimer);
 
