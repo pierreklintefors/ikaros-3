@@ -74,6 +74,7 @@ namespace ikaros
         int get_int(std::string s);
         bool is_set(std::string s);    // Returns true if set and true, and false if not set or not set to true, bool or string
         bool is_not_set(std::string s);    // Negation of is_set
+        int get_index(std::string key); // Returns the index of the key in the dictionary
 
         std::string json() const;
         std::string xml(std::string name, int depth=0, std::string exclude = "");
