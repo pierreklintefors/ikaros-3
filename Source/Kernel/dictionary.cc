@@ -188,6 +188,20 @@ namespace ikaros
                 if(!dict_->count(p.first) || overwrite)
                     (*dict_)[p.first] = p.second;
         }
+        
+        int dictionary::get_index(std::string key) // Returns the index of the key in the dictionary
+        {
+            int index = 0;
+            for (const auto& [k, v] : *dict_)
+            {
+                if (k == key)
+                {
+                    return index;
+                }
+                index++;
+            }
+            return -1; // Key not found
+        }
 
 
     dictionary::operator std::string () const
