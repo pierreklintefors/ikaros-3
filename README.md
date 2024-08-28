@@ -12,7 +12,7 @@ This version is currently in development and not ready for use.
 
 For now, please use the [previous version](https://github.com/ikaros-project/ikaros) instead.
 
-## Ikaros 3 Status - 9 August, 2024
+## Ikaros 3 Status - 28 August, 2024
 
 | Component | State | Comments |
 | ----|----|----|
@@ -28,7 +28,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
 | Kernel            |<div style="color:green">🟢 OK |
 | Exception handling    |<div style="color:#c60">🟡 Partial | sometimes quits instead of stops |
 | Shared dict       |<div style="color:green">🟢  OK |  |
-| Scheduler         |<div style="color:#c60">🟡 Minimal | no zero-delays, single thread |
+| Scheduler         |<div style="color:#green">🟢 OK | single thread |
 | Task sorting      |<div style="color:green">🟢 OK |  |
 | Real time         |<div style="color:green">🟢 OK |  |
 | SetSizes    |     <div style="color:green">🟢 OK |
@@ -58,6 +58,7 @@ For now, please use the [previous version](https://github.com/ikaros-project/ika
             -r (real_time): run in real-time mode
             -s (stop): stop Ikaros after this tick [-1]
             -w (webui_port): port for ikaros WebUI [8000]
+            -x: activate experimental features
 
         filename :   ikg-file to load
 
