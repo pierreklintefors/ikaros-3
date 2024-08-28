@@ -131,6 +131,12 @@ namespace ikaros
         return (*dict_)[s];
     }
 
+    value & 
+    dictionary::at(std::string s)
+    {
+        return dict_->at(s);
+    }
+
     int 
     dictionary::get_int(std::string s)
     {
@@ -322,9 +328,20 @@ namespace ikaros
         value::operator[] (const std::string & s)
         {
             if(!std::holds_alternative<dictionary>(value_))
-            value_ = dictionary();
+                value_ = dictionary();
             return std::get<dictionary>(value_)[s];
         }
+
+
+        value & 
+        value::at(const std::string & s)
+        {
+            if(std::holds_alternative<dictionary>(value_))
+                return std::get<dictionary>(value_).at(s);
+            else
+            throw std::out_of_range("Attribute \""+s+"\" not found.");  
+        }
+
 
         std::ostream& operator<<(std::ostream& os, const value & v)
         {

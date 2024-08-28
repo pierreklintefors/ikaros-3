@@ -64,6 +64,7 @@ namespace ikaros
         //dictionary(const dictionary & d);
     
         value & operator[](std::string s);
+        value & at(std::string s);  // throws if s is not in dictionary
         bool contains(std::string s);
         size_t count(std::string s);
         bool empty() { return dict_->empty(); }
@@ -151,6 +152,7 @@ namespace ikaros
 
         value & operator[] (const char * s); // Captures literals as argument ***************
         value & operator[] (const std::string & s);
+        value & at(const std::string & s); // throws if not dictionary or non-existent attribute
         value & operator[] (int i); // list shortcut ***************
 
         value & push_back(const value & v);
