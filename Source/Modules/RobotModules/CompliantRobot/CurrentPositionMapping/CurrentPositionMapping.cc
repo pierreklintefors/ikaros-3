@@ -51,9 +51,9 @@ class CurrentPositionMapping: public Module
     double position_sampling_interval = 0.05;
 
  
-    matrix SetCurrent(matrix present_current,  int increment, int limit, matrix position, matrix goal_position, int margin){
+    matrix SetGoalCurrent(matrix present_current,  int increment, int limit, matrix position, matrix goal_position, int margin){
         matrix current_output(present_current.size());
-        Notify(msg_debug, "Inside SetCurrent()");
+        Notify(msg_debug, "Inside SetGoalCurrent()");
         if(present_current.size() != current_output.size()){
             std::cout << present_current.size() << std::endl;
             std::cout << current_output.size() << std::endl;
@@ -62,7 +62,7 @@ class CurrentPositionMapping: public Module
         }
         for (int i = 0; i < current_controlled_servos.size(); i++) {
             if ( goal_current(current_controlled_servos(i)) < limit && abs(goal_position(current_controlled_servos(i))- position(current_controlled_servos(i)))> margin){
-                Notify(msg_print, "Increasing current");
+                Notify(msg_debug, "Increasing current");
                 current_output(current_controlled_servos(i)) = goal_current(current_controlled_servos(i))+ increment;
                 if(abs(present_current(current_controlled_servos(i))) > max_present_current(current_controlled_servos(i))){
                     max_present_current(current_controlled_servos(i)) = abs(present_current(current_controlled_servos(i)));
@@ -121,12 +121,10 @@ class CurrentPositionMapping: public Module
             //Checking if distance to goal is decreasing
             if (abs(goal_position(current_controlled_servos(i)) - present_position(current_controlled_servos(i))) < 0.97*abs(goal_position(current_controlled_servos(i))-previous_position(current_controlled_servos(i)))){
                 Notify(msg_debug, "Approximating Goal");
-                std::cout << "Approximating Goal" << std::endl;
                 return true;
             }
             else{
                 Notify(msg_debug, "Not Approximating Goal");
-                std::cout << "Not approximating goal" << std::endl;
                 return false;
             }
         }
@@ -331,8 +329,6 @@ class CurrentPositionMapping: public Module
                     find_minimum_torque_current = false;
                     minimum_torque_current_finsih = false;
                     min_torque_current.copy(present_current);
-                    min_torque_current.print();
-                    present_current.print();
                     goal_current(0) = (abs(min_torque_current(0)) +2);
                     
                     //save starting position, goal position and current in json file
@@ -343,8 +339,7 @@ class CurrentPositionMapping: public Module
                         goal_positions_out.copy(position_transitions[transition]);
                         start_position.copy(present_position);
                         std::cout << "New goal position" << std::endl;
-                        min_torque_current.print();
-                        goal_current.print();
+                        goal_current.copy(present_current);
                         min_moving_current.set(starting_current);
                         max_present_current.set(starting_current);
                         overshot_goal_temp.reset();
@@ -365,15 +360,12 @@ class CurrentPositionMapping: public Module
     
             }
             else{
-                goal_current.copy(SetCurrent(present_current, current_increment, current_limit, present_position, goal_positions_out, position_margin));
+                goal_current.copy(SetGoalCurrent(present_current, current_increment, current_limit, present_position, goal_positions_out, position_margin));
                 overshot_goal.copy(OvershotGoal(present_position, goal_positions_out, start_position, overshot_goal_temp));
                 overshot_goal_temp.copy(overshot_goal);
             }
 
             
-           
-
-            std::cout << "Overshot goal: "<<overshot_goal << std::endl;
             
 
 
