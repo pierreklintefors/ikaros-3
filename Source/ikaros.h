@@ -264,7 +264,7 @@ public:
     bool InputsReady(dictionary d, input_map ingoing_connections);
 
     void SetSourceRanges(const std::string & name, const std::vector<Connection *> & ingoing_connections);
-    int SetInputSize_Flat(dictionary d, const std::vector<Connection *> & ingoing_connections);
+    int SetInputSize_Flat(dictionary d, input_map ingoing_connections);
     int SetInputSize_Index(dictionary d, input_map ingoing_connections);
 
     void ResolveConnection(const range & output, range & source, range & target); // Move to connection

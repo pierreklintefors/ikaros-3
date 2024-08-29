@@ -891,47 +891,62 @@ namespace ikaros
             else if(c->source_range.rank() != kernel().buffers[c->source].rank())
                 throw exception("Explicitly set source range dimensionality does not match source.");
         }
-
     }
 
 
     int 
-    Component::SetInputSize_Flat(dictionary d, const std::vector<Connection *> & ingoing_connections)
+    Component::SetInputSize_Flat(dictionary d, input_map ingoing_connections)
     {
-            Trace("\t\t\t\t\tComponent::SetInputSize_Flat");
+        Trace("\t\t\t\t\tComponent::SetInputSize_Flat");
 
-        SetSourceRanges(d.at("name"), ingoing_connections);
+        std::string name = d.at("name");
+        std::string full_name = path_ +"."+ name;
+        
+        if(!ingoing_connections.count(full_name)) // Not connected
+            return 1;
+
+        //SetSourceRanges(d.at("name"), ingoing_connections.at(full_name));
+
         int begin_index = 0;
         int end_index = 0;
         int flattened_input_size = 0;
-        for(auto & c : ingoing_connections)
+        for(auto & c : ingoing_connections.at(full_name))
         {
             c->flatten_ = true;
+
+         range output_matrix = kernel().buffers[c->source].get_range();  //**NEW  // FIXME: automatic matrix to range conection
+            c->Resolve(output_matrix);  //**NEW  
+
             int s = c->source_range.size() * c->delay_range_.trim().b_[0];
             end_index = begin_index + s;
             c->target_range = range(begin_index, end_index);
             begin_index += s;
             flattened_input_size += s;
+
+            //int delay_size = c->delay_range_.trim().b_[0];  // FIXME: extent/size function
+           // if(delay_size > 1)
+            //    flattened_input_size *= delay_size;
+                std::cout << flattened_input_size << std::endl;
         }
+    
         if(flattened_input_size != 0)
         {
-            kernel().buffers[d.at("name")].realloc(flattened_input_size);   // FIXME: else buffer = {} ???
+            kernel().buffers[full_name].realloc(flattened_input_size); 
           Trace("\t\t\t\t\t\tComponent::SetInputSize_Index Alloc "+std::to_string(flattened_input_size));
         }
 
         if(d.is_set("use_alias"))
         {
             begin_index = 0;
-            for(auto & c : ingoing_connections)
+            for(auto & c : ingoing_connections.at(full_name))
             {
                 int s = c->source_range.size() * c->delay_range_.trim().b_[0];
                 if(c->alias_.empty())
-                    kernel().buffers[d.at("name")].push_label(0, c->source, s);
+                    kernel().buffers[d.at(full_name)].push_label(0, c->source, s);
                 else
-                    kernel().buffers[d.at("name")].push_label(0, c->alias_, s);
+                    kernel().buffers[d.at(full_name)].push_label(0, c->alias_, s);
             }
         }
-
         return 0;
     }
 
@@ -945,6 +960,10 @@ namespace ikaros
         range input_size;
         std::string name = d.at("name");
         std::string full_name = path_ +"."+ name;
+
+        if(!ingoing_connections.count(full_name)) // Not connected
+            return 1;
+
         for(auto c : ingoing_connections.at(full_name))
         {
             range output_matrix = kernel().buffers[c->source].get_range();  // FIXME: automatic matrix to range conection
@@ -1031,15 +1050,12 @@ namespace ikaros
 
 
     int 
-    Component::SetInputSize(dictionary d, input_map ingoing_connections) // FIXME: Add FLATTEN and ALIAS ************
+    Component::SetInputSize(dictionary d, input_map ingoing_connections)
     {
-       Trace("\t\t\t\tComponent::SetInputSize " + std::string(d["name"]));
-
-        std::string name = d.at("name");
-        std::string full_name = path_ +"."+ name;
+        Trace("\t\t\t\tComponent::SetInputSize " + std::string(d["name"]));
 
         if(d.is_set("flatten"))
-            SetInputSize_Flat(d, ingoing_connections.at(full_name));
+            SetInputSize_Flat(d, ingoing_connections);
         else
             SetInputSize_Index(d, ingoing_connections);
 /*
@@ -1225,10 +1241,20 @@ namespace ikaros
         {
             matrix output;
             Bind(output, d["name"]);
-            //output.info();
             for(long d : output.shape())
                 check_sum += prime_number.next() * d;
         } 
+
+        // Iterate over all inputs
+
+        for(auto & d : info_["inputs"])
+        {
+            matrix input;
+            Bind(input, d["name"]);
+            for(long d : input.shape())
+                check_sum += prime_number.next() * d;
+        } 
+
 
         // Iterate obver all parameters
     
@@ -1311,7 +1337,7 @@ namespace ikaros
             if(delay_size > 1)
                 target_range.push_front(0, delay_size);
 
-        if(source_range.size() != target_range.size())
+        if(delay_size*source_range.size() != target_range.size())
             throw exception("Connection could not be resolved");
 
         return target_range;
@@ -1688,6 +1714,8 @@ bool operator==(Request & r, const std::string s)
     void 
     Kernel::CalculateSizes()    
     {
+        try 
+        {
         // Build input table
         std::map<std::string,std::vector<Connection *>> ingoing_connections; 
         for(auto & c : connections)
@@ -1697,6 +1725,11 @@ bool operator==(Request & r, const std::string s)
         for(int i=0; i<components.size(); i++)
             for(auto & [n, c] : components)
                 c->SetSizes(ingoing_connections);
+        }
+        catch(...)
+        {
+            throw fatal_error("Could not calculate input and output sizes.");
+        }
     }
 
 
@@ -1882,7 +1915,7 @@ bool operator==(Request & r, const std::string s)
         current_component_path = path+"."+std::string(info["name"]);
 
         if(components.count(current_component_path)> 0)
-            throw exception("Module or group with this name already exists.");
+            throw exception("Module or group with this name already exists. \""+std::string(info["name"])+"\".");
 
         std::string classname = info["class"];
         if(!classes.count(classname))
