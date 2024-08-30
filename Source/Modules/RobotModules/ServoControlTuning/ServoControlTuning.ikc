@@ -61,6 +61,7 @@
 	<parameter name="robot" type="string" description="The robot to tune" control="menu" options= "EpiGray, EpiBlack, EpiWhite, EpiBlue, EpiYellow, EpiRed, EpiOrange, EpiGreen" />
 
 	<parameter name="Save" type="bool" description="Save the parameters to a json file" control="checkbox" default="false" />
+	<parameter name="RunSequence" type="bool" description="Runs a sequence of motor transitions]" control="checkbox" default="false" />
 
 	<parameter name="NumberTransitions" type="number" description="Number of transitions to make" control="textedit" default="10" />
 
