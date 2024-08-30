@@ -2055,8 +2055,9 @@ bool operator==(Request & r, const std::string s)
             {
                 Notify(msg_fatal_error, e.message);
                 Notify(msg_fatal_error, u8"Load file failed for "s+options_.filename);
-                CalculateCheckSum();
-                New();
+                //CalculateCheckSum();
+                throw fatal_error("Load failed");
+                //New(); // FIXME: New in main - not here
             }
     }
 
@@ -2078,6 +2079,8 @@ bool operator==(Request & r, const std::string s)
         {
             std::string msg = "Incorrect Check Sum: "+std::to_string(calculated_check_sum)+" != "+std::to_string(correct_check_sum);
             Notify(msg_fatal_error, msg);
+            if(info_.is_set("batch_mode"))
+                exit(1); // FIXME: Should exit gracefully
         }
     }
 
