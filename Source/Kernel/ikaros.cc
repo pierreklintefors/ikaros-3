@@ -181,7 +181,10 @@ namespace ikaros
                 break;
 
             case bool_type:
-                *number_value = (val!=0 ? 1 : 0);
+                if(has_options)
+                    *number_value = (val!=0 ? 1 : 0);
+                else
+                    *number_value = is_true(v);
                 break;
 
             case string_type:
@@ -295,8 +298,12 @@ namespace ikaros
     {
         if(!name.empty())
             std::cout << name << " = ";
-        std::cout << std::string(*this) << std::endl;
+        if(type == no_type)
+            std::cout <<"not initialized" << std::endl;
+        else
+            std::cout << std::string(*this) << std::endl;
     }
+
 
     void 
     parameter::info()
@@ -370,35 +377,46 @@ namespace ikaros
     bool 
     Component::ResolveParameter(parameter & p,  std::string & name)
     {
+        //std::cout << "ResolveParameter: " << name << std::endl;
         try
         {
             // Look for binding
             std::string bind_to = GetBind(name);
             if(!bind_to.empty())
             {
-                if(LookupParameter(p, bind_to))
+                if(LookupParameter(p, bind_to)) // FIXME: Not working
+                    return true;
+            }
+
+            std::string value = LookupKey(name);
+            if(value.empty())
+            {
+                SetParameter(name, p.info_["default"]);
+                return true;
+            }
+
+            // Evaluate if numerical expression
+
+            if(p.type==number_type && !p.has_options)
+            {
+                    SetParameter(name, std::to_string(EvaluateNumericalExpression(value))); //FIXME: HANDLE DEFAULTVALUES ALSO
                     return true;
             }
 
             // Lookup normal value in current component-context
 
-            std::string v = GetValue(name);
-            if(!v.empty())  // ****************** this does not work for string that are allowed to be empty
+            value = GetValue(name);
+            if(value.empty())  // ****************** this does not work for string that are allowed to be empty
             {
-                std::string val = v; // Evaluate(v, p.type == string_type); ***********
-                if(!val.empty())
-                {
-                    SetParameter(name, val);
-                    return true;
-                }
+                SetParameter(name, p.info_["default"]);
+                return true;
             }
-
-            SetParameter(name, p.info_["default"]); //******************* Evaluate(default_value, p.type == string_type)
-            return true; // IF refault value ******
+                
+            SetParameter(name, value);
+            return true;
         }
         catch(exception & e)
         {
-            //std::cout << e.what() << std::endl; 
             Notify(msg_fatal_error, e.message);
         }
         catch(std::exception & e)
@@ -717,8 +735,8 @@ namespace ikaros
     }
 
 
-    int 
-    Component::EvaluateIntExpression(std::string & s)
+    double 
+    Component::EvaluateNumericalExpression(std::string & s)
     {
         expression e = expression(s);
         std::map<std::string, std::string> vars;
@@ -745,7 +763,7 @@ namespace ikaros
             }
             else
             {
-                int d = EvaluateIntExpression(e);
+                int d = EvaluateNumericalExpression(e);
                 if(d>0)
                     shape.push_back(d);
             }
@@ -756,13 +774,13 @@ namespace ikaros
 
 
 // NEW EVALUATION FUNCTIONS
-
+/*
     double 
     Component::EvaluateNumber(std::string v)
     {
         return stod(v); // FIXME: Add full parsing of expressions and variables *************
     }
-
+*/
 
     bool 
     Component::EvaluateBool(std::string v)
@@ -882,7 +900,7 @@ namespace ikaros
 
 
     void 
-    Component::SetSourceRanges(const std::string & name, const std::vector<Connection *> & ingoing_connections)
+    Component::SetSourceRanges(const std::string & name, const std::vector<Connection *> & ingoing_connections) // FIXME:REMOVE
     {
         for(auto & c : ingoing_connections) // Copy source size to source_range if not set
         {
@@ -967,6 +985,8 @@ namespace ikaros
         for(auto c : ingoing_connections.at(full_name))
         {
             range output_matrix = kernel().buffers[c->source].get_range();  // FIXME: automatic matrix to range conection
+            if(output_matrix.empty())
+                return 0;
             input_size.extend(c->Resolve(output_matrix));
         }
         kernel().buffers[full_name].realloc(input_size.extent());
@@ -1058,53 +1078,6 @@ namespace ikaros
             SetInputSize_Flat(d, ingoing_connections);
         else
             SetInputSize_Index(d, ingoing_connections);
-/*
-        range input_size;
-        std::string name = d.at("name");
-        std::string full_name = path_ +"."+ name;
-        for(auto c : ingoing_connections.at(full_name))
-        {
-            range output_matrix = kernel().buffers[c->source].get_range();  // FIXME: automatic matrix to range conection
-            input_size.extend(c->Resolve(output_matrix));
-        }
-        kernel().buffers[full_name].realloc(input_size.extent());
-      Trace("\t\t\t\t\tComponent::SetInputSize Alloc" + std::string(input_size));
-
-        // Set alias if requested and there is only a single input
-
-        if(d.is_set("use_alias"))
-        {
-            auto ic = ingoing_connections.at(full_name);
-            if(ic.size() == 1 && !ic[0]->alias_.empty())
-                kernel().buffers[name].set_name(ic[0]->alias_);
-        }
-
-        return 1;
-
-*/
-
-
-
-
-
-/*  
-
-             Trace( "\t\t\t\t\tComponent::SetInputSize " + std::string(d["name"]));
-
-            Kernel& k = kernel();
-            std::string input_name = path_ + "." + std::string(d["name"]);
-
-            // FIXME: Use input type heuristics here ************
-
-            std::string use_alias = d["use_alias"]; // FIXME: IS_SET
-
-            std::string flatten = d["flatten"];
-          
-            if(is_true(flatten))
-                SetInputSize_Flat(input_name, ingoing_connections.at(input_name),is_true(use_alias));
-            else
-                SetInputSize_Index(input_name, ingoing_connections.at(input_name),is_true(use_alias));
-*/
         return 0;
     }
 
@@ -1128,19 +1101,30 @@ namespace ikaros
 
 
     int 
-    Component::SetOutputSize(dictionary d, input_map ingoing_connections) // DENNA BEHÖVER FIXAS *******************
+    Component::SetOutputSize(dictionary d, input_map ingoing_connections)
     {
        Trace("\t\t\t\tComponent::SetOutputSize " + std::string(d["name"]));
 
-        range output_size;
+        if(d.contains("size"))
+            throw fatal_error("Output in group can not have size attribute.");
+
+        range output_size; // FIXME: rename output_range
         std::string name = d.at("name");
         std::string full_name = path_ +"."+ name;
+
+        if(!ingoing_connections.count(full_name))
+            return 0;
+
         for(auto c : ingoing_connections.at(full_name))
         {
             range output_matrix = kernel().buffers[c->source].get_range();  // FIXME: automatic matrix to range conection
+            
+            if(output_matrix.empty())
+                return 0;
+            
             output_size.extend(c->Resolve(output_matrix));
         }
-        kernel().buffers[full_name].realloc(output_size.extent());
+        kernel().buffers[full_name].realloc(output_size.extent()); // FIXME: realloc with range argument
       Trace("\t\t\t\t\tComponent::SetOutputSize Alloc" + std::string(output_size));
 
         return 1;
@@ -1174,7 +1158,7 @@ namespace ikaros
     int 
     Module::SetOutputSize(dictionary d, input_map ingoing_connections) // Uses size attribute // FIXME: Handle errors in evaluation
     {
-        std::cout << "\t\t\tModule::SetOutputSize " << d.at("name") << std::endl;
+        //std::cout << "\t\t\tModule::SetOutputSize " << d.at("name") << std::endl;
         std::string size = d.at("size");
         std::vector<int> shape = EvaluateSizeList(size);
         matrix o;
@@ -1187,7 +1171,7 @@ namespace ikaros
     int 
     Module::SetOutputSizes(input_map ingoing_connections)
     {
-            std::cout << "\t\tModule::SetOutputSizes " << std::endl;
+            //std::cout << "\t\tModule::SetOutputSizes " << std::endl;
 
         if(!InputsReady(info_, ingoing_connections))
             return 0; // Cannot set size yet
@@ -1208,28 +1192,6 @@ namespace ikaros
             SetOutputSizes(ingoing_connections);
             return 0;
     }   
-
-   /*
-    int
-    Component::SetSizes(input_map ingoing_connections)
-    {
-        Kernel& k = kernel();
-
-        // Set input sizes (if possible)
-
-        for(auto d : info_["inputs"])
-            if(k.buffers[path_+"."+std::string(d["name"])].empty())
-                if(InputsReady(d, ingoing_connections))
-                    SetInputSize(d, ingoing_connections);
-
-        // Set output sizes
-
-        SetOutputSizes(ingoing_connections);
-
-        return 0;
-    }
-*/
-
 
 
     void
@@ -1751,13 +1713,12 @@ bool operator==(Request & r, const std::string s)
     void 
     Kernel::InitCircularBuffers()
     {
-        //std::cout << "\nInitCircularBuffers:" << std::endl;
         for(auto it : max_delays)
         {
             if(it.second <= 1)
                 continue;
-            //std::cout << "\t" << it.first << std::endl;
-            circular_buffers.emplace(it.first, CircularBuffer(buffers[it.first], it.second)); // FIXME: Change to initialization list in C++20
+          if(buffers.count(it.first))
+                circular_buffers.emplace(it.first, CircularBuffer(buffers[it.first], it.second)); // FIXME: Change to initialization list in C++20
         }
     }
 
@@ -2446,10 +2407,9 @@ bool operator==(Request & r, const std::string s)
         {
             SortTasks();
             ResolveParameters();
+            PruneConnections();
             CalculateDelays();
             CalculateSizes();
-
-            PruneConnections();
             InitCircularBuffers();
             InitComponents();
 

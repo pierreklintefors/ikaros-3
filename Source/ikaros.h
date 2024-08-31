@@ -250,12 +250,12 @@ public:
     std::string EvaluateVariable(const std::string & s);
     bool LookupParameter(parameter & p, const std::string & name);
     
-    int EvaluateIntExpression(std::string & s);
+    double EvaluateNumericalExpression(std::string & s);
 
     std::vector<int> EvaluateSizeList(std::string & s);
     //std::vector<int> EvaluateSize(std::string & s);
 
-    double EvaluateNumber(std::string v);
+   // double EvaluateNumber(std::string v);
     bool EvaluateBool(std::string v);
     std::string EvaluateString(std::string v);
     std::string EvaluateMatrix(std::string v);
