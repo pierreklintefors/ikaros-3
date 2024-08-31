@@ -211,6 +211,10 @@ namespace ikaros
         for(int i=0; i<index_.size(); i++)
             if(b_[i]-a_[i] > 1)
                 r.push(a_[i], b_[i], inc_[i]);
+
+        if(r.empty())
+            r.push(1);
+
         return r;
     }
 
