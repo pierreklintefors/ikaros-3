@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 test.py
 
@@ -14,31 +15,33 @@ bold = "\033[1m"
 red = "\033[31m"
 reset = "\033[0m"
 
+def get_description(file_path):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+    value = root.get("description")
+    return '' if value is None else value+" – "
 
-if __name__ == "__main__":
+print(f"\n{bold}Running Ikaros Unit Tests{reset}\n")
+errors = 0
+file_count = 0
+current_directory = Path(__file__).resolve().parent
+ikaros_binary = current_directory / "../../../../Bin/ikaros_d"
 
-    def get_description(file_path):
-        tree = ET.parse(file_path)
-        root = tree.getroot()
-        value = root.get("description")
-        return '' if value is None else value+" – "
+test_files = [item for item in current_directory.iterdir() if item.name.startswith("test") and item.suffix.lower() == '.ikg']
 
-    print(f"\n{bold}Running Ikaros Unit Tests{reset}\n")
-    errors = 0
-    file_count = 0
-    current_directory = Path(__file__).resolve().parent
-    ikaros_binary = current_directory / "../../../../Bin/ikaros_d"
-    for item in current_directory.iterdir():
-        if item.name.startswith("test") and item.suffix.lower() == '.ikg':
-            file_count+=1
-            result = subprocess.run( f"{ikaros_binary} -s0 -b {item}", shell=True, text=True, capture_output=True)
-            if result.returncode == 0:
-                print(f"[  OK  ]  {get_description(item)}{item.name}{reset}")
-            else:
-                print(f"{red}{bold}[ FAIL ]  {get_description(item)}{item.name}{reset}")
-                errors += 1
+test_files.sort()
+for item in test_files:
+    if item.name.startswith("test") and item.suffix.lower() == '.ikg':
+        file_count+=1
+        result = subprocess.run( f"{ikaros_binary} -s0 -b {item}", shell=True, text=True, capture_output=True)
+        if result.returncode == 0:
+            print(f"[  OK  ]  {get_description(item)}{item.name}{reset}")
+        else:
+            print(f"{red}{bold}[ FAIL ]  {get_description(item)}{item.name}{reset}")
+            errors += 1
 
-    if errors > 0:
-        print(f"\n{red}{bold}***** Ikaros failed {errors} tests *****{reset}\n")
-    else:
-        print(f"\nIkaros passed all {file_count} tests\n")
+if errors > 0:
+    print(f"\n{red}{bold}***** Ikaros failed {errors} tests *****{reset}\n")
+else:
+    print(f"\nIkaros passed all {file_count} tests\n")
+
