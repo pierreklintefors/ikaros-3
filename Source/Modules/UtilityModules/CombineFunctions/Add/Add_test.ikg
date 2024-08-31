@@ -1,4 +1,4 @@
-<group filename="Source/Modules/UtilityModules/CombineFunctions/Add/Add_test.ikg" name="Test">
+<group filename="Source/Modules/UtilityModules/CombineFunctions/Add/Add_test.ikg" >
    <_connection source="Add.OUTPUT" target="Print.INPUT"/>
    <module class="Print" name="Print"/>
 
