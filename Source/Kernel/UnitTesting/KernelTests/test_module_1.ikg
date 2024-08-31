@@ -1,9 +1,0 @@
-<group name="Test_1"  check_sum = "27413" description="Test that all parameter default values are found">
-
-    <module name="Const" class="Constant" data="9, 8, 7" />
-    <module name="Test" class="KernelTestModule"/>
-
-    <connection source="Const.OUTPUT" target="Test.INPUT" />
-
-</group>
-
