@@ -1,5 +1,5 @@
 <group name="Test_11"  
-    check_sum = "180331" 
+    check_sum = "225373" 
     description="Test parameter indirection"
 
     aa = "abc/def:ghi"
