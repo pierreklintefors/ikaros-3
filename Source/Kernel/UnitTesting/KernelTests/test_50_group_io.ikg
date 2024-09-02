@@ -1,6 +1,5 @@
-<!-- Test of group with inputs and outputs that encapsulates an Add-module -->
+<group name="Test" description="Test of group with inputs and outputs that encapsulates an Add-module" check_sum="1314" >
 
-<group name="Test">
 	<module class = "Constant" name = "Constant1" data="1,2;3,4" />
 	<module class = "Constant" name = "Constant2" data="8,9;-8,-9" />
 
@@ -9,7 +8,7 @@
     <group name="InnerGroup">
         <input name="INPUT_X" />
         <input name="INPUT_Y" />
-        <input name="OUTPUT_Z" />
+        <output name="OUTPUT_Z" />
 
        <!-- Module inside InnerGroup -->
         <module class = "Add" name = "Add" />
@@ -19,7 +18,6 @@
         <!-- Normal connections within a group, but from output to output -->
         <connection  source = "Add.OUTPUT"  target = "OUTPUT_Z" />
 
-        <connection  source = "InnerGroup.OUTPUT_Z"  target = "Print.INPUT" />  
     </group>	
 
     <module class = "Print" name = "Print" />	

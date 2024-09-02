@@ -81,6 +81,8 @@ class Module;
 class Connection;
 class Kernel;
 
+using input_map = const std::map<std::string,std::vector<Connection *>> &;
+
 Kernel& kernel();
 
 //
@@ -253,24 +255,32 @@ public:
     std::string EvaluateVariable(const std::string & s);
     bool LookupParameter(parameter & p, const std::string & name);
     
-    int EvaluateIntExpression(std::string & s);
+    double EvaluateNumericalExpression(std::string & s);
 
     std::vector<int> EvaluateSizeList(std::string & s);
     //std::vector<int> EvaluateSize(std::string & s);
 
-    double EvaluateNumber(std::string v);
+   // double EvaluateNumber(std::string v);
     bool EvaluateBool(std::string v);
     std::string EvaluateString(std::string v);
     std::string EvaluateMatrix(std::string v);
     int EvaluateOptions(std::string v, std::vector<std::string> & options);
 
-    bool InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+    bool InputsReady(dictionary d, input_map ingoing_connections);
 
-    void SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections);
-    void SetInputSize_Flat(const std::string & name,  std::vector<Connection *> & ingoing_connections, bool use_alias);
-    void SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias);
-    void SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections);
-    virtual int SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections);
+    void SetSourceRanges(const std::string & name, const std::vector<Connection *> & ingoing_connections);
+    int SetInputSize_Flat(dictionary d, input_map ingoing_connections);
+    int SetInputSize_Index(dictionary d, input_map ingoing_connections);
+
+    void ResolveConnection(const range & output, range & source, range & target); // Move to connection
+
+    virtual int SetInputSize(dictionary d, input_map ingoing_connections);
+    virtual int SetInputSizes(input_map & ingoing_connections);
+
+    virtual int SetOutputSize(dictionary d, input_map ingoing_connections);
+    virtual int SetOutputSizes(input_map & ingoing_connections); // Uses the size attribute
+
+    virtual int SetSizes(input_map ingoing_connections); // Sets input and output if possible
 
     void CalculateCheckSum(long & check_sum, prime & prime_number); // Calculates a value that depends on all parameters and buffer sizes
 
@@ -291,6 +301,13 @@ class Module : public Component
 public:
     Module();
     ~Module() {}
+
+    //int SetInputSize(std::string name, input_map ingoing_connections);
+    int SetOutputSize(dictionary d, input_map ingoing_connections);
+
+    //int SetInputSizes(input_map ingoing_connections);
+    int SetOutputSizes(input_map ingoing_connections); // Uses the size attribute
+    int SetSizes(input_map  ingoing_connections); // Sets input and output if possible
 };
 
 //
@@ -310,10 +327,12 @@ public:
 
     Connection(std::string s, std::string t, range & delay_range, std::string alias="");
 
+    range Resolve(const range & source_output);
+
     void Tick();
     void Print();
 
-    std::string Info();
+    std::string Info(); // FIXME: Make consistent with other classes
 };
 
 //
@@ -429,6 +448,12 @@ public:
     void CalculateCPUUsage();
 
     bool Notify(int msg, std::string message, std::string path="");
+
+    bool Print(std::string message) { return Notify(msg_print, message); }
+    bool Warning(std::string message, std::string path="") { return Notify(msg_warning, message, path); }
+    bool Debug(std::string message) { return Notify(msg_debug, message); }
+    bool Trace(std::string message) { return Notify(msg_trace, message); }
+
     bool Terminate();
     void ScanClasses(std::string path);
     void ScanFiles(std::string path, bool system=true);

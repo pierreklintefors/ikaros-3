@@ -10,12 +10,22 @@ using namespace ikaros;
 int
 main()
 {
+
+
+    matrix A = {{1, 2, 3}, {-1, -2, -3}}; // 2x3
+    matrix B = {{1, 1}, {2, 2}, {3, 3}}; // 3x2
+    matrix C;
+
+    C.matmul(A,B);
+
+    C.print("C");
+/*
     matrix m = "1, 2; 3, 4";
 
     std::cout << m.size() << std::endl;
     std::cout << m.sum() << std::endl;
     std::cout << m.average() << std::endl;
-/*
+
     std::cout << m << std::endl;
     m.print("XXX");
 

@@ -181,7 +181,10 @@ namespace ikaros
                 break;
 
             case bool_type:
-                *number_value = (val!=0 ? 1 : 0);
+                if(has_options)
+                    *number_value = (val!=0 ? 1 : 0);
+                else
+                    *number_value = is_true(v);
                 break;
 
             case string_type:
@@ -295,8 +298,12 @@ namespace ikaros
     {
         if(!name.empty())
             std::cout << name << " = ";
-        std::cout << std::string(*this) << std::endl;
+        if(type == no_type)
+            std::cout <<"not initialized" << std::endl;
+        else
+            std::cout << std::string(*this) << std::endl;
     }
+
 
     void 
     parameter::info()
@@ -370,35 +377,46 @@ namespace ikaros
     bool 
     Component::ResolveParameter(parameter & p,  std::string & name)
     {
+        //std::cout << "ResolveParameter: " << name << std::endl;
         try
         {
             // Look for binding
             std::string bind_to = GetBind(name);
             if(!bind_to.empty())
             {
-                if(LookupParameter(p, bind_to))
+                if(LookupParameter(p, bind_to)) // FIXME: Not working
+                    return true;
+            }
+
+            std::string value = LookupKey(name);
+            if(value.empty())
+            {
+                SetParameter(name, p.info_["default"]);
+                return true;
+            }
+
+            // Evaluate if numerical expression
+
+            if(p.type==number_type && !p.has_options)
+            {
+                    SetParameter(name, std::to_string(EvaluateNumericalExpression(value))); //FIXME: HANDLE DEFAULTVALUES ALSO
                     return true;
             }
 
             // Lookup normal value in current component-context
 
-            std::string v = GetValue(name);
-            if(!v.empty())  // ****************** this does not work for string that are allowed to be empty
+            value = GetValue(name);
+            if(value.empty())  // ****************** this does not work for string that are allowed to be empty
             {
-                std::string val = v; // Evaluate(v, p.type == string_type); ***********
-                if(!val.empty())
-                {
-                    SetParameter(name, val);
-                    return true;
-                }
+                SetParameter(name, p.info_["default"]);
+                return true;
             }
-
-            SetParameter(name, p.info_["default"]); //******************* Evaluate(default_value, p.type == string_type)
-            return true; // IF refault value ******
+                
+            SetParameter(name, value);
+            return true;
         }
         catch(exception & e)
         {
-            //std::cout << e.what() << std::endl; 
             Notify(msg_fatal_error, e.message);
         }
         catch(std::exception & e)
@@ -717,8 +735,8 @@ namespace ikaros
     }
 
 
-    int 
-    Component::EvaluateIntExpression(std::string & s)
+    double 
+    Component::EvaluateNumericalExpression(std::string & s)
     {
         expression e = expression(s);
         std::map<std::string, std::string> vars;
@@ -745,7 +763,7 @@ namespace ikaros
             }
             else
             {
-                int d = EvaluateIntExpression(e);
+                int d = EvaluateNumericalExpression(e);
                 if(d>0)
                     shape.push_back(d);
             }
@@ -756,13 +774,13 @@ namespace ikaros
 
 
 // NEW EVALUATION FUNCTIONS
-
+/*
     double 
     Component::EvaluateNumber(std::string v)
     {
         return stod(v); // FIXME: Add full parsing of expressions and variables *************
     }
-
+*/
 
     bool 
     Component::EvaluateBool(std::string v)
@@ -867,20 +885,22 @@ namespace ikaros
 
 
     bool
-    Component::InputsReady(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: Handle optional buffers
+    Component::InputsReady(dictionary d,  input_map ingoing_connections) // FIXME: Handle optional buffers
     {
+    Trace("\t\t\tComponent::InputReady");
         Kernel& k = kernel();
 
         std::string n = d["name"];   // ["attributes"]
-        for(auto & c : ingoing_connections[path_+'.'+n])
-            if(k.buffers.at(c->source).rank()==0)
-                return false;
+        if(ingoing_connections.count(path_))
+            for(auto & c : ingoing_connections.at(path_)) // +'.'+n
+                if(k.buffers.at(c->source).rank()==0)
+                    return false;
         return true;
     }
 
 
     void 
-    Component::SetSourceRanges(const std::string & name, std::vector<Connection *> & ingoing_connections)
+    Component::SetSourceRanges(const std::string & name, const std::vector<Connection *> & ingoing_connections) // FIXME:REMOVE
     {
         for(auto & c : ingoing_connections) // Copy source size to source_range if not set
         {
@@ -889,47 +909,102 @@ namespace ikaros
             else if(c->source_range.rank() != kernel().buffers[c->source].rank())
                 throw exception("Explicitly set source range dimensionality does not match source.");
         }
-
     }
 
 
-    void 
-    Component::SetInputSize_Flat(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
+    int 
+    Component::SetInputSize_Flat(dictionary d, input_map ingoing_connections)
     {
-        SetSourceRanges(name, ingoing_connections);
+        Trace("\t\t\t\t\tComponent::SetInputSize_Flat");
+
+        std::string name = d.at("name");
+        std::string full_name = path_ +"."+ name;
+        
+        if(!ingoing_connections.count(full_name)) // Not connected
+            return 1;
+
+        //SetSourceRanges(d.at("name"), ingoing_connections.at(full_name));
+
         int begin_index = 0;
         int end_index = 0;
         int flattened_input_size = 0;
-        for(auto & c : ingoing_connections)
+        for(auto & c : ingoing_connections.at(full_name))
         {
             c->flatten_ = true;
+
+         range output_matrix = kernel().buffers[c->source].get_range();  //**NEW  // FIXME: automatic matrix to range conection
+            c->Resolve(output_matrix);  //**NEW  
+
             int s = c->source_range.size() * c->delay_range_.trim().b_[0];
             end_index = begin_index + s;
             c->target_range = range(begin_index, end_index);
             begin_index += s;
             flattened_input_size += s;
+
+            //int delay_size = c->delay_range_.trim().b_[0];  // FIXME: extent/size function
+           // if(delay_size > 1)
+            //    flattened_input_size *= delay_size;
+                std::cout << flattened_input_size << std::endl;
         }
+    
         if(flattened_input_size != 0)
-            kernel().buffers[name].realloc(flattened_input_size);   // FIXME: else buffer = {} ???
-
-        if(!use_alias)
-            return;
-
-        begin_index = 0;
-        for(auto & c : ingoing_connections)
         {
-            int s = c->source_range.size() * c->delay_range_.trim().b_[0];
-            if(c->alias_.empty())
-                kernel().buffers[name].push_label(0, c->source, s);
-            else
-                kernel().buffers[name].push_label(0, c->alias_, s);
+            kernel().buffers[full_name].realloc(flattened_input_size); 
+          Trace("\t\t\t\t\t\tComponent::SetInputSize_Index Alloc "+std::to_string(flattened_input_size));
         }
+
+        if(d.is_set("use_alias"))
+        {
+            begin_index = 0;
+            for(auto & c : ingoing_connections.at(full_name))
+            {
+                int s = c->source_range.size() * c->delay_range_.trim().b_[0];
+                if(c->alias_.empty())
+                    kernel().buffers[d.at(full_name)].push_label(0, c->source, s);
+                else
+                    kernel().buffers[d.at(full_name)].push_label(0, c->alias_, s);
+            }
+        }
+        return 0;
     }
 
 
-    void 
-    Component::SetInputSize_Index(const std::string & name, std::vector<Connection *> & ingoing_connections, bool use_alias)
+    int 
+    Component::SetInputSize_Index(dictionary d, input_map ingoing_connections)
     {
+
+       Trace("\t\t\t\t\tComponent::SetInputSize_Index " + std::string(d["name"]));
+
+        range input_size;
+        std::string name = d.at("name");
+        std::string full_name = path_ +"."+ name;
+
+        if(!ingoing_connections.count(full_name)) // Not connected
+            return 1;
+
+        for(auto c : ingoing_connections.at(full_name))
+        {
+            range output_matrix = kernel().buffers[c->source].get_range();  // FIXME: automatic matrix to range conection
+            if(output_matrix.empty())
+                return 0;
+            input_size.extend(c->Resolve(output_matrix));
+        }
+        kernel().buffers[full_name].realloc(input_size.extent());
+      Trace("\t\t\t\t\tComponent::SetInputSize Alloc" + std::string(input_size));
+
+        // Set alias if requested and there is only a single input
+
+        if(d.is_set("use_alias"))
+        {
+            auto ic = ingoing_connections.at(full_name);
+            if(ic.size() == 1 && !ic[0]->alias_.empty())
+                kernel().buffers[name].set_name(ic[0]->alias_);
+        }
+
+        return 1;
+
+/*
+
             SetSourceRanges(name, ingoing_connections);
             int max_delay = 0;
             bool first_ingoing_connection = true;
@@ -970,11 +1045,12 @@ namespace ikaros
             r |= c->target_range;
 
         kernel().buffers[name].realloc(r.extent());  // STEP 2: Set input size // FIXME: Check empty input
+          Trace("\t\t\t\t\t\tComponent::SetInputSize_Index Alloc "+std::string(r));
 
         // Set alias
 
         if(!use_alias)
-            return;
+            return 0;
 
         if(ingoing_connections.size() == 1 && !ingoing_connections[0]->alias_.empty())
         {
@@ -984,97 +1060,138 @@ namespace ikaros
         {
             // Handle multiple dimensions
         }
+        return 0;
+
+        */
     }
 
 
-    void 
-    Component::SetInputSize(dictionary d, std::map<std::string,std::vector<Connection *>> & ingoing_connections)
+// ****************************** COMPONENT Sizes ******************************
+
+
+    int 
+    Component::SetInputSize(dictionary d, input_map ingoing_connections)
     {
-            Kernel& k = kernel();
-            std::string input_name = path_ + "." + std::string(d["name"]);
+        Trace("\t\t\t\tComponent::SetInputSize " + std::string(d["name"]));
 
-            // FIXME: Use input type heuristics here ************
-
-            std::string use_alias = d["use_alias"];
-
-            std::string flatten = d["flatten"];
-            if(is_true(flatten))
-                SetInputSize_Flat(input_name, ingoing_connections[input_name],is_true(use_alias));
-            else
-                SetInputSize_Index(input_name, ingoing_connections[input_name],is_true(use_alias));
+        if(d.is_set("flatten"))
+            SetInputSize_Flat(d, ingoing_connections);
+        else
+            SetInputSize_Index(d, ingoing_connections);
+        return 0;
     }
 
 
-    // Attempt to set sizes for a single component
 
     int
-    Component::SetSizes(std::map<std::string,std::vector<Connection *>> & ingoing_connections) // FIXME: add more exception handling
+    Component::SetInputSizes(input_map ingoing_connections)
     {
         Kernel& k = kernel();
+
+        Trace("\t\t\t\tComponent::SetInputSizes");
 
         // Set input sizes (if possible)
 
         for(auto d : info_["inputs"])
             if(k.buffers[path_+"."+std::string(d["name"])].empty())
-            {   
                 if(InputsReady(d, ingoing_connections))
                     SetInputSize(d, ingoing_connections);
-            }
-
-        // Set output sizes // FIXME: Move to separate function
-
-        int outputs_with_size = 0;
-        for(auto & d : info_["outputs"])
-        {
-            std::string n = d["name"];  // FIXME: Throw if not set
-
-            if(dictionary(d).contains("size")) // FIXME: use automatic conversions
-            {
-                std::string s = d["size"];
-                std::vector<int> shape = EvaluateSizeList(s);
-                matrix o;
-                Bind(o, n); // FIXME: Get directly?
-                if(o.rank() != 0)
-                    outputs_with_size++; // Count number of buffers that are set
-                
-                for(int i=0; i < shape.size(); i++)
-                    if(shape[i]<0)
-                    {
-                        kernel().Notify(msg_fatal_error, "Output "s+n+" has negative size for dimension "+std::to_string(i), n); // FIXME: throw
-                        return 0;
-                    }
-
-                o.realloc(shape);
-            }
-            else // Group output: look for connection - only one-to-one right now // FIXME: combine connections to this output
-            {
-                std::string full_name = path_ +"."+n;
-                if(ingoing_connections.count(full_name))
-                {
-                    auto c = ingoing_connections[full_name];
-                    if(c.size() != 1)
-                        throw exception("Cannot set group output size. There must be exactly one connection to an output.");// FIXME: add proper error handling that continues with the others
-                    matrix s = kernel().buffers[c[0]->source];
-                    if(s.rank() != 0)
-                    {
-                        kernel().buffers[full_name].realloc(s.shape());
-                        c[0]->source_range = kernel().buffers[full_name].get_range(); // FIME: use range from shape
-                        c[0]->target_range = kernel().buffers[full_name].get_range();
-                        outputs_with_size++; // Count number of buffers that are set
-                    }
-                int i = 0;
-                }
-            }
-
-         outputs_with_size++;
-        }
-
-
-        if(outputs_with_size == info_["outputs"].size())
-            return 0; // all buffers have been set
-        else
-            return 0; // needs to be called again - FIXME: Report progress later on
+        return 0;
     }
+
+
+    int 
+    Component::SetOutputSize(dictionary d, input_map ingoing_connections)
+    {
+       Trace("\t\t\t\tComponent::SetOutputSize " + std::string(d["name"]));
+
+        if(d.contains("size"))
+            throw fatal_error("Output in group can not have size attribute.");
+
+        range output_size; // FIXME: rename output_range
+        std::string name = d.at("name");
+        std::string full_name = path_ +"."+ name;
+
+        if(!ingoing_connections.count(full_name))
+            return 0;
+
+        for(auto c : ingoing_connections.at(full_name))
+        {
+            range output_matrix = kernel().buffers[c->source].get_range();  // FIXME: automatic matrix to range conection
+            
+            if(output_matrix.empty())
+                return 0;
+            
+            output_size.extend(c->Resolve(output_matrix));
+        }
+        kernel().buffers[full_name].realloc(output_size.extent()); // FIXME: realloc with range argument
+      Trace("\t\t\t\t\tComponent::SetOutputSize Alloc" + std::string(output_size));
+
+        return 1;
+    }
+
+
+    int 
+    Component::SetOutputSizes(input_map ingoing_connections)
+    {
+        Trace("\t\tComponent::SetOutputSizes");
+        for(auto & d : info_["outputs"])
+            SetOutputSize(d, ingoing_connections);
+
+        return 0;
+    }
+
+
+    int
+    Component::SetSizes(input_map ingoing_connections)
+    {
+        Trace("\tComponent::SetSizes");
+        SetInputSizes(ingoing_connections);
+        SetOutputSizes(ingoing_connections);
+
+        return 0;
+    }
+
+
+// ****************************** MODULE Sizes ******************************
+
+    int 
+    Module::SetOutputSize(dictionary d, input_map ingoing_connections) // Uses size attribute // FIXME: Handle errors in evaluation
+    {
+        //std::cout << "\t\t\tModule::SetOutputSize " << d.at("name") << std::endl;
+        std::string size = d.at("size");
+        std::vector<int> shape = EvaluateSizeList(size);
+        matrix o;
+        Bind(o, d.at("name"));
+        o.realloc(shape);
+        return 0;
+    }
+
+
+    int 
+    Module::SetOutputSizes(input_map ingoing_connections)
+    {
+            //std::cout << "\t\tModule::SetOutputSizes " << std::endl;
+
+        if(!InputsReady(info_, ingoing_connections))
+            return 0; // Cannot set size yet
+
+        for(auto & d : info_["outputs"])
+            SetOutputSize(d, ingoing_connections);
+
+        return 0;
+    }
+
+
+
+    int 
+    Module::SetSizes(input_map ingoing_connections)
+    {
+            Trace("\tModule::SetSizes");
+            SetInputSizes(ingoing_connections);
+            SetOutputSizes(ingoing_connections);
+            return 0;
+    }   
 
 
     void
@@ -1086,10 +1203,20 @@ namespace ikaros
         {
             matrix output;
             Bind(output, d["name"]);
-            //output.info();
             for(long d : output.shape())
                 check_sum += prime_number.next() * d;
         } 
+
+        // Iterate over all inputs
+
+        for(auto & d : info_["inputs"])
+        {
+            matrix input;
+            Bind(input, d["name"]);
+            for(long d : input.shape())
+                check_sum += prime_number.next() * d;
+        } 
+
 
         // Iterate obver all parameters
     
@@ -1123,6 +1250,61 @@ namespace ikaros
         flatten_ = false;
         alias_ = alias;
     }
+
+
+    range 
+    Connection::Resolve(const range & source_output)
+    {
+        if(source_output.empty())
+            return 0;
+            // throw exception("Cannot resolve connection. Source output is empty."); //  FIXME: What is correct here? ************
+
+        source_range.extend(source_output.rank());
+        source_range.fill(source_output);
+        range reduced_source = source_range.strip().trim();
+
+        if(target_range.empty())
+            target_range = reduced_source;
+        else
+        {
+            int j=0;
+            for(int i=0; i<target_range.rank()-1; i++)    // CHECK EMPTY DIMENSION
+                if(target_range.empty(i) && j<reduced_source.rank())
+                {
+                    target_range.a_[i] = reduced_source.a_[j];
+                    target_range.b_[i] = reduced_source.b_[j];
+                    target_range.inc_[i] = reduced_source.inc_[j];
+
+                    reduced_source.a_[j] = 0;  // mark as used
+                    reduced_source.b_[j] = 0;
+                    reduced_source.inc_[j] = 0;
+                    j++;
+                }
+
+            int s = 1;
+            for(int i=0; i<reduced_source.rank(); i++)
+            {
+                int si = reduced_source.size(i);
+                s *= (si >0?si:1);
+            }
+
+            if(target_range.empty(target_range.rank()-1) && j<reduced_source.rank())
+            {
+                target_range.a_[target_range.rank()-1] = 0; // Check that dim is empty first
+                target_range.b_[target_range.rank()-1] = s;
+                target_range.inc_[target_range.rank()-1] = 1;
+            }
+        }
+            int delay_size = delay_range_.trim().b_[0];
+            if(delay_size > 1)
+                target_range.push_front(0, delay_size);
+
+        if(delay_size*source_range.size() != target_range.size())
+            throw exception("Connection could not be resolved");
+
+        return target_range;
+    }
+
 
 
     void 
@@ -1245,6 +1427,8 @@ bool operator==(Request & r, const std::string s)
     {
         //std::cout << "Kernel::Clear" << std::endl;
         // FIXME: retain persistent components
+        //for(auto [_,c] : components)
+        //    delete c;
         components.clear();
         connections.clear();
         buffers.clear();   
@@ -1437,40 +1621,76 @@ bool operator==(Request & r, const std::string s)
             throw fatal_error("All parameters could not be resolved");
     }
 
+/*
+    range 
+    Component::ResolveConnection(const range & output, range & source, range & target, range & delay_range)
+    {
+        source.extend(output.rank());
+        source.fill(output);
+        range reduced_source = source.strip().trim();
+
+        if(target.empty())
+            target = reduced_source;
+        else
+        {
+            int j=0;
+            for(int i=0; i<target.rank()-1; i++)    // CHECK EMPTY DIMENSION
+                if(target.empty(i) && j<reduced_source.rank())
+                {
+                    target.a_[i] = reduced_source.a_[j];
+                    target.b_[i] = reduced_source.b_[j];
+                    target.inc_[i] = reduced_source.inc_[j];
+
+                    reduced_source.a_[j] = 0;  // mark as used
+                    reduced_source.b_[j] = 0;
+                    reduced_source.inc_[j] = 0;
+                    j++;
+                }
+
+            int s = 1;
+            for(int i=0; i<reduced_source.rank(); i++)
+            {
+                int si = reduced_source.size(i);
+                s *= (si >0?si:1);
+            }
+
+            if(target.empty(target.rank()-1) && j<reduced_source.rank())
+            {
+                target.a_[target.rank()-1] = 0; // Check that dim is empty first
+                target.b_[target.rank()-1] = s;
+                target.inc_[target.rank()-1] = 1;
+            }
+        }
+            int delay_size = delay_range.trim().b_[0];
+            if(delay_size > 1)
+                c->target_range.push_front(0, delay_size);
+
+        if(source.size() == target.size())
+            throw exception("Connection could not be resolved");
+
+        return c->target_range;
+    }
+*/
+
 
     void 
-    Kernel::CalculateSizes()
+    Kernel::CalculateSizes()    
     {
-        // Copy the table of all components
-        std::map<std::string, Component *> init_components = components;
-
-        // Build input table
-
-        std::map<std::string,std::vector<Connection *>> ingoing_connections; 
-    for(auto & c : connections)
-        ingoing_connections[c.target].push_back(&c);
-
-        // Propagate output size to buffers as long as at least one module sets one of it output sizes
-
-        int iteration_counter = 0;
-        bool progress = true;
-        while(progress)
+        try 
         {
-            //progress = false; // FIXME: turn on again when progress reporting is implemented
+        // Build input table
+        std::map<std::string,std::vector<Connection *>> ingoing_connections; 
+        for(auto & c : connections)
+            ingoing_connections[c.target].push_back(&c);
 
-            // Try to set input and output sizes and remove from list if complete
-
-            auto it = init_components.begin();
-            while( it!=init_components.end())
-                if(it->second->SetSizes(ingoing_connections) == 1) // 1 = completed
-                {
-                    it = init_components.erase(it);
-                    //progress = true;
-                }
-                else
-                    it++;
-            if(iteration_counter++ > 4) // FIXME: REAL CONDITION LATER
-                return;
+        // Loop enough for all sizes to be calculated // FIXME: Restore progress calculation *******************
+        for(int i=0; i<components.size(); i++)
+            for(auto & [n, c] : components)
+                c->SetSizes(ingoing_connections);
+        }
+        catch(...)
+        {
+            throw fatal_error("Could not calculate input and output sizes.");
         }
     }
 
@@ -1493,13 +1713,12 @@ bool operator==(Request & r, const std::string s)
     void 
     Kernel::InitCircularBuffers()
     {
-        //std::cout << "\nInitCircularBuffers:" << std::endl;
         for(auto it : max_delays)
         {
             if(it.second <= 1)
                 continue;
-            //std::cout << "\t" << it.first << std::endl;
-            circular_buffers.emplace(it.first, CircularBuffer(buffers[it.first], it.second)); // FIXME: Change to initialization list in C++20
+          if(buffers.count(it.first))
+                circular_buffers.emplace(it.first, CircularBuffer(buffers[it.first], it.second)); // FIXME: Change to initialization list in C++20
         }
     }
 
@@ -1657,7 +1876,7 @@ bool operator==(Request & r, const std::string s)
         current_component_path = path+"."+std::string(info["name"]);
 
         if(components.count(current_component_path)> 0)
-            throw exception("Module or group with this name already exists.");
+            throw exception("Module or group with this name already exists. \""+std::string(info["name"])+"\".");
 
         std::string classname = info["class"];
         if(!classes.count(classname))
@@ -1797,8 +2016,9 @@ bool operator==(Request & r, const std::string s)
             {
                 Notify(msg_fatal_error, e.message);
                 Notify(msg_fatal_error, u8"Load file failed for "s+options_.filename);
-                CalculateCheckSum();
-                New();
+                //CalculateCheckSum();
+                throw fatal_error("Load failed");
+                //New(); // FIXME: New in main - not here
             }
     }
 
@@ -1820,6 +2040,8 @@ bool operator==(Request & r, const std::string s)
         {
             std::string msg = "Incorrect Check Sum: "+std::to_string(calculated_check_sum)+" != "+std::to_string(correct_check_sum);
             Notify(msg_fatal_error, msg);
+            if(info_.is_set("batch_mode"))
+                exit(1); // FIXME: Should exit gracefully
         }
     }
 
@@ -1850,7 +2072,7 @@ bool operator==(Request & r, const std::string s)
     }
 
 
-   
+
     void 
     Kernel::Propagate()
     {
@@ -2185,10 +2407,9 @@ bool operator==(Request & r, const std::string s)
         {
             SortTasks();
             ResolveParameters();
+            PruneConnections();
             CalculateDelays();
             CalculateSizes();
-
-            PruneConnections();
             InitCircularBuffers();
             InitComponents();
 

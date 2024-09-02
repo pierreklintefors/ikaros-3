@@ -113,7 +113,7 @@ It is not always necessary to check if an input is connected as several function
 
 ### Delayed inputs
 
-When a connection includes a delay-attribute, the target input obtains an additional dimension for the delayed signals unless the flatten-attribute is set on the input. If output M.OUTPUT is a two-dimensional matrix with dimensions a x b that is connected to N.INPUT with a delay range of 10 then the input wil become a three-dimensional matrix with dimensionas 3 x c x b.
+When a connection includes a delay-attribute, the target input obtains an additional dimension for the delayed signals unless the flatten-attribute is set on the input. If output M.OUTPUT is a two-dimensional matrix with dimensions a x b that is connected to N.INPUT with a delay range of 10 then the input wil become a three-dimensional matrix with dimensionas 10 x a x b.
 
 ```xml
 <connection source=M.OUTPUT target="N.INPUT" delay=":10" />
@@ -126,7 +126,7 @@ matrix input;
 
 Bind(input, "INPUT");
 
-matrix m = input[2]; // Get a 2-dimensional matrix from the input, two steps back
+matrix m = input[2]; // Get a 2-dimensional matrix from the input, two ticks back
 ```
 
 

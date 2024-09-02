@@ -61,33 +61,34 @@ main(int argc, char *argv[])
 
         while(k.run_mode != run_mode_quit)
         {
-            k.Run();
-            if(k.run_mode < run_mode_quit) // Restart requested
+            try
             {
-                k.Save();
-                k.Clear();
+                k.Run();
+                if(k.run_mode < run_mode_quit) // Restart requested
+                {
+                    k.Save();
+                    k.Clear();
+                }
+            }
+            catch(fatal_error & e)
+            {
+                std::cerr << "Ikaros:: Fatal error: " << e.what() << std::endl;
+                if(o.is_set("batch_mode"))
+                    exit(1);
+                else
+                    k.New(); // Try again...
             }
         }
-
-        std::cout << "\nIkaros 3.0 Ended" << std::endl;
-    }
-    catch(fatal_error & e)
-    {
-        std::cerr << "IKAROS::FATAL ERROR: " << e.what() << std::endl;
-    }
-    catch(exception & e)
-    {
-        std::cerr << "IKAROS::EXCEPTION: " << e.what() << std::endl;
-    }
-
-    catch(const std::exception& e)
-    {
-        std::cerr << "STD::EXCEPTION: " << e.what() << std::endl;
     }
     catch(...)
     {
-        std::cerr << "UNKOWN EXCEPTION " << std::endl;
+        // This should not happen since only fatal_exceptions should make it this far
+        std::cerr << "Ikaros: Internal Error" << std::endl;
+        exit(1);
     }
+
+        std::cout << "\nIkaros 3.0 Ended" << std::endl;
+
     return 0;
 }
 

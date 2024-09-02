@@ -124,7 +124,7 @@ public:
         return vars;
     }
 
-    float evaluate(::variables vars = {})
+    double evaluate(::variables vars = {})
     {
         try
         {
@@ -136,7 +136,7 @@ public:
                                 str = vars[str];
                             if(str.empty()) // FIXME: throw parameter is not set; should get deafult if possible
                                 return 0;
-                            return std::stof(str);
+                            return std::stod(str);
                 
 
                 case '+':   return left->evaluate(vars) + right->evaluate(vars);
