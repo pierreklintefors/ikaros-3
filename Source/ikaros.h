@@ -160,6 +160,11 @@ public:
     std::string json();    
     
     friend std::ostream& operator<<(std::ostream& os, parameter p);
+    // Method to compare string_value with a string literal
+    bool compare_string(const std::string& value) const {
+        // Check if string_value is non-null and compare
+        return string_value && *string_value == value;
+    }
 };
 
 
@@ -572,4 +577,3 @@ public:
 
 }; // namespace ikaros
 #endif
-

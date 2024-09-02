@@ -15,13 +15,8 @@
 		<module
 			class = "Constant"
 			name = "Goal_current"
-			_data = "
-			0 0 0 0 0 0
-			0 0 0 0 0 0
-			0 0 0 0 0 0
-			0"
 			data = "
-			0, 0, 0, 0, 0, 0
+			50, 50, 0, 0, 0, 0
 			"
 		/>
 
@@ -42,7 +37,7 @@
 			class = "EpiServos"
 			name = "EpiServos"
 			log_level = "8"
-			robot = "EpiWhite"
+			robot = "EpiGray"
 			simulate = "false"
 		/>
 
