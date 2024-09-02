@@ -134,7 +134,7 @@ public:
                                 return 0;
                             else if(vars.count(str))
                                 str = vars[str];
-                            if(str.empty()) // FIXME: throw parameter is not set; should get deafult if possible
+                            if(str.empty()) // FIXME: throw parameter is not set; should get default if possible
                                 return 0;
                             return std::stod(str);
                 
@@ -142,12 +142,22 @@ public:
                 case '+':   return left->evaluate(vars) + right->evaluate(vars);
                 case '-':   return left->evaluate(vars) - right->evaluate(vars);
                 case '*':   return left->evaluate(vars) * right->evaluate(vars);
-                case '/':   return left->evaluate(vars) / right->evaluate(vars); // trow exception if right == 0
+                case '/':   
+                    {
+                            double r = right->evaluate(vars);
+                            if(r==0) 
+                                throw std::runtime_error("Division by zero in expression.");
+                            return left->evaluate(vars) / r;
+                    }
             default:
                 return 0;
             }   
         }
-        catch(const std::exception& e)
+        catch(std::exception & e)
+        {
+            throw std::invalid_argument(e.what());
+        }
+        catch(...)
         {
             throw std::invalid_argument("invalid expression");
         }
@@ -222,7 +232,7 @@ private:
                     for(int j=0; j<not_after.size(); j++)
                         if(i>0 && s[i-1]==not_after[j])
                         {
-                            match = false; // a goto here is sooooo tempting...if only C++ had a decent continue statement...or internal functions
+                            match = false;
                             break;
                         }
                 

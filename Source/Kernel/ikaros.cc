@@ -1156,23 +1156,41 @@ namespace ikaros
 // ****************************** MODULE Sizes ******************************
 
     int 
-    Module::SetOutputSize(dictionary d, input_map ingoing_connections) // Uses size attribute // FIXME: Handle errors in evaluation
+    Module::SetOutputSize(dictionary d, input_map ingoing_connections)
     {
-        //std::cout << "\t\t\tModule::SetOutputSize " << d.at("name") << std::endl;
-        std::string size = d.at("size");
-        std::vector<int> shape = EvaluateSizeList(size);
-        matrix o;
-        Bind(o, d.at("name"));
-        o.realloc(shape);
-        return 0;
+        try
+        {
+            std::string size ;
+            
+            if(d.contains("size"))
+                size = std::string(d["size"]);  // FIXME: Get string
+
+            if(size.empty())
+             size = LookupKey("size");
+
+            if(size.empty())
+                throw fatal_error("Output \""+std::string(d.at("name")) +"\" must have a value for \"size\".");
+            std::vector<int> shape = EvaluateSizeList(size);
+            matrix o;
+            Bind(o, d.at("name"));
+            o.realloc(shape);
+            return 0;
+        }
+        catch(const std::invalid_argument & e)
+        {
+            Notify(msg_fatal_error, e.what());
+            throw fatal_error("Size expression for output \""+std::string(d.at("name")) +"\" is invalid.");
+        }
+        catch(...)
+        {
+            throw fatal_error("Size expression for output \""+std::string(d.at("name")) +"\" is invalid.");
+        }
     }
 
 
     int 
     Module::SetOutputSizes(input_map ingoing_connections)
     {
-            //std::cout << "\t\tModule::SetOutputSizes " << std::endl;
-
         if(!InputsReady(info_, ingoing_connections))
             return 0; // Cannot set size yet
 
@@ -1197,6 +1215,7 @@ namespace ikaros
     void
     Component::CalculateCheckSum(long & check_sum, prime & prime_number) // Calculates a value that depends on all parameters and output sizes; used for integrity testing of kernel and module
     {
+
         // Iterate over all outputs
 
         for(auto & d : info_["outputs"])
@@ -1688,6 +1707,11 @@ bool operator==(Request & r, const std::string s)
             for(auto & [n, c] : components)
                 c->SetSizes(ingoing_connections);
         }
+        catch(fatal_error & e)
+        {
+            Notify(msg_fatal_error, e.message);
+            throw fatal_error("Could not calculate input and output sizes.");
+        }
         catch(...)
         {
             throw fatal_error("Could not calculate input and output sizes.");
@@ -1882,6 +1906,9 @@ bool operator==(Request & r, const std::string s)
         if(!classes.count(classname))
             throw exception("Class \""+classname+"\" does not exist.");
 
+if(classes[classname].path.empty())
+        throw fatal_error("Class file \""+classname+".ikc\" could not be found.");
+
          info.merge(dictionary(classes[classname].path));  // merge with class data structure
 
         if(classes[classname].module_creator == nullptr)
@@ -2032,6 +2059,15 @@ bool operator==(Request & r, const std::string s)
         long correct_check_sum = info_["check_sum"];
         long calculated_check_sum = 0;
         prime prime_number;
+
+        // Iterate over task lists to test partitioning
+
+        calculated_check_sum += prime_number.next() * tasks.size();
+        for(auto & t : tasks)
+            calculated_check_sum += prime_number.next() * t.size();
+
+        // Iterate over components
+        
         for(auto & [n,c] : components)      
             c->CalculateCheckSum(calculated_check_sum, prime_number);
         if(correct_check_sum == calculated_check_sum)
@@ -2041,7 +2077,7 @@ bool operator==(Request & r, const std::string s)
             std::string msg = "Incorrect Check Sum: "+std::to_string(calculated_check_sum)+" != "+std::to_string(correct_check_sum);
             Notify(msg_fatal_error, msg);
             if(info_.is_set("batch_mode"))
-                exit(1); // FIXME: Should exit gracefully
+                exit(calculated_check_sum); // Return checksum if incorrect
         }
     }
 
@@ -2385,6 +2421,7 @@ bool operator==(Request & r, const std::string s)
                 tasks.insert(tasks.begin(), task_list);
             else
                 tasks.push_back(task_list);
+
         }
     }
 
