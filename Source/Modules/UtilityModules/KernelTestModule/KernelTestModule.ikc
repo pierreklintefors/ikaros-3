@@ -20,6 +20,9 @@
 
 
 	<input name="INPUT" />
+
+	<!-- Test different froms of simple size expressions -->
+
 	<output name="OUTPUT" description="The output. Copy of input." size="INPUT.size"/>
 
 	<output name="OUTPUT1" description="The output" size="13"/>
